@@ -35,6 +35,15 @@ flowchart LR
     Foundation --> Admin
 ```
 
+## Backend alignment note
+
+All backend-facing subsystem plans now assume a single `canvas-backend` project with two runtime modes:
+
+- `API mode`
+- `Worker mode`
+
+The file paths and task names below should stay consistent with that modular-monolith packaging model.
+
 ## Execution guidance
 
 - Execute one plan at a time.

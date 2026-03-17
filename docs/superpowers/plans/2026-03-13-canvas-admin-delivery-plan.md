@@ -65,9 +65,9 @@ git commit -m "feat: add tenant admin screens"
 **Files:**
 - Create: `apps/web/src/app/operator/tenants/page.tsx`
 - Create: `apps/web/src/app/operator/jobs/page.tsx`
-- Create: `apps/api/src/routes/operator/list-tenants.ts`
-- Create: `apps/api/src/routes/operator/list-jobs.ts`
-- Test: `apps/api/src/routes/operator/list-jobs.test.ts`
+- Create: `apps/backend/src/modules/operator/routes/list-tenants.ts`
+- Create: `apps/backend/src/modules/operator/routes/list-jobs.ts`
+- Test: `apps/backend/src/modules/operator/routes/list-jobs.test.ts`
 
 - [ ] **Step 1: Write the failing operator jobs test**
 
@@ -90,7 +90,7 @@ describe("mapOperatorJob", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/routes/operator/list-jobs.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/operator/routes/list-jobs.test.ts`
 Expected: FAIL because the operator route is missing.
 
 - [ ] **Step 3: Implement the operator summaries**
@@ -107,13 +107,13 @@ export function mapOperatorJob(input: {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm vitest run apps/api/src/routes/operator/list-jobs.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/operator/routes/list-jobs.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/web/src/app/operator apps/api/src/routes/operator
+git add apps/web/src/app/operator apps/backend/src/modules/operator
 git commit -m "feat: add operator support tooling"
 ```
 
@@ -125,10 +125,9 @@ git commit -m "feat: add operator support tooling"
 - Create: `infra/k8s/overlays/dev/kustomization.yaml`
 - Create: `infra/k8s/overlays/staging/kustomization.yaml`
 - Create: `infra/k8s/overlays/prod/kustomization.yaml`
-- Modify: `infra/k8s/base/api-deployment.yaml`
-- Modify: `infra/k8s/base/session-deployment.yaml`
-- Modify: `infra/k8s/base/realtime-deployment.yaml`
-- Create: `infra/k8s/base/api-service.yaml`
+- Modify: `infra/k8s/base/backend-api-deployment.yaml`
+- Modify: `infra/k8s/base/backend-worker-deployment.yaml`
+- Create: `infra/k8s/base/backend-api-service.yaml`
 - Create: `infra/k8s/base/web-service.yaml`
 - Test: `tools/tests/k8s-overlays.test.ts`
 

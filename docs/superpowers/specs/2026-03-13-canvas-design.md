@@ -80,27 +80,20 @@ flowchart LR
     HostApp --> EmbedSDK["canvas-embed-sdk<br/>React/shadcn package"]
     HostApp --> SessionSign["Host backend session signer"]
 
-    EmbedSDK --> CanvasAPI["canvas-api"]
-    SessionSign --> CanvasSession["canvas-session"]
-    CanvasSession --> CanvasAPI
-    EmbedSDK --> CanvasRealtime["canvas-realtime"]
+    EmbedSDK --> ApiMode["canvas-backend<br/>API mode"]
+    EmbedSDK <--> Realtime["Realtime Gateway<br/>(inside API mode)"]
+    SessionSign --> ApiMode
+    HostApp --> ApiMode
 
-    CanvasAPI --> Metadata["Postgres<br/>metadata + normalized data"]
-    CanvasAPI --> S3["S3<br/>raw uploads + exports"]
-    CanvasAPI --> Redis["Redis<br/>queue + cache + pub/sub"]
+    ApiMode --> Metadata["Postgres<br/>metadata + normalized data"]
+    ApiMode --> S3["S3<br/>raw uploads + exports"]
+    ApiMode --> Redis["Redis<br/>queue + cache + pub/sub"]
 
-    CanvasAPI --> Worker["canvas-worker"]
-    Worker --> Ingest["canvas-ingest"]
-    Ingest --> Metadata
-    Ingest --> S3
-    Worker --> Redis
+    WorkerMode["canvas-backend<br/>Worker mode"] --> Metadata
+    WorkerMode --> S3
+    WorkerMode --> Redis
 
-    CanvasAPI --> Query["canvas-query"]
-    Query --> Metadata
-    Query --> Redis
-
-    Redis --> CanvasRealtime
-    CanvasRealtime --> EmbedSDK
+    Redis --> Realtime
 ```
 
 ## 5. Day-One Services
@@ -116,28 +109,28 @@ flowchart LR
 
 ### Core backend
 
-- `canvas-api`
+- `canvas-backend`
+  - one Node.js/TypeScript backend project
+  - one Docker image
+  - shared modules for auth, tenant context, datasets, ingestion, query, charts, dashboards, workbooks, and realtime
+
+### Runtime modes
+
+- `API mode`
   - main REST/JSON application API
-  - handles datasets, uploads, dashboards, charts, workbooks, tenant config, and permissions
-- `canvas-session`
   - validates signed host session assertions
   - issues short-lived `canvas` access tokens
-- `canvas-ingest`
-  - parses uploaded files or app-pushed data payloads
-  - runs normalization and import workflows
-- `canvas-query`
-  - executes analytical queries against normalized data in Postgres
-  - shapes data for table/grid/chart use
-- `canvas-worker`
+  - handles datasets, uploads, dashboards, charts, workbooks, tenant config, and permissions
+  - exposes WebSocket realtime communication for live updates
+- `Worker mode`
   - runs asynchronous jobs using Redis-backed queues
-  - coordinates import, export, refresh, and background processing
-- `canvas-realtime`
-  - provides WebSocket communication
-  - pushes job, query, and dashboard update events to connected clients
+  - parses uploaded files or app-pushed data payloads
+  - performs normalization and import workflows
+  - handles export and other background processing
 
 ### What `api-gateway/app-api` means
 
-For day one, the public API surface can be implemented as a single Node.js service:
+For day one, the public API surface is implemented inside `canvas-backend` API mode:
 
 - gateway responsibilities
   - auth verification
@@ -148,7 +141,7 @@ For day one, the public API surface can be implemented as a single Node.js servi
   - BI product business logic
   - datasets, dashboards, charts, workbooks, permissions, and tenant config
 
-In practice this means `canvas-api` is a REST API service that combines both concerns initially, while still leaving room to separate them later.
+In practice this means the backend is a modular monolith: one Node.js project with clear internal boundaries and two runtime entrypoints, leaving room to split services later if needed.
 
 ## 6. Core Product Components
 
@@ -205,7 +198,7 @@ In practice this means `canvas-api` is a REST API service that combines both con
 1. Host backend authenticates its own user
 2. Host backend signs a `canvas` session payload
 3. Host frontend mounts `canvas` React components
-4. The embedded SDK exchanges the signed payload with `canvas-session`
+4. The embedded SDK exchanges the signed payload with the `canvas-backend` session endpoint
 5. `canvas` returns a short-lived session token and tenant-scoped capabilities
 6. The SDK uses REST for application operations and WebSocket for live updates
 
@@ -286,7 +279,7 @@ Day one exclusions:
 1. Data arrives through upload or API push
 2. Raw payload is stored in `S3`
 3. Import job is queued in Redis
-4. `canvas-ingest` parses and profiles the data
+4. `canvas-backend` worker mode parses and profiles the data
 5. Schema inference and normalization run
 6. Cleaned data is written into normalized Postgres tables
 7. Dataset metadata is persisted in Postgres
@@ -347,26 +340,25 @@ Postgres is the day-one analytical store. The domain model should still be desig
 sequenceDiagram
     participant HB as Host Backend
     participant FE as Embedded SDK
-    participant SES as canvas-session
-    participant API as canvas-api
-    participant RT as canvas-realtime
+    participant API as canvas-backend API mode
+    participant RT as Realtime Gateway
     participant R as Redis
-    participant I as canvas-ingest
+    participant W as canvas-backend Worker mode
     participant PG as Postgres
     participant S3 as S3
 
     HB->>FE: signed canvas session payload
-    FE->>SES: exchange signed payload
-    SES-->>FE: short-lived canvas token
+    FE->>API: exchange signed payload
+    API-->>FE: short-lived canvas token
     FE->>RT: open WebSocket with token
 
     FE->>API: upload file or push dataset metadata
     API->>S3: store raw payload
     API->>R: enqueue import job
-    R->>I: deliver job
-    I->>S3: read raw data
-    I->>PG: write normalized rows + metadata
-    I->>R: publish import progress and completion
+    R->>W: deliver job
+    W->>S3: read raw data
+    W->>PG: write normalized rows + metadata
+    W->>R: publish import progress and completion
     R->>RT: pub/sub event
     RT-->>FE: live import update
 
@@ -380,7 +372,7 @@ sequenceDiagram
 - user selects a dataset
 - user drags fields or configures chart settings
 - frontend creates a query specification
-- `canvas-query` executes against normalized data
+- `canvas-backend` API mode executes against normalized data
 - results are transformed into chart-ready payloads
 - charts are saved into workbooks and dashboards
 
@@ -418,7 +410,7 @@ The UI should feel live at all times.
 
 ### Realtime architecture
 
-- `canvas-realtime` authenticates socket sessions
+- the realtime gateway runs inside `canvas-backend` API mode
 - Redis pub/sub fans out job and query events
 - clients subscribe by tenant, user, workspace, and asset scope
 - reconnect logic resyncs state after interruption
@@ -454,13 +446,9 @@ Everything is deployed on Kubernetes from day one.
 
 ### Recommended workloads
 
-- Deployment: `canvas-api`
-- Deployment: `canvas-session`
-- Deployment: `canvas-query`
-- Deployment: `canvas-realtime`
+- Deployment: `canvas-backend-api`
+- Deployment: `canvas-backend-worker`
 - Deployment: `canvas-web`
-- Deployment: `canvas-ingest`
-- Deployment: `canvas-worker`
 - StatefulSet or managed service: `Postgres`
 - StatefulSet or managed service: `Redis`
 - external service: `S3`
@@ -489,13 +477,9 @@ flowchart TB
         Ingress["Ingress"]
 
         subgraph Apps["Application Pods"]
-            API["canvas-api"]
-            Session["canvas-session"]
-            Query["canvas-query"]
-            Realtime["canvas-realtime"]
+            API["canvas-backend-api"]
+            Worker["canvas-backend-worker"]
             Web["canvas-web"]
-            Ingest["canvas-ingest"]
-            Worker["canvas-worker"]
         end
 
         subgraph Data["Stateful Services"]
@@ -509,22 +493,14 @@ flowchart TB
 
     Host --> Ingress
     Ingress --> API
-    Ingress --> Session
-    Ingress --> Query
-    Ingress --> Realtime
     Ingress --> Web
 
     API --> PG
     API --> Redis
     API --> S3
-    Query --> PG
-    Query --> Redis
-    Ingest --> PG
-    Ingest --> S3
-    Ingest --> Redis
     Worker --> Redis
     Worker --> PG
-    Realtime --> Redis
+    Worker --> S3
 
     classDef external fill:#f6f6f6,stroke:#999,stroke-width:1px;
 ```

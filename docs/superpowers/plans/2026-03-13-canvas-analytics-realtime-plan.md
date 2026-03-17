@@ -4,7 +4,7 @@
 
 **Goal:** Turn normalized datasets into live tables, charts, workbooks, and dashboards, with WebSocket-driven status and refresh events.
 
-**Architecture:** Use a dedicated query service and shared chart contracts to convert user drag/drop choices into Postgres-backed query results. Persist workbook and dashboard assets in Postgres and fan out query/import/publish events through Redis pub/sub to the realtime gateway.
+**Architecture:** Use `query`, `charts`, and `realtime` modules inside `apps/backend` API mode to convert user drag/drop choices into Postgres-backed query results. Persist workbook and dashboard assets in Postgres and fan out query/import/publish events through Redis pub/sub to the realtime gateway.
 
 **Tech Stack:** TypeScript, Fastify, PostgreSQL, Redis, React, ECharts, AG Grid, Vitest, Playwright
 
@@ -17,9 +17,9 @@
 **Files:**
 - Create: `packages/contracts/src/query.ts`
 - Create: `packages/contracts/src/charts.ts`
-- Create: `apps/query/src/lib/build-sql.ts`
-- Create: `apps/query/src/lib/map-chart-payload.ts`
-- Test: `apps/query/src/lib/build-sql.test.ts`
+- Create: `apps/backend/src/modules/query/lib/build-sql.ts`
+- Create: `apps/backend/src/modules/query/lib/map-chart-payload.ts`
+- Test: `apps/backend/src/modules/query/lib/build-sql.test.ts`
 
 - [ ] **Step 1: Write the failing SQL builder test**
 
@@ -43,7 +43,7 @@ describe("buildSql", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm vitest run apps/query/src/lib/build-sql.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/query/lib/build-sql.test.ts`
 Expected: FAIL because the query builder is missing.
 
 - [ ] **Step 3: Implement the query builder and chart mapper**
@@ -60,22 +60,22 @@ export function buildSql(input: {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm vitest run apps/query/src/lib/build-sql.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/query/lib/build-sql.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/contracts/src/query.ts packages/contracts/src/charts.ts apps/query/src/lib
+git add packages/contracts/src/query.ts packages/contracts/src/charts.ts apps/backend/src/modules/query/lib
 git commit -m "feat: add query and chart contracts"
 ```
 
 ### Task 2: Add chart query endpoint
 
 **Files:**
-- Create: `apps/api/src/routes/charts/run-chart-query.ts`
-- Create: `apps/query/src/routes/run-query.ts`
-- Test: `apps/api/src/routes/charts/run-chart-query.test.ts`
+- Create: `apps/backend/src/modules/charts/routes/run-chart-query.ts`
+- Create: `apps/backend/src/modules/query/routes/run-query.ts`
+- Test: `apps/backend/src/modules/charts/routes/run-chart-query.test.ts`
 
 - [ ] **Step 1: Write the failing chart query route test**
 
@@ -97,7 +97,7 @@ describe("runChartQuery", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/routes/charts/run-chart-query.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/charts/routes/run-chart-query.test.ts`
 Expected: FAIL because the route handler is missing.
 
 - [ ] **Step 3: Implement the API/query service path**
@@ -116,13 +116,13 @@ export async function runChartQuery(input: {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm vitest run apps/api/src/routes/charts/run-chart-query.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/charts/routes/run-chart-query.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/api/src/routes/charts apps/query/src/routes
+git add apps/backend/src/modules/charts apps/backend/src/modules/query/routes
 git commit -m "feat: add chart query endpoint"
 ```
 
@@ -134,8 +134,8 @@ git commit -m "feat: add chart query endpoint"
 - Modify: `packages/db/prisma/schema.prisma`
 - Create: `packages/db/src/workbook-repository.ts`
 - Create: `packages/db/src/dashboard-repository.ts`
-- Create: `apps/api/src/routes/workbooks/create-workbook.ts`
-- Create: `apps/api/src/routes/dashboards/create-dashboard.ts`
+- Create: `apps/backend/src/modules/workbooks/routes/create-workbook.ts`
+- Create: `apps/backend/src/modules/dashboards/routes/create-dashboard.ts`
 - Test: `packages/db/src/workbook-repository.test.ts`
 
 - [ ] **Step 1: Write the failing workbook repository test**
@@ -177,7 +177,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/db/prisma/schema.prisma packages/db/src/workbook-repository.ts packages/db/src/dashboard-repository.ts apps/api/src/routes/workbooks apps/api/src/routes/dashboards
+git add packages/db/prisma/schema.prisma packages/db/src/workbook-repository.ts packages/db/src/dashboard-repository.ts apps/backend/src/modules/workbooks apps/backend/src/modules/dashboards
 git commit -m "feat: add workbook and dashboard persistence"
 ```
 
@@ -234,11 +234,11 @@ git commit -m "feat: add authoring ui shells"
 
 **Files:**
 - Create: `packages/contracts/src/events.ts`
-- Create: `apps/realtime/src/server.ts`
-- Create: `apps/realtime/src/subscriptions/import-events.ts`
-- Create: `apps/realtime/src/subscriptions/dashboard-events.ts`
+- Create: `apps/backend/src/modules/realtime/server.ts`
+- Create: `apps/backend/src/modules/realtime/subscriptions/import-events.ts`
+- Create: `apps/backend/src/modules/realtime/subscriptions/dashboard-events.ts`
 - Create: `packages/embed-sdk/src/hooks/use-live-canvas.ts`
-- Test: `apps/realtime/src/server.test.ts`
+- Test: `apps/backend/src/modules/realtime/server.test.ts`
 
 - [ ] **Step 1: Write the failing realtime server test**
 
@@ -255,7 +255,7 @@ describe("createChannelName", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm vitest run apps/realtime/src/server.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/realtime/server.test.ts`
 Expected: FAIL because the server helper is missing.
 
 - [ ] **Step 3: Implement the realtime channel helpers and client hook**
@@ -268,13 +268,13 @@ export function createChannelName(tenantId: string, topic: string) {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm vitest run apps/realtime/src/server.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/realtime/server.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/contracts/src/events.ts apps/realtime/src packages/embed-sdk/src/hooks/use-live-canvas.ts
+git add packages/contracts/src/events.ts apps/backend/src/modules/realtime packages/embed-sdk/src/hooks/use-live-canvas.ts
 git commit -m "feat: add realtime event fanout"
 ```
 

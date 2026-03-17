@@ -4,7 +4,7 @@
 
 **Goal:** Build the delegated host-auth session exchange, tenant context enforcement, and RBAC foundation for all `canvas` APIs and WebSocket connections.
 
-**Architecture:** Create a dedicated `canvas-session` service for signed host assertions and short-lived token issuance, then share tenant-aware middleware across the REST API and realtime service. Persist tenants, principals, memberships, and roles in Postgres through a shared database package.
+**Architecture:** Create `session` and `tenant` modules inside `apps/backend`, expose the session exchange endpoint through backend API mode, and share tenant-aware middleware across REST and WebSocket handlers. Persist tenants, principals, memberships, and roles in Postgres through a shared database package.
 
 **Tech Stack:** TypeScript, Fastify, jose, Prisma, PostgreSQL, Redis, Vitest
 
@@ -110,17 +110,17 @@ git add packages/db/prisma packages/db/src/seed.*
 git commit -m "feat: add tenant seed workflow"
 ```
 
-## Chunk 2: Session Exchange Service
+## Chunk 2: Backend Session Exchange Module
 
 ### Task 3: Validate host assertions and mint short-lived tokens
 
 **Files:**
-- Create: `apps/session/src/app.ts`
-- Create: `apps/session/src/routes/exchange-session.ts`
+- Create: `apps/backend/src/modules/session/app.ts`
+- Create: `apps/backend/src/modules/session/routes/exchange-session.ts`
 - Create: `packages/contracts/src/session.ts`
 - Create: `packages/auth/src/host-assertion.ts`
 - Create: `packages/auth/src/canvas-token.ts`
-- Test: `apps/session/src/routes/exchange-session.test.ts`
+- Test: `apps/backend/src/modules/session/routes/exchange-session.test.ts`
 
 - [ ] **Step 1: Write the failing session exchange test**
 
@@ -143,7 +143,7 @@ describe("exchangeHostAssertion", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm vitest run apps/session/src/routes/exchange-session.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/session/routes/exchange-session.test.ts`
 Expected: FAIL because the route logic is missing.
 
 - [ ] **Step 3: Implement the assertion and token services**
@@ -162,14 +162,14 @@ export async function exchangeHostAssertion(payload: {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm vitest run apps/session/src/routes/exchange-session.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/session/routes/exchange-session.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/session packages/contracts packages/auth
-git commit -m "feat: add host session exchange service"
+git add apps/backend packages/contracts packages/auth
+git commit -m "feat: add backend session exchange module"
 ```
 
 ### Task 4: Add session middleware for HTTP and WebSocket consumers

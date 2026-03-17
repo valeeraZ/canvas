@@ -4,7 +4,7 @@
 
 **Goal:** Accept file uploads and host-pushed data, normalize them into tenant-scoped Postgres tables, and expose dataset metadata plus import lifecycle APIs.
 
-**Architecture:** Keep raw payloads in S3, queue import jobs in Redis, and perform parsing plus normalization in dedicated worker processes. Store dataset metadata, schema versions, warnings, and normalized rows in Postgres behind the `canvas-api` dataset endpoints.
+**Architecture:** Keep raw payloads in S3, queue import jobs in Redis, and perform parsing plus normalization in dedicated worker processes. Store dataset metadata, schema versions, warnings, and normalized rows in Postgres behind the `canvas-backend` dataset endpoints, with imports executed by backend worker mode.
 
 **Tech Stack:** TypeScript, Fastify, PostgreSQL, Prisma, Redis, S3-compatible storage, csv-parse, zod, Vitest
 
@@ -72,10 +72,10 @@ git commit -m "feat: add dataset and import job metadata"
 ### Task 2: Add upload initiation and finalize endpoints
 
 **Files:**
-- Create: `apps/api/src/routes/datasets/create-upload.ts`
-- Create: `apps/api/src/routes/datasets/finalize-upload.ts`
+- Create: `apps/backend/src/modules/datasets/routes/create-upload.ts`
+- Create: `apps/backend/src/modules/datasets/routes/finalize-upload.ts`
 - Create: `packages/storage/src/presign.ts`
-- Test: `apps/api/src/routes/datasets/create-upload.test.ts`
+- Test: `apps/backend/src/modules/datasets/routes/create-upload.test.ts`
 
 - [ ] **Step 1: Write the failing upload route test**
 
@@ -98,7 +98,7 @@ describe("createUploadSession", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/routes/datasets/create-upload.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/datasets/routes/create-upload.test.ts`
 Expected: FAIL because the route helper is missing.
 
 - [ ] **Step 3: Implement minimal upload initiation and finalize handlers**
@@ -117,13 +117,13 @@ export async function createUploadSession(input: {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm vitest run apps/api/src/routes/datasets/create-upload.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/datasets/routes/create-upload.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/api/src/routes/datasets packages/storage/src/presign.ts
+git add apps/backend/src/modules/datasets packages/storage/src/presign.ts
 git commit -m "feat: add dataset upload endpoints"
 ```
 
@@ -133,9 +133,9 @@ git commit -m "feat: add dataset upload endpoints"
 
 **Files:**
 - Create: `packages/queue/src/import-jobs.ts`
-- Create: `workers/jobs/src/handlers/run-import-job.ts`
-- Create: `workers/jobs/src/worker.ts`
-- Test: `workers/jobs/src/handlers/run-import-job.test.ts`
+- Create: `apps/backend/src/worker/handlers/run-import-job.ts`
+- Create: `apps/backend/src/worker/index.ts`
+- Test: `apps/backend/src/worker/handlers/run-import-job.test.ts`
 
 - [ ] **Step 1: Write the failing import worker test**
 
@@ -158,7 +158,7 @@ describe("buildImportJobPayload", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm vitest run workers/jobs/src/handlers/run-import-job.test.ts`
+Run: `pnpm vitest run apps/backend/src/worker/handlers/run-import-job.test.ts`
 Expected: FAIL because the queue contract is missing.
 
 - [ ] **Step 3: Implement the import queue contract and worker entrypoint**
@@ -175,24 +175,24 @@ export function buildImportJobPayload(input: {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm vitest run workers/jobs/src/handlers/run-import-job.test.ts`
+Run: `pnpm vitest run apps/backend/src/worker/handlers/run-import-job.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/queue/src/import-jobs.ts workers/jobs/src
+git add packages/queue/src/import-jobs.ts apps/backend/src/worker
 git commit -m "feat: add import worker pipeline"
 ```
 
 ### Task 4: Parse CSV uploads and normalize rows
 
 **Files:**
-- Create: `workers/ingest/src/parsers/csv.ts`
-- Create: `workers/ingest/src/normalize/infer-schema.ts`
-- Create: `workers/ingest/src/normalize/normalize-rows.ts`
-- Create: `workers/ingest/src/persist/write-normalized-table.ts`
-- Test: `workers/ingest/src/normalize/normalize-rows.test.ts`
+- Create: `apps/backend/src/modules/ingestion/parsers/csv.ts`
+- Create: `apps/backend/src/modules/ingestion/normalize/infer-schema.ts`
+- Create: `apps/backend/src/modules/ingestion/normalize/normalize-rows.ts`
+- Create: `apps/backend/src/modules/ingestion/persist/write-normalized-table.ts`
+- Test: `apps/backend/src/modules/ingestion/normalize/normalize-rows.test.ts`
 
 - [ ] **Step 1: Write the failing normalization test**
 
@@ -215,7 +215,7 @@ describe("normalizeRows", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm vitest run workers/ingest/src/normalize/normalize-rows.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/ingestion/normalize/normalize-rows.test.ts`
 Expected: FAIL because the normalization code is missing.
 
 - [ ] **Step 3: Implement parsing and normalization helpers**
@@ -236,13 +236,13 @@ export function normalizeRows(input: {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm vitest run workers/ingest/src/normalize/normalize-rows.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/ingestion/normalize/normalize-rows.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add workers/ingest/src
+git add apps/backend/src/modules/ingestion
 git commit -m "feat: add csv parsing and normalization"
 ```
 
@@ -251,10 +251,10 @@ git commit -m "feat: add csv parsing and normalization"
 ### Task 5: Expose dataset listing, status, and warnings
 
 **Files:**
-- Create: `apps/api/src/routes/datasets/list-datasets.ts`
-- Create: `apps/api/src/routes/datasets/get-dataset.ts`
-- Create: `apps/api/src/routes/datasets/list-import-jobs.ts`
-- Test: `apps/api/src/routes/datasets/list-datasets.test.ts`
+- Create: `apps/backend/src/modules/datasets/routes/list-datasets.ts`
+- Create: `apps/backend/src/modules/datasets/routes/get-dataset.ts`
+- Create: `apps/backend/src/modules/datasets/routes/list-import-jobs.ts`
+- Test: `apps/backend/src/modules/datasets/routes/list-datasets.test.ts`
 
 - [ ] **Step 1: Write the failing dataset listing test**
 
@@ -278,7 +278,7 @@ describe("mapDatasetSummary", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/routes/datasets/list-datasets.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/datasets/routes/list-datasets.test.ts`
 Expected: FAIL because the mapper is missing.
 
 - [ ] **Step 3: Implement dataset summary routes**
@@ -301,13 +301,13 @@ export function mapDatasetSummary(input: {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm vitest run apps/api/src/routes/datasets/list-datasets.test.ts`
+Run: `pnpm vitest run apps/backend/src/modules/datasets/routes/list-datasets.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/api/src/routes/datasets
+git add apps/backend/src/modules/datasets
 git commit -m "feat: expose dataset and import job status"
 ```
 

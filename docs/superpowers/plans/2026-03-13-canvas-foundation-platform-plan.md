@@ -4,7 +4,7 @@
 
 **Goal:** Create the greenfield monorepo, shared TypeScript tooling, local service adapters, and Kubernetes-ready application skeleton for all other `canvas` subsystems.
 
-**Architecture:** Use a pnpm/turborepo monorepo with separate `apps`, `packages`, and `infra` directories. Start with thin service skeletons, a shared config layer, and local adapters for Postgres, Redis, and S3-compatible storage so feature teams can build against stable interfaces.
+**Architecture:** Use a pnpm/turborepo monorepo with separate `apps`, `packages`, and `infra` directories. Start with a single `apps/backend` modular-monolith service, a `apps/web` frontend, a shared config layer, and local adapters for Postgres, Redis, and S3-compatible storage so feature teams can build against stable interfaces.
 
 **Tech Stack:** pnpm, Turborepo, TypeScript, Vitest, Fastify, Next.js, shadcn/ui, Prisma, PostgreSQL, Redis, S3-compatible storage, Kubernetes manifests
 
@@ -81,13 +81,14 @@ git commit -m "chore: bootstrap canvas monorepo"
 ### Task 2: Create app and package skeletons
 
 **Files:**
-- Create: `apps/api/src/index.ts`
-- Create: `apps/session/src/index.ts`
-- Create: `apps/realtime/src/index.ts`
+- Create: `apps/backend/package.json`
+- Create: `apps/backend/src/main.ts`
+- Create: `apps/backend/src/api/index.ts`
+- Create: `apps/backend/src/worker/index.ts`
+- Create: `apps/backend/src/modules/session/index.ts`
+- Create: `apps/backend/src/modules/realtime/index.ts`
 - Create: `apps/web/package.json`
 - Create: `apps/web/src/app/page.tsx`
-- Create: `workers/ingest/src/index.ts`
-- Create: `workers/jobs/src/index.ts`
 - Create: `packages/config/src/index.ts`
 - Create: `packages/contracts/src/index.ts`
 - Create: `packages/db/src/index.ts`
@@ -103,10 +104,10 @@ import { existsSync } from "node:fs";
 
 describe("service skeletons", () => {
   it("creates all planned entrypoints", () => {
-    expect(existsSync("apps/api/src/index.ts")).toBe(true);
-    expect(existsSync("apps/session/src/index.ts")).toBe(true);
-    expect(existsSync("apps/realtime/src/index.ts")).toBe(true);
-    expect(existsSync("workers/ingest/src/index.ts")).toBe(true);
+    expect(existsSync("apps/backend/src/main.ts")).toBe(true);
+    expect(existsSync("apps/backend/src/api/index.ts")).toBe(true);
+    expect(existsSync("apps/backend/src/worker/index.ts")).toBe(true);
+    expect(existsSync("apps/backend/src/modules/session/index.ts")).toBe(true);
   });
 });
 ```
@@ -132,7 +133,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps workers packages tools/tests/service-entrypoints.test.ts
+git add apps packages tools/tests/service-entrypoints.test.ts
 git commit -m "chore: add service and package skeletons"
 ```
 
@@ -269,15 +270,12 @@ git commit -m "chore: add base infrastructure adapters"
 ### Task 5: Add Docker and Kubernetes skeletons
 
 **Files:**
-- Create: `Dockerfile.api`
+- Create: `Dockerfile.backend`
 - Create: `Dockerfile.web`
 - Create: `infra/k8s/base/namespace.yaml`
-- Create: `infra/k8s/base/api-deployment.yaml`
-- Create: `infra/k8s/base/session-deployment.yaml`
-- Create: `infra/k8s/base/realtime-deployment.yaml`
+- Create: `infra/k8s/base/backend-api-deployment.yaml`
+- Create: `infra/k8s/base/backend-worker-deployment.yaml`
 - Create: `infra/k8s/base/web-deployment.yaml`
-- Create: `infra/k8s/base/ingest-deployment.yaml`
-- Create: `infra/k8s/base/jobs-deployment.yaml`
 - Create: `infra/k8s/base/kustomization.yaml`
 - Test: `tools/tests/k8s-layout.test.ts`
 
@@ -290,8 +288,8 @@ import { existsSync } from "node:fs";
 describe("k8s base layout", () => {
   it("contains a kustomization and core deployment manifests", () => {
     expect(existsSync("infra/k8s/base/kustomization.yaml")).toBe(true);
-    expect(existsSync("infra/k8s/base/api-deployment.yaml")).toBe(true);
-    expect(existsSync("infra/k8s/base/realtime-deployment.yaml")).toBe(true);
+    expect(existsSync("infra/k8s/base/backend-api-deployment.yaml")).toBe(true);
+    expect(existsSync("infra/k8s/base/backend-worker-deployment.yaml")).toBe(true);
   });
 });
 ```
@@ -307,7 +305,7 @@ Expected: FAIL because the manifests do not exist yet.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: canvas-api
+  name: canvas-backend-api
 spec:
   replicas: 1
 ```
@@ -320,7 +318,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Dockerfile.* infra/k8s tools/tests/k8s-layout.test.ts
+git add Dockerfile.backend Dockerfile.web infra/k8s tools/tests/k8s-layout.test.ts
 git commit -m "chore: add base container and kubernetes assets"
 ```
 
