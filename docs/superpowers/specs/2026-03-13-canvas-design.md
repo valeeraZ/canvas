@@ -151,6 +151,7 @@ In practice this means the backend is a modular monolith: one Node.js project wi
 - dataset explorer
 - chart builder
 - workbook editor
+- dashboard builder
 - dashboard viewer/publisher
 - tenant admin screens
 - internal operator console
@@ -188,6 +189,73 @@ In practice this means the backend is a modular monolith: one Node.js project wi
 - result shaping for charts and tables
 - visualization adapter for chart configuration
 - AG Grid-like exploration support
+
+### Dashboard UI and widget model
+
+- dashboard authoring and viewing should be built with `shadcn/ui` primitives
+- tenant theme tokens should be layered on top of `shadcn/ui` so each host product can keep a native-looking experience
+- dashboard UX should support both:
+  - `builder mode`
+  - `viewer mode`
+
+#### Dashboard UI/UX principles
+
+- use a clean panel-based builder with consistent dialogs, drawers, forms, menus, and side panels
+- keep widget configuration discoverable and low-friction
+- support responsive layouts for both desktop and embedded app views
+- separate editing actions from viewing actions clearly
+- use live updates so users can see data refresh, query completion, and dashboard changes without manual refresh
+
+#### Widget model
+
+In v1, a dashboard is composed of a set of widgets placed within a saved layout.
+
+Each widget should have:
+
+- `type`
+- `title`
+- `layout`
+- `data binding`
+- `configuration`
+- `display options`
+
+#### V1 widget types
+
+- `chart`
+  - visual chart backed by a dataset or query
+- `table`
+  - tabular data widget for row/column exploration
+- `metric`
+  - single-value KPI style widget
+- `text`
+  - descriptive or instructional content block
+
+#### Widget selection and configuration flow
+
+1. user opens dashboard builder
+2. user chooses `Add widget`
+3. user selects widget type
+4. user selects a dataset or saved query
+5. user configures widget options
+6. widget is added to the dashboard layout
+7. user saves or publishes the dashboard
+
+#### Widget data source model
+
+- dashboards do not bind directly to raw uploaded files
+- raw files are first imported into `canvas` as normalized datasets
+- widgets then bind to:
+  - a dataset
+  - a saved query
+  - a derived chart configuration
+
+This keeps chart, table, and metric widgets consistent and makes dashboard behavior easier to reason about.
+
+#### V1 scope boundary
+
+- do not build a plugin marketplace or open widget SDK in v1
+- do not support arbitrary third-party widget types in v1
+- focus on making `chart`, `table`, `metric`, and `text` widgets production-ready first
 
 ## 7. Embedding Model
 
@@ -382,6 +450,7 @@ sequenceDiagram
 - metadata and layouts are stored in Postgres
 - permissions are attached to the asset
 - published dashboards become available to the same tenant through embedded screens
+- dashboard layouts are composed from widgets bound to normalized datasets or saved queries
 
 ## 13. Realtime Model
 
@@ -429,6 +498,7 @@ Day-one APIs should be REST-first.
 - chart query execution
 - workbook CRUD
 - dashboard CRUD and publication
+- widget creation and configuration within dashboard definitions
 - tenant branding and configuration
 - permissions and role assignment
 - job status retrieval

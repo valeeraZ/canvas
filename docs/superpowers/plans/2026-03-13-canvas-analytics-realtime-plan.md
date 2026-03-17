@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Turn normalized datasets into live tables, charts, workbooks, and dashboards, with WebSocket-driven status and refresh events.
+**Goal:** Turn normalized datasets into live tables, charts, workbooks, and dashboards, with a formal v1 widget model and WebSocket-driven status and refresh events.
 
-**Architecture:** Use `query`, `charts`, and `realtime` modules inside `apps/backend` API mode to convert user drag/drop choices into Postgres-backed query results. Persist workbook and dashboard assets in Postgres and fan out query/import/publish events through Redis pub/sub to the realtime gateway.
+**Architecture:** Use `query`, `charts`, `dashboards`, and `realtime` modules inside `apps/backend` API mode to convert user drag/drop choices into Postgres-backed query results. Persist workbook, dashboard, and widget assets in Postgres and fan out query/import/publish events through Redis pub/sub to the realtime gateway. V1 dashboard authoring should explicitly support chart, table, metric, and text widgets.
 
 **Tech Stack:** TypeScript, Fastify, PostgreSQL, Redis, React, ECharts, AG Grid, Vitest, Playwright
 
@@ -128,57 +128,72 @@ git commit -m "feat: add chart query endpoint"
 
 ## Chunk 2: Workbook and Dashboard Authoring
 
-### Task 3: Add persisted workbook and dashboard models
+### Task 3: Add persisted workbook, dashboard, and widget models
 
 **Files:**
 - Modify: `packages/db/prisma/schema.prisma`
+- Create: `packages/contracts/src/widgets.ts`
 - Create: `packages/db/src/workbook-repository.ts`
 - Create: `packages/db/src/dashboard-repository.ts`
+- Create: `packages/db/src/dashboard-widget-repository.ts`
 - Create: `apps/backend/src/modules/workbooks/routes/create-workbook.ts`
 - Create: `apps/backend/src/modules/dashboards/routes/create-dashboard.ts`
-- Test: `packages/db/src/workbook-repository.test.ts`
+- Test: `packages/db/src/dashboard-widget-repository.test.ts`
 
-- [ ] **Step 1: Write the failing workbook repository test**
+- [ ] **Step 1: Write the failing dashboard widget repository test**
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { buildWorkbook } from "./workbook-repository";
+import { buildDashboardWidget } from "./dashboard-widget-repository";
 
-describe("buildWorkbook", () => {
-  it("creates a tenant-scoped workbook draft", () => {
-    const workbook = buildWorkbook({
+describe("buildDashboardWidget", () => {
+  it("creates a dashboard widget bound to a dataset", () => {
+    const widget = buildDashboardWidget({
       tenantId: "tenant_123",
-      title: "Executive Summary"
+      dashboardId: "dash_1",
+      type: "metric",
+      datasetId: "ds_9"
     });
 
-    expect(workbook.title).toBe("Executive Summary");
+    expect(widget.type).toBe("metric");
+    expect(widget.datasetId).toBe("ds_9");
   });
 });
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm vitest run packages/db/src/workbook-repository.test.ts`
-Expected: FAIL because the repository helper is missing.
+Run: `pnpm vitest run packages/db/src/dashboard-widget-repository.test.ts`
+Expected: FAIL because the widget repository helper is missing.
 
-- [ ] **Step 3: Implement the workbook and dashboard persistence layer**
+- [ ] **Step 3: Implement the workbook, dashboard, and widget persistence layer**
 
 ```ts
-export function buildWorkbook(input: { tenantId: string; title: string }) {
-  return { tenantId: input.tenantId, title: input.title, status: "draft" as const };
+export function buildDashboardWidget(input: {
+  tenantId: string;
+  dashboardId: string;
+  type: "chart" | "table" | "metric" | "text";
+  datasetId?: string;
+}) {
+  return {
+    tenantId: input.tenantId,
+    dashboardId: input.dashboardId,
+    type: input.type,
+    datasetId: input.datasetId ?? null
+  };
 }
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm vitest run packages/db/src/workbook-repository.test.ts`
+Run: `pnpm vitest run packages/db/src/dashboard-widget-repository.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/db/prisma/schema.prisma packages/db/src/workbook-repository.ts packages/db/src/dashboard-repository.ts apps/backend/src/modules/workbooks apps/backend/src/modules/dashboards
-git commit -m "feat: add workbook and dashboard persistence"
+git add packages/db/prisma/schema.prisma packages/contracts/src/widgets.ts packages/db/src/workbook-repository.ts packages/db/src/dashboard-repository.ts packages/db/src/dashboard-widget-repository.ts apps/backend/src/modules/workbooks apps/backend/src/modules/dashboards
+git commit -m "feat: add workbook dashboard and widget persistence"
 ```
 
 ### Task 4: Build authoring UI flows
@@ -187,45 +202,62 @@ git commit -m "feat: add workbook and dashboard persistence"
 - Create: `packages/embed-sdk/src/features/chart-builder/chart-builder.tsx`
 - Create: `packages/embed-sdk/src/features/workbooks/workbook-editor.tsx`
 - Create: `packages/embed-sdk/src/features/dashboards/dashboard-builder.tsx`
-- Test: `packages/embed-sdk/src/features/chart-builder/chart-builder.test.tsx`
+- Create: `packages/embed-sdk/src/features/dashboards/widget-picker.tsx`
+- Create: `packages/embed-sdk/src/features/dashboards/widget-config-panel.tsx`
+- Create: `packages/embed-sdk/src/features/dashboards/widgets/table-widget.tsx`
+- Create: `packages/embed-sdk/src/features/dashboards/widgets/metric-widget.tsx`
+- Create: `packages/embed-sdk/src/features/dashboards/widgets/text-widget.tsx`
+- Test: `packages/embed-sdk/src/features/dashboards/dashboard-builder.test.tsx`
 
-- [ ] **Step 1: Write the failing chart builder test**
+- [ ] **Step 1: Write the failing dashboard builder test**
 
 ```tsx
 import { describe, expect, it } from "vitest";
 import { renderToString } from "react-dom/server";
-import { ChartBuilder } from "./chart-builder";
+import { DashboardBuilder } from "./dashboard-builder";
 
-describe("ChartBuilder", () => {
-  it("renders a chart type selector", () => {
-    expect(renderToString(<ChartBuilder />)).toContain("Chart Type");
+describe("DashboardBuilder", () => {
+  it("renders the v1 widget choices", () => {
+    const html = renderToString(<DashboardBuilder />);
+
+    expect(html).toContain("chart");
+    expect(html).toContain("table");
+    expect(html).toContain("metric");
+    expect(html).toContain("text");
   });
 });
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm vitest run packages/embed-sdk/src/features/chart-builder/chart-builder.test.tsx`
-Expected: FAIL because the component is missing.
+Run: `pnpm vitest run packages/embed-sdk/src/features/dashboards/dashboard-builder.test.tsx`
+Expected: FAIL because the dashboard builder components are missing.
 
-- [ ] **Step 3: Implement the authoring shells**
+- [ ] **Step 3: Implement the authoring shells and widget-specific UI**
 
 ```tsx
-export function ChartBuilder() {
-  return <section>Chart Type</section>;
+export function DashboardBuilder() {
+  return (
+    <section>
+      <button>chart</button>
+      <button>table</button>
+      <button>metric</button>
+      <button>text</button>
+    </section>
+  );
 }
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm vitest run packages/embed-sdk/src/features/chart-builder/chart-builder.test.tsx`
+Run: `pnpm vitest run packages/embed-sdk/src/features/dashboards/dashboard-builder.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add packages/embed-sdk/src/features
-git commit -m "feat: add authoring ui shells"
+git commit -m "feat: add dashboard widget authoring ui"
 ```
 
 ## Chunk 3: Realtime Events

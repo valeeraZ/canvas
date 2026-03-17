@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the embeddable React/Next.js SDK, white-label theme system, and baseline analytics workspace shell that host applications mount directly.
+**Goal:** Build the embeddable React/Next.js SDK, white-label theme system, and baseline analytics workspace shell that host applications mount directly, including the dashboard builder UX foundation.
 
-**Architecture:** Package the product surface as `packages/embed-sdk` backed by shared UI primitives in `packages/ui`. Use session bootstrap hooks to exchange host assertions for `canvas` tokens, then render a tenant-themed shell with dataset, workbook, and dashboard routes.
+**Architecture:** Package the product surface as `packages/embed-sdk` backed by shared UI primitives in `packages/ui`. Use session bootstrap hooks to exchange host assertions for `canvas` tokens, then render a tenant-themed shell with dataset, workbook, and dashboard routes. The dashboard builder should use `shadcn/ui` primitives to provide a widget picker, layout shell, and widget configuration panel that can later host chart, table, metric, and text widgets.
 
 **Tech Stack:** Next.js, React, TypeScript, shadcn/ui, TanStack Query, Zustand, Vitest, Playwright
 
@@ -229,6 +229,129 @@ Expected: PASS.
 ```bash
 git add apps/web
 git commit -m "feat: add embed integration demo"
+```
+
+## Chunk 3: Dashboard Builder UX Foundation
+
+### Task 5: Add shared dashboard builder primitives
+
+**Files:**
+- Create: `packages/ui/src/components/dashboard-builder-shell.tsx`
+- Create: `packages/ui/src/components/dashboard-grid.tsx`
+- Create: `packages/ui/src/components/widget-picker.tsx`
+- Create: `packages/ui/src/components/widget-config-panel.tsx`
+- Test: `packages/ui/src/components/widget-picker.test.tsx`
+
+- [ ] **Step 1: Write the failing widget picker test**
+
+```tsx
+import { describe, expect, it } from "vitest";
+import { renderToString } from "react-dom/server";
+import { WidgetPicker } from "./widget-picker";
+
+describe("WidgetPicker", () => {
+  it("renders the v1 widget choices", () => {
+    const html = renderToString(
+      <WidgetPicker
+        widgetTypes={["chart", "table", "metric", "text"]}
+        onSelect={() => undefined}
+      />
+    );
+
+    expect(html).toContain("chart");
+    expect(html).toContain("metric");
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `pnpm vitest run packages/ui/src/components/widget-picker.test.tsx`
+Expected: FAIL because the dashboard builder primitives are missing.
+
+- [ ] **Step 3: Implement the builder shell, grid, picker, and config panel**
+
+```tsx
+export function WidgetPicker(props: {
+  widgetTypes: string[];
+  onSelect: (type: string) => void;
+}) {
+  return (
+    <section>
+      {props.widgetTypes.map((type) => (
+        <button key={type} onClick={() => props.onSelect(type)}>
+          {type}
+        </button>
+      ))}
+    </section>
+  );
+}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `pnpm vitest run packages/ui/src/components/widget-picker.test.tsx`
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add packages/ui/src/components
+git commit -m "feat: add dashboard builder ui primitives"
+```
+
+### Task 6: Expose dashboard builder shell through the SDK
+
+**Files:**
+- Create: `packages/embed-sdk/src/features/dashboards/dashboard-builder-shell.tsx`
+- Create: `packages/embed-sdk/src/features/dashboards/dashboard-builder-shell.test.tsx`
+- Modify: `packages/embed-sdk/src/routes/dashboard-screen.tsx`
+
+- [ ] **Step 1: Write the failing dashboard builder shell test**
+
+```tsx
+import { describe, expect, it } from "vitest";
+import { renderToString } from "react-dom/server";
+import { DashboardBuilderShell } from "./dashboard-builder-shell";
+
+describe("DashboardBuilderShell", () => {
+  it("renders add widget and configure controls", () => {
+    const html = renderToString(<DashboardBuilderShell />);
+
+    expect(html).toContain("Add Widget");
+    expect(html).toContain("Configure");
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `pnpm vitest run packages/embed-sdk/src/features/dashboards/dashboard-builder-shell.test.tsx`
+Expected: FAIL because the shell component is missing.
+
+- [ ] **Step 3: Implement the SDK-facing dashboard builder shell**
+
+```tsx
+export function DashboardBuilderShell() {
+  return (
+    <section>
+      <button>Add Widget</button>
+      <aside>Configure</aside>
+    </section>
+  );
+}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `pnpm vitest run packages/embed-sdk/src/features/dashboards/dashboard-builder-shell.test.tsx`
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add packages/embed-sdk/src/features/dashboards packages/embed-sdk/src/routes/dashboard-screen.tsx
+git commit -m "feat: expose dashboard builder shell in sdk"
 ```
 
 Plan complete and saved to `docs/superpowers/plans/2026-03-13-canvas-embed-experience-plan.md`. Ready to execute?
