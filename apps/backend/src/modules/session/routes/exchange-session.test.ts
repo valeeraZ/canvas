@@ -30,4 +30,24 @@ describe("exchangeHostAssertion", () => {
     expect(result.principal.displayName).toBe("Ada Lovelace");
     expect(result.principal.roles).toEqual(["USER", "ADMIN"]);
   });
+
+  it("can issue a session from local mock auth data", async () => {
+    const fetchImpl = vi.fn();
+
+    const result = await exchangeHostAssertion({
+      authBaseUrl: "https://auth.internal",
+      token: "token-123",
+      appName: "canvas",
+      fetchImpl,
+      mockContext: {
+        displayName: "Local Dev",
+        employeeId: "dev-1",
+        roles: ["ADMIN"]
+      }
+    });
+
+    expect(result.accessToken).toContain("dev-1");
+    expect(result.principal.roles).toEqual(["ADMIN"]);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
 });

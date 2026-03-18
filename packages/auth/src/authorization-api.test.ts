@@ -47,4 +47,27 @@ describe("fetchAuthorizationContext", () => {
       }
     );
   });
+
+  it("supports local mock context without calling external endpoints", async () => {
+    const fetchImpl = vi.fn();
+
+    const result = await fetchAuthorizationContext({
+      authBaseUrl: "https://auth.internal",
+      token: "token-123",
+      appName: "canvas",
+      fetchImpl,
+      mockContext: {
+        displayName: "Local Dev",
+        employeeId: "dev-1",
+        roles: ["ADMIN"]
+      }
+    });
+
+    expect(result).toEqual({
+      displayName: "Local Dev",
+      employeeId: "dev-1",
+      roles: ["ADMIN"]
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
 });

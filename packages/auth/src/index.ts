@@ -1,5 +1,5 @@
 export { fetchAuthorizationContext } from "./authorization-api";
-export type { AuthorizationContext } from "./authorization-api";
+export type { AuthorizationApiInput, AuthorizationContext } from "./authorization-api";
 export { buildHostAssertion } from "./host-assertion";
 export type { HostAssertion } from "./host-assertion";
 export { mintCanvasAccessToken } from "./canvas-token";

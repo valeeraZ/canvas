@@ -1,4 +1,5 @@
 import { buildHostAssertion } from "../../../../../../packages/auth/src/host-assertion";
+import type { AuthorizationContext } from "../../../../../../packages/auth/src/authorization-api";
 import { mintCanvasAccessToken } from "../../../../../../packages/auth/src/canvas-token";
 import type { SessionExchangeResult } from "../../../../../../packages/contracts/src/session";
 
@@ -7,6 +8,7 @@ export async function exchangeHostAssertion(input: {
   token: string;
   appName: string;
   fetchImpl?: typeof fetch;
+  mockContext?: AuthorizationContext;
 }): Promise<SessionExchangeResult> {
   const assertion = await buildHostAssertion(input);
   const accessToken = mintCanvasAccessToken({

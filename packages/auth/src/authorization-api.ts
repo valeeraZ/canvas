@@ -4,11 +4,12 @@ export type AuthorizationContext = {
   roles: string[];
 };
 
-type AuthorizationApiInput = {
+export type AuthorizationApiInput = {
   authBaseUrl: string;
   token: string;
   appName: string;
   fetchImpl?: typeof fetch;
+  mockContext?: AuthorizationContext;
 };
 
 function createHeaders(token: string): HeadersInit {
@@ -20,6 +21,10 @@ function createHeaders(token: string): HeadersInit {
 export async function fetchAuthorizationContext(
   input: AuthorizationApiInput
 ): Promise<AuthorizationContext> {
+  if (input.mockContext) {
+    return input.mockContext;
+  }
+
   const fetchImpl = input.fetchImpl ?? fetch;
   const baseUrl = input.authBaseUrl.replace(/\/+$/, "");
 

@@ -1,4 +1,5 @@
 import { fetchAuthorizationContext } from "./authorization-api";
+import type { AuthorizationContext } from "./authorization-api";
 
 export type HostAssertion = {
   tenantId: string;
@@ -12,6 +13,7 @@ export async function buildHostAssertion(input: {
   token: string;
   appName: string;
   fetchImpl?: typeof fetch;
+  mockContext?: AuthorizationContext;
 }): Promise<HostAssertion> {
   const context = await fetchAuthorizationContext(input);
 
