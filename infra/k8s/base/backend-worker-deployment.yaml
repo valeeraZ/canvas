@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: canvas-backend-worker
+  namespace: canvas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: canvas-backend-worker
+  template:
+    metadata:
+      labels:
+        app: canvas-backend-worker
+    spec:
+      containers:
+        - name: backend-worker
+          image: canvas/backend:dev
+          imagePullPolicy: IfNotPresent

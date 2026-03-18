@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: canvas-backend-api
+  namespace: canvas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: canvas-backend-api
+  template:
+    metadata:
+      labels:
+        app: canvas-backend-api
+    spec:
+      containers:
+        - name: backend-api
+          image: canvas/backend:dev
+          imagePullPolicy: IfNotPresent
