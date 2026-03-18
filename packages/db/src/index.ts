@@ -1,3 +1,2 @@
-export function createStubService(name: string) {
-  return { name, status: "bootstrapped" as const };
-}
+export { createDbClient } from "./client";
+export type { DbClientConfig } from "./client";

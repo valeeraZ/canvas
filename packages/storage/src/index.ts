@@ -1,3 +1,2 @@
-export function createStubService(name: string) {
-  return { name, status: "bootstrapped" as const };
-}
+export { createStorageClient } from "./client";
+export type { StorageClient, StorageClientConfig } from "./types";
