@@ -24,6 +24,19 @@ describeIfDatabase("dataset routes with prisma", () => {
   });
 
   beforeAll(async () => {
+    await prisma.tenant.upsert({
+      where: {
+        slug: "tenant-integration"
+      },
+      update: {
+        name: "Integration Tenant"
+      },
+      create: {
+        id: tenantId,
+        slug: "tenant-integration",
+        name: "Integration Tenant"
+      }
+    });
     await prisma.importJob.deleteMany({
       where: {
         tenantId
@@ -45,6 +58,11 @@ describeIfDatabase("dataset routes with prisma", () => {
     await prisma.dataset.deleteMany({
       where: {
         tenantId
+      }
+    });
+    await prisma.tenant.deleteMany({
+      where: {
+        id: tenantId
       }
     });
     await app.close();
