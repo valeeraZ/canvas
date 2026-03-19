@@ -11,6 +11,8 @@ export { buildDatasetRecord } from "./dataset-repository";
 export { buildImportJobRecord } from "./import-job-repository";
 export { createDatasetStore, toDatasetRecord } from "./dataset-store";
 export { createImportJobStore, toImportJobRecord } from "./import-job-store";
+export { createWorkbookStore, toWorkbookRecord } from "./workbook-store";
+export { createDashboardStore, toDashboardRecord } from "./dashboard-store";
 export { buildWorkbookRecord } from "./workbook-repository";
 export { buildDashboardRecord } from "./dashboard-repository";
 export { buildDashboardWidget } from "./dashboard-widget-repository";
