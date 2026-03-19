@@ -9,5 +9,6 @@ describe("embed demo page", () => {
 
     expect(html).toContain("Canvas Embed Demo");
     expect(html).toContain("Simulate Login");
+    expect(html).toContain("Run Ingestion Demo");
   });
 });
