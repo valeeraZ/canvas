@@ -9,3 +9,6 @@ export type { TenantRole } from "./rbac";
 export { buildSeedTenant } from "./seed";
 export { buildDatasetRecord } from "./dataset-repository";
 export { buildImportJobRecord } from "./import-job-repository";
+export { buildWorkbookRecord } from "./workbook-repository";
+export { buildDashboardRecord } from "./dashboard-repository";
+export { buildDashboardWidget } from "./dashboard-widget-repository";

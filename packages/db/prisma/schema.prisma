@@ -13,6 +13,8 @@ model Tenant {
   name        String
   memberships Membership[]
   datasets    Dataset[]
+  workbooks   Workbook[]
+  dashboards  Dashboard[]
 }
 
 model Principal {
@@ -40,6 +42,7 @@ model Dataset {
   warnings   Json?
   tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   importJobs ImportJob[]
+  widgets    DashboardWidget[]
 }
 
 model ImportJob {
@@ -50,4 +53,31 @@ model ImportJob {
   objectKey String
   warnings  Json?
   dataset   Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+}
+
+model Workbook {
+  id       String   @id @default(cuid())
+  tenantId String
+  name     String
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model Dashboard {
+  id        String            @id @default(cuid())
+  tenantId  String
+  workbookId String?
+  name      String
+  tenant    Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  widgets   DashboardWidget[]
+}
+
+model DashboardWidget {
+  id          String     @id @default(cuid())
+  tenantId    String
+  dashboardId String
+  type        String
+  datasetId   String?
+  config      Json?
+  dashboard   Dashboard  @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  dataset     Dataset?   @relation(fields: [datasetId], references: [id], onDelete: SetNull)
 }
