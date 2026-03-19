@@ -1,3 +1,2 @@
-export function createStubService(name: string) {
-  return { name, status: "bootstrapped" as const };
-}
+export { createApiApp } from "./api/app";
+export type { CreateApiAppOptions } from "./api/app";
