@@ -1,0 +1,6 @@
+import React from "react";
+import { EmbedDemo } from "../../components/embed-demo";
+
+export default function Page() {
+  return <EmbedDemo />;
+}
