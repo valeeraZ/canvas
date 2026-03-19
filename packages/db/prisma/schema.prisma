@@ -12,6 +12,7 @@ model Tenant {
   slug        String       @unique
   name        String
   memberships Membership[]
+  datasets    Dataset[]
 }
 
 model Principal {
@@ -29,4 +30,24 @@ model Membership {
   principal   Principal @relation(fields: [principalId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, principalId])
+}
+
+model Dataset {
+  id         String      @id @default(cuid())
+  tenantId   String
+  name       String
+  status     String
+  warnings   Json?
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  importJobs ImportJob[]
+}
+
+model ImportJob {
+  id        String   @id @default(cuid())
+  datasetId String
+  tenantId  String
+  status    String
+  objectKey String
+  warnings  Json?
+  dataset   Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
 }

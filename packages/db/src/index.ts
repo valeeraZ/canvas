@@ -7,3 +7,5 @@ export type { PrincipalRecord } from "./principal-repository";
 export { can } from "./rbac";
 export type { TenantRole } from "./rbac";
 export { buildSeedTenant } from "./seed";
+export { buildDatasetRecord } from "./dataset-repository";
+export { buildImportJobRecord } from "./import-job-repository";
