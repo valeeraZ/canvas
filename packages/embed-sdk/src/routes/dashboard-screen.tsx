@@ -1,6 +1,6 @@
 import React from "react";
-import { DashboardBuilderShell } from "../features/dashboards/dashboard-builder-shell";
+import { DashboardBuilder } from "../features/dashboards/dashboard-builder";
 
 export function DashboardScreen() {
-  return <DashboardBuilderShell />;
+  return <DashboardBuilder />;
 }
