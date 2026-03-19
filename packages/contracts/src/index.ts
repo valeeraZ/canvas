@@ -9,3 +9,4 @@ export type {
 export type { ChartPayload } from "./charts";
 export type { QueryMeasure, QuerySpec } from "./query";
 export type { DashboardWidgetRecord, WidgetType } from "./widgets";
+export type { RealtimeEvent, RealtimeTopic } from "./events";
