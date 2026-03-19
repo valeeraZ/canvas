@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { AuthorizationContext } from "../../../../../packages/auth/src/authorization-api";
+import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client";
 import { exchangeHostAssertion } from "./routes/exchange-session";
 
 type SessionExchangeBody = {
@@ -10,6 +11,7 @@ type SessionExchangeBody = {
 export type SessionModuleOptions = {
   authBaseUrl: string;
   mockContext?: AuthorizationContext;
+  db?: PrismaClient;
 };
 
 export const sessionModule: FastifyPluginAsync<SessionModuleOptions> = async (
@@ -29,7 +31,8 @@ export const sessionModule: FastifyPluginAsync<SessionModuleOptions> = async (
       authBaseUrl: options.authBaseUrl,
       token: request.body?.token ?? "local-dev-token",
       appName: request.body?.appName ?? "canvas",
-      mockContext: options.mockContext
+      mockContext: options.mockContext,
+      db: options.db
     });
   });
 };

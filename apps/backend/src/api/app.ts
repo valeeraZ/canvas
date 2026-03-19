@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import type { AuthorizationContext } from "../../../../packages/auth/src/authorization-api";
 import type { PrismaClient } from "../../../../packages/db/src/generated/prisma/client";
+import { authModule } from "../modules/auth/app";
 import {
   createDatasetsService,
   datasetsModule,
@@ -37,6 +38,7 @@ export function createApiApp(options: CreateApiAppOptions) {
     };
   });
 
+  void app.register(authModule);
   void app.register(sessionModule, options);
 
   const datasets =
