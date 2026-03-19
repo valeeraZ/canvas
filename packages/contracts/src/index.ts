@@ -6,3 +6,5 @@ export type {
   DatasetStatus,
   ImportJobRecord
 } from "./datasets";
+export type { ChartPayload } from "./charts";
+export type { QueryMeasure, QuerySpec } from "./query";
