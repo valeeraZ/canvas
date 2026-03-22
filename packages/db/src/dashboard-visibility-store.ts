@@ -67,6 +67,32 @@ export function createDashboardVisibilityStore(prisma: PrismaClient) {
       });
 
       return created.map(toDashboardVisibilityRule);
+    },
+    async listByAppAndSubjects(input: {
+      appId: string;
+      subjects: Array<{
+        subjectType: DashboardVisibilityRule["subjectType"];
+        subjectId: string;
+      }>;
+    }) {
+      if (input.subjects.length === 0) {
+        return [] as DashboardVisibilityRule[];
+      }
+
+      const rules = await prisma.dashboardVisibilityRule.findMany({
+        where: {
+          tenantId: input.appId,
+          OR: input.subjects.map((subject) => ({
+            subjectType: subject.subjectType,
+            subjectId: subject.subjectId
+          }))
+        },
+        orderBy: {
+          dashboardId: "asc"
+        }
+      });
+
+      return rules.map(toDashboardVisibilityRule);
     }
   };
 }

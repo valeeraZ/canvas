@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import { buildTenantContextFromToken } from "../../../../../packages/auth/src/canvas-token-decode";
+import { decodeCanvasAccessToken } from "../../../../../packages/auth/src/canvas-token-decode";
 import { assertTenantContext } from "../../../../../packages/auth/src/tenant-context";
 import { selectApp } from "./routes/select-app";
 
@@ -7,7 +7,9 @@ declare module "fastify" {
   interface FastifyRequest {
     tenantContext?: {
       tenantId: string;
+      externalUserId: string;
       roles: string[];
+      groups: string[];
     };
   }
 }
@@ -20,6 +22,17 @@ function readBearerToken(header: string | undefined): string | null {
   return header.slice("Bearer ".length).trim() || null;
 }
 
+function readGroups(header: string | undefined): string[] {
+  if (!header) {
+    return [];
+  }
+
+  return header
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 export const authModule: FastifyPluginAsync = async (app) => {
   app.decorateRequest("tenantContext", null);
 
@@ -30,7 +43,14 @@ export const authModule: FastifyPluginAsync = async (app) => {
       return;
     }
 
-    request.tenantContext = buildTenantContextFromToken(token);
+    const claims = decodeCanvasAccessToken(token);
+
+    request.tenantContext = {
+      tenantId: claims.tenantId,
+      externalUserId: claims.externalUserId,
+      roles: claims.roles,
+      groups: readGroups(request.headers["x-canvas-groups"] as string | undefined)
+    };
   });
 
   app.get("/auth/me", async (request) => {

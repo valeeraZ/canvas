@@ -11,6 +11,8 @@ afterEach(async () => {
 
 describe("dashboard routes", () => {
   it("creates, lists, and fetches dashboards", async () => {
+    let visibleRequest: unknown;
+
     const app = createApiApp({
       authBaseUrl: "http://auth.local",
       mockContext: {
@@ -27,14 +29,17 @@ describe("dashboard routes", () => {
             workbookId: "wb_1"
           }
         ],
-        listVisibleDashboards: async () => [
-          {
-            id: "dash_1",
-            tenantId: "tenant_demo",
-            name: "Overview",
-            workbookId: "wb_1"
-          }
-        ],
+        listVisibleDashboards: async (input: unknown) => {
+          visibleRequest = input;
+          return [
+            {
+              id: "dash_1",
+              tenantId: "tenant_demo",
+              name: "Overview",
+              workbookId: "wb_1"
+            }
+          ];
+        },
         getDashboard: async (dashboardId: string) => ({
           id: dashboardId,
           tenantId: "tenant_demo",
@@ -84,7 +89,30 @@ describe("dashboard routes", () => {
       method: "GET",
       url: "/dashboards/visible"
     });
-    expect(visibleResponse.statusCode).toBe(200);
-    expect(visibleResponse.json()[0]?.id).toBe("dash_1");
+    expect(visibleResponse.statusCode).toBe(401);
+
+    const session = await app.inject({
+      method: "POST",
+      url: "/session/exchange",
+      payload: {
+        token: "local-dev-token",
+        appName: "canvas"
+      }
+    });
+
+    const authorizedVisible = await app.inject({
+      method: "GET",
+      url: "/dashboards/visible",
+      headers: {
+        authorization: `Bearer ${session.json().accessToken as string}`
+      }
+    });
+    expect(authorizedVisible.statusCode).toBe(200);
+    expect((visibleRequest as { externalUserId?: string })?.externalUserId).toBe(
+      "dev-1"
+    );
+    expect((visibleRequest as { roles?: string[] })?.roles).toContain("ADMIN");
+    expect((visibleRequest as { tenantId?: string })?.tenantId).toBe("canvas");
+    expect(authorizedVisible.json()[0]?.id).toBe("dash_1");
   });
 });

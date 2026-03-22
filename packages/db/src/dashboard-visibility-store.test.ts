@@ -54,4 +54,35 @@ describe("createDashboardVisibilityStore", () => {
     expect(result).toHaveLength(1);
     expect(result[0]?.subjectId).toBe("ADMIN");
   });
+
+  it("filters rules by app and subject list", async () => {
+    const prisma = {
+      dashboardVisibilityRule: {
+        deleteMany: async () => ({ count: 0 }),
+        createManyAndReturn: async () => [],
+        findMany: async () => [
+          {
+            id: "rule_3",
+            tenantId: "tenant_demo",
+            dashboardId: "dash_2",
+            subjectType: "role",
+            subjectId: "ANALYST"
+          }
+        ]
+      }
+    } as any;
+
+    const store = createDashboardVisibilityStore(prisma);
+    const result = await store.listByAppAndSubjects({
+      appId: "tenant_demo",
+      subjects: [
+        {
+          subjectType: "role",
+          subjectId: "ANALYST"
+        }
+      ]
+    });
+
+    expect(result[0]?.dashboardId).toBe("dash_2");
+  });
 });
