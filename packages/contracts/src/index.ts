@@ -8,5 +8,9 @@ export type {
 } from "./datasets";
 export type { ChartPayload } from "./charts";
 export type { QueryMeasure, QuerySpec } from "./query";
+export type { WorkbookRecord } from "./workbooks";
+export type { DashboardRecord } from "./dashboards";
 export type { DashboardWidgetRecord, WidgetType } from "./widgets";
 export type { RealtimeEvent, RealtimeTopic } from "./events";
+export type { AppContext } from "./app-context";
+export type { VisibleDashboard, SelectedDashboard } from "./embed-viewer";

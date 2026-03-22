@@ -2,5 +2,8 @@
   "name": "@canvas/backend",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "fastify": "^5.8.2"
+  }
 }

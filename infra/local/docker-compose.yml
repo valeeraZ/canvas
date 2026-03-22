@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: canvas-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: canvas
+      POSTGRES_USER: canvas
+      POSTGRES_PASSWORD: canvas
+    ports:
+      - "5432:5432"
+    volumes:
+      - canvas-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U canvas -d canvas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  canvas-postgres-data:
