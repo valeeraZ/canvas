@@ -2,6 +2,26 @@
 
 This index breaks the approved `canvas` design into subsystem plans that can be executed independently but in sequence.
 
+## Current execution baseline (v2: app-scoped model)
+
+Spec:
+
+- `/Users/sylvain/Work/canvas/docs/superpowers/specs/2026-03-22-canvas-app-portal-and-embed-viewer-design.md`
+
+Recommended execution order:
+
+1. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-22-canvas-auth-app-context-plan.md`
+2. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-22-canvas-dashboard-distribution-plan.md`
+3. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-22-canvas-portal-plan.md`
+4. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-22-canvas-embed-sdk-viewer-plan.md`
+
+Why this order:
+
+- `Auth and App Context` establishes `amtoken` to app-scoped principal context and app switching.
+- `Dashboard Distribution` defines visibility and per-user selection semantics used by both Portal and SDK.
+- `Canvas Portal` then builds management and authoring UX on stable backend semantics.
+- `Embed SDK Viewer` finalizes host-facing read/selection UX with minimized churn.
+
 ## Recommended execution order
 
 1. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-13-canvas-foundation-platform-plan.md`
@@ -43,6 +63,10 @@ All backend-facing subsystem plans now assume a single `canvas-backend` project 
 - `Worker mode`
 
 The file paths and task names below should stay consistent with that modular-monolith packaging model.
+
+## Historical plans (v1)
+
+The `2026-03-13` plan set below remains as historical context, but new implementation work should follow the v2 app-scoped baseline above.
 
 ## Execution guidance
 
