@@ -5,6 +5,7 @@ import type { PrismaClient } from "../../../../../packages/db/src/generated/pris
 
 export type DashboardsService = {
   listDashboards: () => Promise<DashboardRecord[]>;
+  listVisibleDashboards: () => Promise<DashboardRecord[]>;
   getDashboard: (dashboardId: string) => Promise<DashboardRecord | null>;
   createDashboard: (input: {
     name: string;
@@ -26,6 +27,9 @@ export function createDashboardsService(input: {
     listDashboards() {
       return dashboards.listByTenant(input.tenantId);
     },
+    listVisibleDashboards() {
+      return dashboards.listByTenant(input.tenantId);
+    },
     getDashboard(dashboardId: string) {
       return dashboards.findByTenantAndId(input.tenantId, dashboardId);
     },
@@ -45,6 +49,10 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
 ) => {
   app.get("/dashboards", async () => {
     return options.dashboards.listDashboards();
+  });
+
+  app.get("/dashboards/visible", async () => {
+    return options.dashboards.listVisibleDashboards();
   });
 
   app.get<{

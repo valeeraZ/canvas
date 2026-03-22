@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { buildTenantContextFromToken } from "../../../../../packages/auth/src/canvas-token-decode";
 import { assertTenantContext } from "../../../../../packages/auth/src/tenant-context";
+import { selectApp } from "./routes/select-app";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -34,5 +35,32 @@ export const authModule: FastifyPluginAsync = async (app) => {
 
   app.get("/auth/me", async (request) => {
     return assertTenantContext(request.tenantContext);
+  });
+
+  app.post<{
+    Body: {
+      appName?: string;
+    };
+  }>("/auth/select-app", async (request, reply) => {
+    const token = readBearerToken(request.headers.authorization);
+
+    if (!token) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.body?.appName) {
+      reply.status(400);
+      return {
+        message: "appName is required"
+      };
+    }
+
+    return selectApp({
+      accessToken: token,
+      appName: request.body.appName
+    });
   });
 };

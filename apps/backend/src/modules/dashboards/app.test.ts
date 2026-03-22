@@ -27,6 +27,14 @@ describe("dashboard routes", () => {
             workbookId: "wb_1"
           }
         ],
+        listVisibleDashboards: async () => [
+          {
+            id: "dash_1",
+            tenantId: "tenant_demo",
+            name: "Overview",
+            workbookId: "wb_1"
+          }
+        ],
         getDashboard: async (dashboardId: string) => ({
           id: dashboardId,
           tenantId: "tenant_demo",
@@ -71,5 +79,12 @@ describe("dashboard routes", () => {
     });
     expect(createResponse.statusCode).toBe(200);
     expect(createResponse.json().workbookId).toBe("wb_1");
+
+    const visibleResponse = await app.inject({
+      method: "GET",
+      url: "/dashboards/visible"
+    });
+    expect(visibleResponse.statusCode).toBe(200);
+    expect(visibleResponse.json()[0]?.id).toBe("dash_1");
   });
 });
