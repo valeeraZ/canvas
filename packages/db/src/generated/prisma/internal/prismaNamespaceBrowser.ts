@@ -58,7 +58,9 @@ export const ModelName = {
   ImportJob: 'ImportJob',
   Workbook: 'Workbook',
   Dashboard: 'Dashboard',
-  DashboardWidget: 'DashboardWidget'
+  DashboardWidget: 'DashboardWidget',
+  DashboardVisibilityRule: 'DashboardVisibilityRule',
+  PrincipalAppPreference: 'PrincipalAppPreference'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -156,6 +158,26 @@ export const DashboardWidgetScalarFieldEnum = {
 } as const
 
 export type DashboardWidgetScalarFieldEnum = (typeof DashboardWidgetScalarFieldEnum)[keyof typeof DashboardWidgetScalarFieldEnum]
+
+
+export const DashboardVisibilityRuleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  dashboardId: 'dashboardId',
+  subjectType: 'subjectType',
+  subjectId: 'subjectId'
+} as const
+
+export type DashboardVisibilityRuleScalarFieldEnum = (typeof DashboardVisibilityRuleScalarFieldEnum)[keyof typeof DashboardVisibilityRuleScalarFieldEnum]
+
+
+export const PrincipalAppPreferenceScalarFieldEnum = {
+  principalId: 'principalId',
+  tenantId: 'tenantId',
+  selectedDashboardId: 'selectedDashboardId'
+} as const
+
+export type PrincipalAppPreferenceScalarFieldEnum = (typeof PrincipalAppPreferenceScalarFieldEnum)[keyof typeof PrincipalAppPreferenceScalarFieldEnum]
 
 
 export const SortOrder = {

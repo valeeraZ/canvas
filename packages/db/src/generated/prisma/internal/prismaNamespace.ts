@@ -391,7 +391,9 @@ export const ModelName = {
   ImportJob: 'ImportJob',
   Workbook: 'Workbook',
   Dashboard: 'Dashboard',
-  DashboardWidget: 'DashboardWidget'
+  DashboardWidget: 'DashboardWidget',
+  DashboardVisibilityRule: 'DashboardVisibilityRule',
+  PrincipalAppPreference: 'PrincipalAppPreference'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -407,7 +409,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "principal" | "membership" | "dataset" | "importJob" | "workbook" | "dashboard" | "dashboardWidget"
+    modelProps: "tenant" | "principal" | "membership" | "dataset" | "importJob" | "workbook" | "dashboard" | "dashboardWidget" | "dashboardVisibilityRule" | "principalAppPreference"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1003,6 +1005,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DashboardVisibilityRule: {
+      payload: Prisma.$DashboardVisibilityRulePayload<ExtArgs>
+      fields: Prisma.DashboardVisibilityRuleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DashboardVisibilityRuleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardVisibilityRulePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DashboardVisibilityRuleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardVisibilityRulePayload>
+        }
+        findFirst: {
+          args: Prisma.DashboardVisibilityRuleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardVisibilityRulePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DashboardVisibilityRuleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardVisibilityRulePayload>
+        }
+        findMany: {
+          args: Prisma.DashboardVisibilityRuleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardVisibilityRulePayload>[]
+        }
+        create: {
+          args: Prisma.DashboardVisibilityRuleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardVisibilityRulePayload>
+        }
+        createMany: {
+          args: Prisma.DashboardVisibilityRuleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DashboardVisibilityRuleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardVisibilityRulePayload>[]
+        }
+        delete: {
+          args: Prisma.DashboardVisibilityRuleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardVisibilityRulePayload>
+        }
+        update: {
+          args: Prisma.DashboardVisibilityRuleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardVisibilityRulePayload>
+        }
+        deleteMany: {
+          args: Prisma.DashboardVisibilityRuleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DashboardVisibilityRuleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DashboardVisibilityRuleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardVisibilityRulePayload>[]
+        }
+        upsert: {
+          args: Prisma.DashboardVisibilityRuleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardVisibilityRulePayload>
+        }
+        aggregate: {
+          args: Prisma.DashboardVisibilityRuleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDashboardVisibilityRule>
+        }
+        groupBy: {
+          args: Prisma.DashboardVisibilityRuleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DashboardVisibilityRuleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DashboardVisibilityRuleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DashboardVisibilityRuleCountAggregateOutputType> | number
+        }
+      }
+    }
+    PrincipalAppPreference: {
+      payload: Prisma.$PrincipalAppPreferencePayload<ExtArgs>
+      fields: Prisma.PrincipalAppPreferenceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PrincipalAppPreferenceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalAppPreferencePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PrincipalAppPreferenceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalAppPreferencePayload>
+        }
+        findFirst: {
+          args: Prisma.PrincipalAppPreferenceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalAppPreferencePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PrincipalAppPreferenceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalAppPreferencePayload>
+        }
+        findMany: {
+          args: Prisma.PrincipalAppPreferenceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalAppPreferencePayload>[]
+        }
+        create: {
+          args: Prisma.PrincipalAppPreferenceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalAppPreferencePayload>
+        }
+        createMany: {
+          args: Prisma.PrincipalAppPreferenceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PrincipalAppPreferenceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalAppPreferencePayload>[]
+        }
+        delete: {
+          args: Prisma.PrincipalAppPreferenceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalAppPreferencePayload>
+        }
+        update: {
+          args: Prisma.PrincipalAppPreferenceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalAppPreferencePayload>
+        }
+        deleteMany: {
+          args: Prisma.PrincipalAppPreferenceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PrincipalAppPreferenceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PrincipalAppPreferenceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalAppPreferencePayload>[]
+        }
+        upsert: {
+          args: Prisma.PrincipalAppPreferenceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalAppPreferencePayload>
+        }
+        aggregate: {
+          args: Prisma.PrincipalAppPreferenceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePrincipalAppPreference>
+        }
+        groupBy: {
+          args: Prisma.PrincipalAppPreferenceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PrincipalAppPreferenceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PrincipalAppPreferenceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PrincipalAppPreferenceCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1121,6 +1271,26 @@ export const DashboardWidgetScalarFieldEnum = {
 } as const
 
 export type DashboardWidgetScalarFieldEnum = (typeof DashboardWidgetScalarFieldEnum)[keyof typeof DashboardWidgetScalarFieldEnum]
+
+
+export const DashboardVisibilityRuleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  dashboardId: 'dashboardId',
+  subjectType: 'subjectType',
+  subjectId: 'subjectId'
+} as const
+
+export type DashboardVisibilityRuleScalarFieldEnum = (typeof DashboardVisibilityRuleScalarFieldEnum)[keyof typeof DashboardVisibilityRuleScalarFieldEnum]
+
+
+export const PrincipalAppPreferenceScalarFieldEnum = {
+  principalId: 'principalId',
+  tenantId: 'tenantId',
+  selectedDashboardId: 'selectedDashboardId'
+} as const
+
+export type PrincipalAppPreferenceScalarFieldEnum = (typeof PrincipalAppPreferenceScalarFieldEnum)[keyof typeof PrincipalAppPreferenceScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1314,6 +1484,8 @@ export type GlobalOmitConfig = {
   workbook?: Prisma.WorkbookOmit
   dashboard?: Prisma.DashboardOmit
   dashboardWidget?: Prisma.DashboardWidgetOmit
+  dashboardVisibilityRule?: Prisma.DashboardVisibilityRuleOmit
+  principalAppPreference?: Prisma.PrincipalAppPreferenceOmit
 }
 
 /* Types for Logging */

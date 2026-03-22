@@ -170,6 +170,8 @@ export type TenantWhereInput = {
   datasets?: Prisma.DatasetListRelationFilter
   workbooks?: Prisma.WorkbookListRelationFilter
   dashboards?: Prisma.DashboardListRelationFilter
+  visibilityRules?: Prisma.DashboardVisibilityRuleListRelationFilter
+  appPreferences?: Prisma.PrincipalAppPreferenceListRelationFilter
 }
 
 export type TenantOrderByWithRelationInput = {
@@ -180,6 +182,8 @@ export type TenantOrderByWithRelationInput = {
   datasets?: Prisma.DatasetOrderByRelationAggregateInput
   workbooks?: Prisma.WorkbookOrderByRelationAggregateInput
   dashboards?: Prisma.DashboardOrderByRelationAggregateInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleOrderByRelationAggregateInput
+  appPreferences?: Prisma.PrincipalAppPreferenceOrderByRelationAggregateInput
 }
 
 export type TenantWhereUniqueInput = Prisma.AtLeast<{
@@ -193,6 +197,8 @@ export type TenantWhereUniqueInput = Prisma.AtLeast<{
   datasets?: Prisma.DatasetListRelationFilter
   workbooks?: Prisma.WorkbookListRelationFilter
   dashboards?: Prisma.DashboardListRelationFilter
+  visibilityRules?: Prisma.DashboardVisibilityRuleListRelationFilter
+  appPreferences?: Prisma.PrincipalAppPreferenceListRelationFilter
 }, "id" | "slug">
 
 export type TenantOrderByWithAggregationInput = {
@@ -221,6 +227,8 @@ export type TenantCreateInput = {
   datasets?: Prisma.DatasetCreateNestedManyWithoutTenantInput
   workbooks?: Prisma.WorkbookCreateNestedManyWithoutTenantInput
   dashboards?: Prisma.DashboardCreateNestedManyWithoutTenantInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutTenantInput
+  appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateInput = {
@@ -231,6 +239,8 @@ export type TenantUncheckedCreateInput = {
   datasets?: Prisma.DatasetUncheckedCreateNestedManyWithoutTenantInput
   workbooks?: Prisma.WorkbookUncheckedCreateNestedManyWithoutTenantInput
   dashboards?: Prisma.DashboardUncheckedCreateNestedManyWithoutTenantInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutTenantInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUpdateInput = {
@@ -241,6 +251,8 @@ export type TenantUpdateInput = {
   datasets?: Prisma.DatasetUpdateManyWithoutTenantNestedInput
   workbooks?: Prisma.WorkbookUpdateManyWithoutTenantNestedInput
   dashboards?: Prisma.DashboardUpdateManyWithoutTenantNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutTenantNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateInput = {
@@ -251,6 +263,8 @@ export type TenantUncheckedUpdateInput = {
   datasets?: Prisma.DatasetUncheckedUpdateManyWithoutTenantNestedInput
   workbooks?: Prisma.WorkbookUncheckedUpdateManyWithoutTenantNestedInput
   dashboards?: Prisma.DashboardUncheckedUpdateManyWithoutTenantNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutTenantNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateManyInput = {
@@ -354,6 +368,34 @@ export type TenantUpdateOneRequiredWithoutDashboardsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutDashboardsInput, Prisma.TenantUpdateWithoutDashboardsInput>, Prisma.TenantUncheckedUpdateWithoutDashboardsInput>
 }
 
+export type TenantCreateNestedOneWithoutVisibilityRulesInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutVisibilityRulesInput, Prisma.TenantUncheckedCreateWithoutVisibilityRulesInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutVisibilityRulesInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutVisibilityRulesNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutVisibilityRulesInput, Prisma.TenantUncheckedCreateWithoutVisibilityRulesInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutVisibilityRulesInput
+  upsert?: Prisma.TenantUpsertWithoutVisibilityRulesInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutVisibilityRulesInput, Prisma.TenantUpdateWithoutVisibilityRulesInput>, Prisma.TenantUncheckedUpdateWithoutVisibilityRulesInput>
+}
+
+export type TenantCreateNestedOneWithoutAppPreferencesInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutAppPreferencesInput, Prisma.TenantUncheckedCreateWithoutAppPreferencesInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutAppPreferencesInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutAppPreferencesNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutAppPreferencesInput, Prisma.TenantUncheckedCreateWithoutAppPreferencesInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutAppPreferencesInput
+  upsert?: Prisma.TenantUpsertWithoutAppPreferencesInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutAppPreferencesInput, Prisma.TenantUpdateWithoutAppPreferencesInput>, Prisma.TenantUncheckedUpdateWithoutAppPreferencesInput>
+}
+
 export type TenantCreateWithoutMembershipsInput = {
   id?: string
   slug: string
@@ -361,6 +403,8 @@ export type TenantCreateWithoutMembershipsInput = {
   datasets?: Prisma.DatasetCreateNestedManyWithoutTenantInput
   workbooks?: Prisma.WorkbookCreateNestedManyWithoutTenantInput
   dashboards?: Prisma.DashboardCreateNestedManyWithoutTenantInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutTenantInput
+  appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutMembershipsInput = {
@@ -370,6 +414,8 @@ export type TenantUncheckedCreateWithoutMembershipsInput = {
   datasets?: Prisma.DatasetUncheckedCreateNestedManyWithoutTenantInput
   workbooks?: Prisma.WorkbookUncheckedCreateNestedManyWithoutTenantInput
   dashboards?: Prisma.DashboardUncheckedCreateNestedManyWithoutTenantInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutTenantInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutMembershipsInput = {
@@ -395,6 +441,8 @@ export type TenantUpdateWithoutMembershipsInput = {
   datasets?: Prisma.DatasetUpdateManyWithoutTenantNestedInput
   workbooks?: Prisma.WorkbookUpdateManyWithoutTenantNestedInput
   dashboards?: Prisma.DashboardUpdateManyWithoutTenantNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutTenantNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutMembershipsInput = {
@@ -404,6 +452,8 @@ export type TenantUncheckedUpdateWithoutMembershipsInput = {
   datasets?: Prisma.DatasetUncheckedUpdateManyWithoutTenantNestedInput
   workbooks?: Prisma.WorkbookUncheckedUpdateManyWithoutTenantNestedInput
   dashboards?: Prisma.DashboardUncheckedUpdateManyWithoutTenantNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutTenantNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutDatasetsInput = {
@@ -413,6 +463,8 @@ export type TenantCreateWithoutDatasetsInput = {
   memberships?: Prisma.MembershipCreateNestedManyWithoutTenantInput
   workbooks?: Prisma.WorkbookCreateNestedManyWithoutTenantInput
   dashboards?: Prisma.DashboardCreateNestedManyWithoutTenantInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutTenantInput
+  appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutDatasetsInput = {
@@ -422,6 +474,8 @@ export type TenantUncheckedCreateWithoutDatasetsInput = {
   memberships?: Prisma.MembershipUncheckedCreateNestedManyWithoutTenantInput
   workbooks?: Prisma.WorkbookUncheckedCreateNestedManyWithoutTenantInput
   dashboards?: Prisma.DashboardUncheckedCreateNestedManyWithoutTenantInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutTenantInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutDatasetsInput = {
@@ -447,6 +501,8 @@ export type TenantUpdateWithoutDatasetsInput = {
   memberships?: Prisma.MembershipUpdateManyWithoutTenantNestedInput
   workbooks?: Prisma.WorkbookUpdateManyWithoutTenantNestedInput
   dashboards?: Prisma.DashboardUpdateManyWithoutTenantNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutTenantNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutDatasetsInput = {
@@ -456,6 +512,8 @@ export type TenantUncheckedUpdateWithoutDatasetsInput = {
   memberships?: Prisma.MembershipUncheckedUpdateManyWithoutTenantNestedInput
   workbooks?: Prisma.WorkbookUncheckedUpdateManyWithoutTenantNestedInput
   dashboards?: Prisma.DashboardUncheckedUpdateManyWithoutTenantNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutTenantNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutWorkbooksInput = {
@@ -465,6 +523,8 @@ export type TenantCreateWithoutWorkbooksInput = {
   memberships?: Prisma.MembershipCreateNestedManyWithoutTenantInput
   datasets?: Prisma.DatasetCreateNestedManyWithoutTenantInput
   dashboards?: Prisma.DashboardCreateNestedManyWithoutTenantInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutTenantInput
+  appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutWorkbooksInput = {
@@ -474,6 +534,8 @@ export type TenantUncheckedCreateWithoutWorkbooksInput = {
   memberships?: Prisma.MembershipUncheckedCreateNestedManyWithoutTenantInput
   datasets?: Prisma.DatasetUncheckedCreateNestedManyWithoutTenantInput
   dashboards?: Prisma.DashboardUncheckedCreateNestedManyWithoutTenantInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutTenantInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutWorkbooksInput = {
@@ -499,6 +561,8 @@ export type TenantUpdateWithoutWorkbooksInput = {
   memberships?: Prisma.MembershipUpdateManyWithoutTenantNestedInput
   datasets?: Prisma.DatasetUpdateManyWithoutTenantNestedInput
   dashboards?: Prisma.DashboardUpdateManyWithoutTenantNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutTenantNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutWorkbooksInput = {
@@ -508,6 +572,8 @@ export type TenantUncheckedUpdateWithoutWorkbooksInput = {
   memberships?: Prisma.MembershipUncheckedUpdateManyWithoutTenantNestedInput
   datasets?: Prisma.DatasetUncheckedUpdateManyWithoutTenantNestedInput
   dashboards?: Prisma.DashboardUncheckedUpdateManyWithoutTenantNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutTenantNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutDashboardsInput = {
@@ -517,6 +583,8 @@ export type TenantCreateWithoutDashboardsInput = {
   memberships?: Prisma.MembershipCreateNestedManyWithoutTenantInput
   datasets?: Prisma.DatasetCreateNestedManyWithoutTenantInput
   workbooks?: Prisma.WorkbookCreateNestedManyWithoutTenantInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutTenantInput
+  appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutDashboardsInput = {
@@ -526,6 +594,8 @@ export type TenantUncheckedCreateWithoutDashboardsInput = {
   memberships?: Prisma.MembershipUncheckedCreateNestedManyWithoutTenantInput
   datasets?: Prisma.DatasetUncheckedCreateNestedManyWithoutTenantInput
   workbooks?: Prisma.WorkbookUncheckedCreateNestedManyWithoutTenantInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutTenantInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutDashboardsInput = {
@@ -551,6 +621,8 @@ export type TenantUpdateWithoutDashboardsInput = {
   memberships?: Prisma.MembershipUpdateManyWithoutTenantNestedInput
   datasets?: Prisma.DatasetUpdateManyWithoutTenantNestedInput
   workbooks?: Prisma.WorkbookUpdateManyWithoutTenantNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutTenantNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutDashboardsInput = {
@@ -560,6 +632,128 @@ export type TenantUncheckedUpdateWithoutDashboardsInput = {
   memberships?: Prisma.MembershipUncheckedUpdateManyWithoutTenantNestedInput
   datasets?: Prisma.DatasetUncheckedUpdateManyWithoutTenantNestedInput
   workbooks?: Prisma.WorkbookUncheckedUpdateManyWithoutTenantNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutTenantNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantCreateWithoutVisibilityRulesInput = {
+  id?: string
+  slug: string
+  name: string
+  memberships?: Prisma.MembershipCreateNestedManyWithoutTenantInput
+  datasets?: Prisma.DatasetCreateNestedManyWithoutTenantInput
+  workbooks?: Prisma.WorkbookCreateNestedManyWithoutTenantInput
+  dashboards?: Prisma.DashboardCreateNestedManyWithoutTenantInput
+  appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutTenantInput
+}
+
+export type TenantUncheckedCreateWithoutVisibilityRulesInput = {
+  id?: string
+  slug: string
+  name: string
+  memberships?: Prisma.MembershipUncheckedCreateNestedManyWithoutTenantInput
+  datasets?: Prisma.DatasetUncheckedCreateNestedManyWithoutTenantInput
+  workbooks?: Prisma.WorkbookUncheckedCreateNestedManyWithoutTenantInput
+  dashboards?: Prisma.DashboardUncheckedCreateNestedManyWithoutTenantInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type TenantCreateOrConnectWithoutVisibilityRulesInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutVisibilityRulesInput, Prisma.TenantUncheckedCreateWithoutVisibilityRulesInput>
+}
+
+export type TenantUpsertWithoutVisibilityRulesInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutVisibilityRulesInput, Prisma.TenantUncheckedUpdateWithoutVisibilityRulesInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutVisibilityRulesInput, Prisma.TenantUncheckedCreateWithoutVisibilityRulesInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutVisibilityRulesInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutVisibilityRulesInput, Prisma.TenantUncheckedUpdateWithoutVisibilityRulesInput>
+}
+
+export type TenantUpdateWithoutVisibilityRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  memberships?: Prisma.MembershipUpdateManyWithoutTenantNestedInput
+  datasets?: Prisma.DatasetUpdateManyWithoutTenantNestedInput
+  workbooks?: Prisma.WorkbookUpdateManyWithoutTenantNestedInput
+  dashboards?: Prisma.DashboardUpdateManyWithoutTenantNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutVisibilityRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  memberships?: Prisma.MembershipUncheckedUpdateManyWithoutTenantNestedInput
+  datasets?: Prisma.DatasetUncheckedUpdateManyWithoutTenantNestedInput
+  workbooks?: Prisma.WorkbookUncheckedUpdateManyWithoutTenantNestedInput
+  dashboards?: Prisma.DashboardUncheckedUpdateManyWithoutTenantNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantCreateWithoutAppPreferencesInput = {
+  id?: string
+  slug: string
+  name: string
+  memberships?: Prisma.MembershipCreateNestedManyWithoutTenantInput
+  datasets?: Prisma.DatasetCreateNestedManyWithoutTenantInput
+  workbooks?: Prisma.WorkbookCreateNestedManyWithoutTenantInput
+  dashboards?: Prisma.DashboardCreateNestedManyWithoutTenantInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutTenantInput
+}
+
+export type TenantUncheckedCreateWithoutAppPreferencesInput = {
+  id?: string
+  slug: string
+  name: string
+  memberships?: Prisma.MembershipUncheckedCreateNestedManyWithoutTenantInput
+  datasets?: Prisma.DatasetUncheckedCreateNestedManyWithoutTenantInput
+  workbooks?: Prisma.WorkbookUncheckedCreateNestedManyWithoutTenantInput
+  dashboards?: Prisma.DashboardUncheckedCreateNestedManyWithoutTenantInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type TenantCreateOrConnectWithoutAppPreferencesInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutAppPreferencesInput, Prisma.TenantUncheckedCreateWithoutAppPreferencesInput>
+}
+
+export type TenantUpsertWithoutAppPreferencesInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutAppPreferencesInput, Prisma.TenantUncheckedUpdateWithoutAppPreferencesInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutAppPreferencesInput, Prisma.TenantUncheckedCreateWithoutAppPreferencesInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutAppPreferencesInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutAppPreferencesInput, Prisma.TenantUncheckedUpdateWithoutAppPreferencesInput>
+}
+
+export type TenantUpdateWithoutAppPreferencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  memberships?: Prisma.MembershipUpdateManyWithoutTenantNestedInput
+  datasets?: Prisma.DatasetUpdateManyWithoutTenantNestedInput
+  workbooks?: Prisma.WorkbookUpdateManyWithoutTenantNestedInput
+  dashboards?: Prisma.DashboardUpdateManyWithoutTenantNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutAppPreferencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  memberships?: Prisma.MembershipUncheckedUpdateManyWithoutTenantNestedInput
+  datasets?: Prisma.DatasetUncheckedUpdateManyWithoutTenantNestedInput
+  workbooks?: Prisma.WorkbookUncheckedUpdateManyWithoutTenantNestedInput
+  dashboards?: Prisma.DashboardUncheckedUpdateManyWithoutTenantNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 
@@ -572,6 +766,8 @@ export type TenantCountOutputType = {
   datasets: number
   workbooks: number
   dashboards: number
+  visibilityRules: number
+  appPreferences: number
 }
 
 export type TenantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -579,6 +775,8 @@ export type TenantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   datasets?: boolean | TenantCountOutputTypeCountDatasetsArgs
   workbooks?: boolean | TenantCountOutputTypeCountWorkbooksArgs
   dashboards?: boolean | TenantCountOutputTypeCountDashboardsArgs
+  visibilityRules?: boolean | TenantCountOutputTypeCountVisibilityRulesArgs
+  appPreferences?: boolean | TenantCountOutputTypeCountAppPreferencesArgs
 }
 
 /**
@@ -619,6 +817,20 @@ export type TenantCountOutputTypeCountDashboardsArgs<ExtArgs extends runtime.Typ
   where?: Prisma.DashboardWhereInput
 }
 
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountVisibilityRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DashboardVisibilityRuleWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountAppPreferencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PrincipalAppPreferenceWhereInput
+}
+
 
 export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -628,6 +840,8 @@ export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   datasets?: boolean | Prisma.Tenant$datasetsArgs<ExtArgs>
   workbooks?: boolean | Prisma.Tenant$workbooksArgs<ExtArgs>
   dashboards?: boolean | Prisma.Tenant$dashboardsArgs<ExtArgs>
+  visibilityRules?: boolean | Prisma.Tenant$visibilityRulesArgs<ExtArgs>
+  appPreferences?: boolean | Prisma.Tenant$appPreferencesArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tenant"]>
 
@@ -655,6 +869,8 @@ export type TenantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   datasets?: boolean | Prisma.Tenant$datasetsArgs<ExtArgs>
   workbooks?: boolean | Prisma.Tenant$workbooksArgs<ExtArgs>
   dashboards?: boolean | Prisma.Tenant$dashboardsArgs<ExtArgs>
+  visibilityRules?: boolean | Prisma.Tenant$visibilityRulesArgs<ExtArgs>
+  appPreferences?: boolean | Prisma.Tenant$appPreferencesArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TenantIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -667,6 +883,8 @@ export type $TenantPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     datasets: Prisma.$DatasetPayload<ExtArgs>[]
     workbooks: Prisma.$WorkbookPayload<ExtArgs>[]
     dashboards: Prisma.$DashboardPayload<ExtArgs>[]
+    visibilityRules: Prisma.$DashboardVisibilityRulePayload<ExtArgs>[]
+    appPreferences: Prisma.$PrincipalAppPreferencePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1070,6 +1288,8 @@ export interface Prisma__TenantClient<T, Null = never, ExtArgs extends runtime.T
   datasets<T extends Prisma.Tenant$datasetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$datasetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DatasetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   workbooks<T extends Prisma.Tenant$workbooksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$workbooksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkbookPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   dashboards<T extends Prisma.Tenant$dashboardsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$dashboardsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DashboardPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  visibilityRules<T extends Prisma.Tenant$visibilityRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$visibilityRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DashboardVisibilityRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  appPreferences<T extends Prisma.Tenant$appPreferencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$appPreferencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PrincipalAppPreferencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1588,6 +1808,54 @@ export type Tenant$dashboardsArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.DashboardScalarFieldEnum | Prisma.DashboardScalarFieldEnum[]
+}
+
+/**
+ * Tenant.visibilityRules
+ */
+export type Tenant$visibilityRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DashboardVisibilityRule
+   */
+  select?: Prisma.DashboardVisibilityRuleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DashboardVisibilityRule
+   */
+  omit?: Prisma.DashboardVisibilityRuleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DashboardVisibilityRuleInclude<ExtArgs> | null
+  where?: Prisma.DashboardVisibilityRuleWhereInput
+  orderBy?: Prisma.DashboardVisibilityRuleOrderByWithRelationInput | Prisma.DashboardVisibilityRuleOrderByWithRelationInput[]
+  cursor?: Prisma.DashboardVisibilityRuleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DashboardVisibilityRuleScalarFieldEnum | Prisma.DashboardVisibilityRuleScalarFieldEnum[]
+}
+
+/**
+ * Tenant.appPreferences
+ */
+export type Tenant$appPreferencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PrincipalAppPreference
+   */
+  select?: Prisma.PrincipalAppPreferenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PrincipalAppPreference
+   */
+  omit?: Prisma.PrincipalAppPreferenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PrincipalAppPreferenceInclude<ExtArgs> | null
+  where?: Prisma.PrincipalAppPreferenceWhereInput
+  orderBy?: Prisma.PrincipalAppPreferenceOrderByWithRelationInput | Prisma.PrincipalAppPreferenceOrderByWithRelationInput[]
+  cursor?: Prisma.PrincipalAppPreferenceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PrincipalAppPreferenceScalarFieldEnum | Prisma.PrincipalAppPreferenceScalarFieldEnum[]
 }
 
 /**

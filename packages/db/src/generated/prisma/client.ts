@@ -81,3 +81,13 @@ export type Dashboard = Prisma.DashboardModel
  * 
  */
 export type DashboardWidget = Prisma.DashboardWidgetModel
+/**
+ * Model DashboardVisibilityRule
+ * 
+ */
+export type DashboardVisibilityRule = Prisma.DashboardVisibilityRuleModel
+/**
+ * Model PrincipalAppPreference
+ * 
+ */
+export type PrincipalAppPreference = Prisma.PrincipalAppPreferenceModel

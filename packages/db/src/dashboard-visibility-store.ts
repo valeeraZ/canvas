@@ -1,21 +1,72 @@
+import type { PrismaClient } from "./generated/prisma/client";
+
 export type DashboardVisibilityRule = {
+  id?: string;
   dashboardId: string;
   appId: string;
   subjectType: "user" | "group" | "role";
   subjectId: string;
 };
 
-export function createDashboardVisibilityStore() {
+type PersistedDashboardVisibilityRule = {
+  id: string;
+  tenantId: string;
+  dashboardId: string;
+  subjectType: string;
+  subjectId: string;
+};
+
+export function toDashboardVisibilityRule(
+  input: PersistedDashboardVisibilityRule
+): DashboardVisibilityRule {
   return {
-    async listByDashboard(_: { appId: string; dashboardId: string }) {
-      return [] as DashboardVisibilityRule[];
+    id: input.id,
+    appId: input.tenantId,
+    dashboardId: input.dashboardId,
+    subjectType: input.subjectType as DashboardVisibilityRule["subjectType"],
+    subjectId: input.subjectId
+  };
+}
+
+export function createDashboardVisibilityStore(prisma: PrismaClient) {
+  return {
+    async listByDashboard(input: { appId: string; dashboardId: string }) {
+      const rules = await prisma.dashboardVisibilityRule.findMany({
+        where: {
+          tenantId: input.appId,
+          dashboardId: input.dashboardId
+        },
+        orderBy: [{ subjectType: "asc" }, { subjectId: "asc" }]
+      });
+
+      return rules.map(toDashboardVisibilityRule);
     },
     async replaceRules(input: {
       appId: string;
       dashboardId: string;
       rules: DashboardVisibilityRule[];
     }) {
-      return input.rules;
+      await prisma.dashboardVisibilityRule.deleteMany({
+        where: {
+          tenantId: input.appId,
+          dashboardId: input.dashboardId
+        }
+      });
+
+      if (input.rules.length === 0) {
+        return [] as DashboardVisibilityRule[];
+      }
+
+      const created = await prisma.dashboardVisibilityRule.createManyAndReturn({
+        data: input.rules.map((rule) => ({
+          tenantId: input.appId,
+          dashboardId: input.dashboardId,
+          subjectType: rule.subjectType,
+          subjectId: rule.subjectId
+        }))
+      });
+
+      return created.map(toDashboardVisibilityRule);
     }
   };
 }

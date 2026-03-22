@@ -159,12 +159,14 @@ export type PrincipalWhereInput = {
   id?: Prisma.StringFilter<"Principal"> | string
   externalUserId?: Prisma.StringFilter<"Principal"> | string
   memberships?: Prisma.MembershipListRelationFilter
+  appPreferences?: Prisma.PrincipalAppPreferenceListRelationFilter
 }
 
 export type PrincipalOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   externalUserId?: Prisma.SortOrder
   memberships?: Prisma.MembershipOrderByRelationAggregateInput
+  appPreferences?: Prisma.PrincipalAppPreferenceOrderByRelationAggregateInput
 }
 
 export type PrincipalWhereUniqueInput = Prisma.AtLeast<{
@@ -174,6 +176,7 @@ export type PrincipalWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.PrincipalWhereInput[]
   NOT?: Prisma.PrincipalWhereInput | Prisma.PrincipalWhereInput[]
   memberships?: Prisma.MembershipListRelationFilter
+  appPreferences?: Prisma.PrincipalAppPreferenceListRelationFilter
 }, "id" | "externalUserId">
 
 export type PrincipalOrderByWithAggregationInput = {
@@ -196,24 +199,28 @@ export type PrincipalCreateInput = {
   id?: string
   externalUserId: string
   memberships?: Prisma.MembershipCreateNestedManyWithoutPrincipalInput
+  appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutPrincipalInput
 }
 
 export type PrincipalUncheckedCreateInput = {
   id?: string
   externalUserId: string
   memberships?: Prisma.MembershipUncheckedCreateNestedManyWithoutPrincipalInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutPrincipalInput
 }
 
 export type PrincipalUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   externalUserId?: Prisma.StringFieldUpdateOperationsInput | string
   memberships?: Prisma.MembershipUpdateManyWithoutPrincipalNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutPrincipalNestedInput
 }
 
 export type PrincipalUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   externalUserId?: Prisma.StringFieldUpdateOperationsInput | string
   memberships?: Prisma.MembershipUncheckedUpdateManyWithoutPrincipalNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutPrincipalNestedInput
 }
 
 export type PrincipalCreateManyInput = {
@@ -265,14 +272,30 @@ export type PrincipalUpdateOneRequiredWithoutMembershipsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PrincipalUpdateToOneWithWhereWithoutMembershipsInput, Prisma.PrincipalUpdateWithoutMembershipsInput>, Prisma.PrincipalUncheckedUpdateWithoutMembershipsInput>
 }
 
+export type PrincipalCreateNestedOneWithoutAppPreferencesInput = {
+  create?: Prisma.XOR<Prisma.PrincipalCreateWithoutAppPreferencesInput, Prisma.PrincipalUncheckedCreateWithoutAppPreferencesInput>
+  connectOrCreate?: Prisma.PrincipalCreateOrConnectWithoutAppPreferencesInput
+  connect?: Prisma.PrincipalWhereUniqueInput
+}
+
+export type PrincipalUpdateOneRequiredWithoutAppPreferencesNestedInput = {
+  create?: Prisma.XOR<Prisma.PrincipalCreateWithoutAppPreferencesInput, Prisma.PrincipalUncheckedCreateWithoutAppPreferencesInput>
+  connectOrCreate?: Prisma.PrincipalCreateOrConnectWithoutAppPreferencesInput
+  upsert?: Prisma.PrincipalUpsertWithoutAppPreferencesInput
+  connect?: Prisma.PrincipalWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PrincipalUpdateToOneWithWhereWithoutAppPreferencesInput, Prisma.PrincipalUpdateWithoutAppPreferencesInput>, Prisma.PrincipalUncheckedUpdateWithoutAppPreferencesInput>
+}
+
 export type PrincipalCreateWithoutMembershipsInput = {
   id?: string
   externalUserId: string
+  appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutPrincipalInput
 }
 
 export type PrincipalUncheckedCreateWithoutMembershipsInput = {
   id?: string
   externalUserId: string
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutPrincipalInput
 }
 
 export type PrincipalCreateOrConnectWithoutMembershipsInput = {
@@ -294,11 +317,53 @@ export type PrincipalUpdateToOneWithWhereWithoutMembershipsInput = {
 export type PrincipalUpdateWithoutMembershipsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   externalUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutPrincipalNestedInput
 }
 
 export type PrincipalUncheckedUpdateWithoutMembershipsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   externalUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutPrincipalNestedInput
+}
+
+export type PrincipalCreateWithoutAppPreferencesInput = {
+  id?: string
+  externalUserId: string
+  memberships?: Prisma.MembershipCreateNestedManyWithoutPrincipalInput
+}
+
+export type PrincipalUncheckedCreateWithoutAppPreferencesInput = {
+  id?: string
+  externalUserId: string
+  memberships?: Prisma.MembershipUncheckedCreateNestedManyWithoutPrincipalInput
+}
+
+export type PrincipalCreateOrConnectWithoutAppPreferencesInput = {
+  where: Prisma.PrincipalWhereUniqueInput
+  create: Prisma.XOR<Prisma.PrincipalCreateWithoutAppPreferencesInput, Prisma.PrincipalUncheckedCreateWithoutAppPreferencesInput>
+}
+
+export type PrincipalUpsertWithoutAppPreferencesInput = {
+  update: Prisma.XOR<Prisma.PrincipalUpdateWithoutAppPreferencesInput, Prisma.PrincipalUncheckedUpdateWithoutAppPreferencesInput>
+  create: Prisma.XOR<Prisma.PrincipalCreateWithoutAppPreferencesInput, Prisma.PrincipalUncheckedCreateWithoutAppPreferencesInput>
+  where?: Prisma.PrincipalWhereInput
+}
+
+export type PrincipalUpdateToOneWithWhereWithoutAppPreferencesInput = {
+  where?: Prisma.PrincipalWhereInput
+  data: Prisma.XOR<Prisma.PrincipalUpdateWithoutAppPreferencesInput, Prisma.PrincipalUncheckedUpdateWithoutAppPreferencesInput>
+}
+
+export type PrincipalUpdateWithoutAppPreferencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  externalUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  memberships?: Prisma.MembershipUpdateManyWithoutPrincipalNestedInput
+}
+
+export type PrincipalUncheckedUpdateWithoutAppPreferencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  externalUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  memberships?: Prisma.MembershipUncheckedUpdateManyWithoutPrincipalNestedInput
 }
 
 
@@ -308,10 +373,12 @@ export type PrincipalUncheckedUpdateWithoutMembershipsInput = {
 
 export type PrincipalCountOutputType = {
   memberships: number
+  appPreferences: number
 }
 
 export type PrincipalCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   memberships?: boolean | PrincipalCountOutputTypeCountMembershipsArgs
+  appPreferences?: boolean | PrincipalCountOutputTypeCountAppPreferencesArgs
 }
 
 /**
@@ -331,11 +398,19 @@ export type PrincipalCountOutputTypeCountMembershipsArgs<ExtArgs extends runtime
   where?: Prisma.MembershipWhereInput
 }
 
+/**
+ * PrincipalCountOutputType without action
+ */
+export type PrincipalCountOutputTypeCountAppPreferencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PrincipalAppPreferenceWhereInput
+}
+
 
 export type PrincipalSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   externalUserId?: boolean
   memberships?: boolean | Prisma.Principal$membershipsArgs<ExtArgs>
+  appPreferences?: boolean | Prisma.Principal$appPreferencesArgs<ExtArgs>
   _count?: boolean | Prisma.PrincipalCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["principal"]>
 
@@ -357,6 +432,7 @@ export type PrincipalSelectScalar = {
 export type PrincipalOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "externalUserId", ExtArgs["result"]["principal"]>
 export type PrincipalInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   memberships?: boolean | Prisma.Principal$membershipsArgs<ExtArgs>
+  appPreferences?: boolean | Prisma.Principal$appPreferencesArgs<ExtArgs>
   _count?: boolean | Prisma.PrincipalCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PrincipalIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -366,6 +442,7 @@ export type $PrincipalPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   name: "Principal"
   objects: {
     memberships: Prisma.$MembershipPayload<ExtArgs>[]
+    appPreferences: Prisma.$PrincipalAppPreferencePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -765,6 +842,7 @@ readonly fields: PrincipalFieldRefs;
 export interface Prisma__PrincipalClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   memberships<T extends Prisma.Principal$membershipsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Principal$membershipsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MembershipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  appPreferences<T extends Prisma.Principal$appPreferencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Principal$appPreferencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PrincipalAppPreferencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1210,6 +1288,30 @@ export type Principal$membershipsArgs<ExtArgs extends runtime.Types.Extensions.I
   take?: number
   skip?: number
   distinct?: Prisma.MembershipScalarFieldEnum | Prisma.MembershipScalarFieldEnum[]
+}
+
+/**
+ * Principal.appPreferences
+ */
+export type Principal$appPreferencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PrincipalAppPreference
+   */
+  select?: Prisma.PrincipalAppPreferenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PrincipalAppPreference
+   */
+  omit?: Prisma.PrincipalAppPreferenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PrincipalAppPreferenceInclude<ExtArgs> | null
+  where?: Prisma.PrincipalAppPreferenceWhereInput
+  orderBy?: Prisma.PrincipalAppPreferenceOrderByWithRelationInput | Prisma.PrincipalAppPreferenceOrderByWithRelationInput[]
+  cursor?: Prisma.PrincipalAppPreferenceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PrincipalAppPreferenceScalarFieldEnum | Prisma.PrincipalAppPreferenceScalarFieldEnum[]
 }
 
 /**

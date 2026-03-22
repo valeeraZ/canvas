@@ -176,6 +176,8 @@ export type DashboardWhereInput = {
   name?: Prisma.StringFilter<"Dashboard"> | string
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   widgets?: Prisma.DashboardWidgetListRelationFilter
+  visibilityRules?: Prisma.DashboardVisibilityRuleListRelationFilter
+  appPreferences?: Prisma.PrincipalAppPreferenceListRelationFilter
 }
 
 export type DashboardOrderByWithRelationInput = {
@@ -185,6 +187,8 @@ export type DashboardOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   tenant?: Prisma.TenantOrderByWithRelationInput
   widgets?: Prisma.DashboardWidgetOrderByRelationAggregateInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleOrderByRelationAggregateInput
+  appPreferences?: Prisma.PrincipalAppPreferenceOrderByRelationAggregateInput
 }
 
 export type DashboardWhereUniqueInput = Prisma.AtLeast<{
@@ -197,6 +201,8 @@ export type DashboardWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"Dashboard"> | string
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   widgets?: Prisma.DashboardWidgetListRelationFilter
+  visibilityRules?: Prisma.DashboardVisibilityRuleListRelationFilter
+  appPreferences?: Prisma.PrincipalAppPreferenceListRelationFilter
 }, "id">
 
 export type DashboardOrderByWithAggregationInput = {
@@ -225,6 +231,8 @@ export type DashboardCreateInput = {
   name: string
   tenant: Prisma.TenantCreateNestedOneWithoutDashboardsInput
   widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDashboardInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutDashboardInput
+  appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutSelectedDashboardInput
 }
 
 export type DashboardUncheckedCreateInput = {
@@ -233,6 +241,8 @@ export type DashboardUncheckedCreateInput = {
   workbookId?: string | null
   name: string
   widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDashboardInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutDashboardInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutSelectedDashboardInput
 }
 
 export type DashboardUpdateInput = {
@@ -241,6 +251,8 @@ export type DashboardUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutDashboardsNestedInput
   widgets?: Prisma.DashboardWidgetUpdateManyWithoutDashboardNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutDashboardNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutSelectedDashboardNestedInput
 }
 
 export type DashboardUncheckedUpdateInput = {
@@ -249,6 +261,8 @@ export type DashboardUncheckedUpdateInput = {
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDashboardNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutDashboardNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutSelectedDashboardNestedInput
 }
 
 export type DashboardCreateManyInput = {
@@ -305,6 +319,11 @@ export type DashboardMinOrderByAggregateInput = {
 export type DashboardScalarRelationFilter = {
   is?: Prisma.DashboardWhereInput
   isNot?: Prisma.DashboardWhereInput
+}
+
+export type DashboardNullableScalarRelationFilter = {
+  is?: Prisma.DashboardWhereInput | null
+  isNot?: Prisma.DashboardWhereInput | null
 }
 
 export type DashboardCreateNestedManyWithoutTenantInput = {
@@ -367,11 +386,43 @@ export type DashboardUpdateOneRequiredWithoutWidgetsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.DashboardUpdateToOneWithWhereWithoutWidgetsInput, Prisma.DashboardUpdateWithoutWidgetsInput>, Prisma.DashboardUncheckedUpdateWithoutWidgetsInput>
 }
 
+export type DashboardCreateNestedOneWithoutVisibilityRulesInput = {
+  create?: Prisma.XOR<Prisma.DashboardCreateWithoutVisibilityRulesInput, Prisma.DashboardUncheckedCreateWithoutVisibilityRulesInput>
+  connectOrCreate?: Prisma.DashboardCreateOrConnectWithoutVisibilityRulesInput
+  connect?: Prisma.DashboardWhereUniqueInput
+}
+
+export type DashboardUpdateOneRequiredWithoutVisibilityRulesNestedInput = {
+  create?: Prisma.XOR<Prisma.DashboardCreateWithoutVisibilityRulesInput, Prisma.DashboardUncheckedCreateWithoutVisibilityRulesInput>
+  connectOrCreate?: Prisma.DashboardCreateOrConnectWithoutVisibilityRulesInput
+  upsert?: Prisma.DashboardUpsertWithoutVisibilityRulesInput
+  connect?: Prisma.DashboardWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DashboardUpdateToOneWithWhereWithoutVisibilityRulesInput, Prisma.DashboardUpdateWithoutVisibilityRulesInput>, Prisma.DashboardUncheckedUpdateWithoutVisibilityRulesInput>
+}
+
+export type DashboardCreateNestedOneWithoutAppPreferencesInput = {
+  create?: Prisma.XOR<Prisma.DashboardCreateWithoutAppPreferencesInput, Prisma.DashboardUncheckedCreateWithoutAppPreferencesInput>
+  connectOrCreate?: Prisma.DashboardCreateOrConnectWithoutAppPreferencesInput
+  connect?: Prisma.DashboardWhereUniqueInput
+}
+
+export type DashboardUpdateOneWithoutAppPreferencesNestedInput = {
+  create?: Prisma.XOR<Prisma.DashboardCreateWithoutAppPreferencesInput, Prisma.DashboardUncheckedCreateWithoutAppPreferencesInput>
+  connectOrCreate?: Prisma.DashboardCreateOrConnectWithoutAppPreferencesInput
+  upsert?: Prisma.DashboardUpsertWithoutAppPreferencesInput
+  disconnect?: Prisma.DashboardWhereInput | boolean
+  delete?: Prisma.DashboardWhereInput | boolean
+  connect?: Prisma.DashboardWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DashboardUpdateToOneWithWhereWithoutAppPreferencesInput, Prisma.DashboardUpdateWithoutAppPreferencesInput>, Prisma.DashboardUncheckedUpdateWithoutAppPreferencesInput>
+}
+
 export type DashboardCreateWithoutTenantInput = {
   id?: string
   workbookId?: string | null
   name: string
   widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDashboardInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutDashboardInput
+  appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutSelectedDashboardInput
 }
 
 export type DashboardUncheckedCreateWithoutTenantInput = {
@@ -379,6 +430,8 @@ export type DashboardUncheckedCreateWithoutTenantInput = {
   workbookId?: string | null
   name: string
   widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDashboardInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutDashboardInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutSelectedDashboardInput
 }
 
 export type DashboardCreateOrConnectWithoutTenantInput = {
@@ -422,6 +475,8 @@ export type DashboardCreateWithoutWidgetsInput = {
   workbookId?: string | null
   name: string
   tenant: Prisma.TenantCreateNestedOneWithoutDashboardsInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutDashboardInput
+  appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutSelectedDashboardInput
 }
 
 export type DashboardUncheckedCreateWithoutWidgetsInput = {
@@ -429,6 +484,8 @@ export type DashboardUncheckedCreateWithoutWidgetsInput = {
   tenantId: string
   workbookId?: string | null
   name: string
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutDashboardInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutSelectedDashboardInput
 }
 
 export type DashboardCreateOrConnectWithoutWidgetsInput = {
@@ -452,6 +509,8 @@ export type DashboardUpdateWithoutWidgetsInput = {
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutDashboardsNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutDashboardNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutSelectedDashboardNestedInput
 }
 
 export type DashboardUncheckedUpdateWithoutWidgetsInput = {
@@ -459,6 +518,112 @@ export type DashboardUncheckedUpdateWithoutWidgetsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutDashboardNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutSelectedDashboardNestedInput
+}
+
+export type DashboardCreateWithoutVisibilityRulesInput = {
+  id?: string
+  workbookId?: string | null
+  name: string
+  tenant: Prisma.TenantCreateNestedOneWithoutDashboardsInput
+  widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDashboardInput
+  appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutSelectedDashboardInput
+}
+
+export type DashboardUncheckedCreateWithoutVisibilityRulesInput = {
+  id?: string
+  tenantId: string
+  workbookId?: string | null
+  name: string
+  widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDashboardInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutSelectedDashboardInput
+}
+
+export type DashboardCreateOrConnectWithoutVisibilityRulesInput = {
+  where: Prisma.DashboardWhereUniqueInput
+  create: Prisma.XOR<Prisma.DashboardCreateWithoutVisibilityRulesInput, Prisma.DashboardUncheckedCreateWithoutVisibilityRulesInput>
+}
+
+export type DashboardUpsertWithoutVisibilityRulesInput = {
+  update: Prisma.XOR<Prisma.DashboardUpdateWithoutVisibilityRulesInput, Prisma.DashboardUncheckedUpdateWithoutVisibilityRulesInput>
+  create: Prisma.XOR<Prisma.DashboardCreateWithoutVisibilityRulesInput, Prisma.DashboardUncheckedCreateWithoutVisibilityRulesInput>
+  where?: Prisma.DashboardWhereInput
+}
+
+export type DashboardUpdateToOneWithWhereWithoutVisibilityRulesInput = {
+  where?: Prisma.DashboardWhereInput
+  data: Prisma.XOR<Prisma.DashboardUpdateWithoutVisibilityRulesInput, Prisma.DashboardUncheckedUpdateWithoutVisibilityRulesInput>
+}
+
+export type DashboardUpdateWithoutVisibilityRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutDashboardsNestedInput
+  widgets?: Prisma.DashboardWidgetUpdateManyWithoutDashboardNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutSelectedDashboardNestedInput
+}
+
+export type DashboardUncheckedUpdateWithoutVisibilityRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDashboardNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutSelectedDashboardNestedInput
+}
+
+export type DashboardCreateWithoutAppPreferencesInput = {
+  id?: string
+  workbookId?: string | null
+  name: string
+  tenant: Prisma.TenantCreateNestedOneWithoutDashboardsInput
+  widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDashboardInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutDashboardInput
+}
+
+export type DashboardUncheckedCreateWithoutAppPreferencesInput = {
+  id?: string
+  tenantId: string
+  workbookId?: string | null
+  name: string
+  widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDashboardInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutDashboardInput
+}
+
+export type DashboardCreateOrConnectWithoutAppPreferencesInput = {
+  where: Prisma.DashboardWhereUniqueInput
+  create: Prisma.XOR<Prisma.DashboardCreateWithoutAppPreferencesInput, Prisma.DashboardUncheckedCreateWithoutAppPreferencesInput>
+}
+
+export type DashboardUpsertWithoutAppPreferencesInput = {
+  update: Prisma.XOR<Prisma.DashboardUpdateWithoutAppPreferencesInput, Prisma.DashboardUncheckedUpdateWithoutAppPreferencesInput>
+  create: Prisma.XOR<Prisma.DashboardCreateWithoutAppPreferencesInput, Prisma.DashboardUncheckedCreateWithoutAppPreferencesInput>
+  where?: Prisma.DashboardWhereInput
+}
+
+export type DashboardUpdateToOneWithWhereWithoutAppPreferencesInput = {
+  where?: Prisma.DashboardWhereInput
+  data: Prisma.XOR<Prisma.DashboardUpdateWithoutAppPreferencesInput, Prisma.DashboardUncheckedUpdateWithoutAppPreferencesInput>
+}
+
+export type DashboardUpdateWithoutAppPreferencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutDashboardsNestedInput
+  widgets?: Prisma.DashboardWidgetUpdateManyWithoutDashboardNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutDashboardNestedInput
+}
+
+export type DashboardUncheckedUpdateWithoutAppPreferencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDashboardNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutDashboardNestedInput
 }
 
 export type DashboardCreateManyTenantInput = {
@@ -472,6 +637,8 @@ export type DashboardUpdateWithoutTenantInput = {
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   widgets?: Prisma.DashboardWidgetUpdateManyWithoutDashboardNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutDashboardNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutSelectedDashboardNestedInput
 }
 
 export type DashboardUncheckedUpdateWithoutTenantInput = {
@@ -479,6 +646,8 @@ export type DashboardUncheckedUpdateWithoutTenantInput = {
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDashboardNestedInput
+  visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutDashboardNestedInput
+  appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutSelectedDashboardNestedInput
 }
 
 export type DashboardUncheckedUpdateManyWithoutTenantInput = {
@@ -494,10 +663,14 @@ export type DashboardUncheckedUpdateManyWithoutTenantInput = {
 
 export type DashboardCountOutputType = {
   widgets: number
+  visibilityRules: number
+  appPreferences: number
 }
 
 export type DashboardCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   widgets?: boolean | DashboardCountOutputTypeCountWidgetsArgs
+  visibilityRules?: boolean | DashboardCountOutputTypeCountVisibilityRulesArgs
+  appPreferences?: boolean | DashboardCountOutputTypeCountAppPreferencesArgs
 }
 
 /**
@@ -517,6 +690,20 @@ export type DashboardCountOutputTypeCountWidgetsArgs<ExtArgs extends runtime.Typ
   where?: Prisma.DashboardWidgetWhereInput
 }
 
+/**
+ * DashboardCountOutputType without action
+ */
+export type DashboardCountOutputTypeCountVisibilityRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DashboardVisibilityRuleWhereInput
+}
+
+/**
+ * DashboardCountOutputType without action
+ */
+export type DashboardCountOutputTypeCountAppPreferencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PrincipalAppPreferenceWhereInput
+}
+
 
 export type DashboardSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -525,6 +712,8 @@ export type DashboardSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   name?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   widgets?: boolean | Prisma.Dashboard$widgetsArgs<ExtArgs>
+  visibilityRules?: boolean | Prisma.Dashboard$visibilityRulesArgs<ExtArgs>
+  appPreferences?: boolean | Prisma.Dashboard$appPreferencesArgs<ExtArgs>
   _count?: boolean | Prisma.DashboardCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["dashboard"]>
 
@@ -555,6 +744,8 @@ export type DashboardOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 export type DashboardInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   widgets?: boolean | Prisma.Dashboard$widgetsArgs<ExtArgs>
+  visibilityRules?: boolean | Prisma.Dashboard$visibilityRulesArgs<ExtArgs>
+  appPreferences?: boolean | Prisma.Dashboard$appPreferencesArgs<ExtArgs>
   _count?: boolean | Prisma.DashboardCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DashboardIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -569,6 +760,8 @@ export type $DashboardPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   objects: {
     tenant: Prisma.$TenantPayload<ExtArgs>
     widgets: Prisma.$DashboardWidgetPayload<ExtArgs>[]
+    visibilityRules: Prisma.$DashboardVisibilityRulePayload<ExtArgs>[]
+    appPreferences: Prisma.$PrincipalAppPreferencePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -971,6 +1164,8 @@ export interface Prisma__DashboardClient<T, Null = never, ExtArgs extends runtim
   readonly [Symbol.toStringTag]: "PrismaPromise"
   tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   widgets<T extends Prisma.Dashboard$widgetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Dashboard$widgetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DashboardWidgetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  visibilityRules<T extends Prisma.Dashboard$visibilityRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Dashboard$visibilityRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DashboardVisibilityRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  appPreferences<T extends Prisma.Dashboard$appPreferencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Dashboard$appPreferencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PrincipalAppPreferencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1426,6 +1621,54 @@ export type Dashboard$widgetsArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.DashboardWidgetScalarFieldEnum | Prisma.DashboardWidgetScalarFieldEnum[]
+}
+
+/**
+ * Dashboard.visibilityRules
+ */
+export type Dashboard$visibilityRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DashboardVisibilityRule
+   */
+  select?: Prisma.DashboardVisibilityRuleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DashboardVisibilityRule
+   */
+  omit?: Prisma.DashboardVisibilityRuleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DashboardVisibilityRuleInclude<ExtArgs> | null
+  where?: Prisma.DashboardVisibilityRuleWhereInput
+  orderBy?: Prisma.DashboardVisibilityRuleOrderByWithRelationInput | Prisma.DashboardVisibilityRuleOrderByWithRelationInput[]
+  cursor?: Prisma.DashboardVisibilityRuleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DashboardVisibilityRuleScalarFieldEnum | Prisma.DashboardVisibilityRuleScalarFieldEnum[]
+}
+
+/**
+ * Dashboard.appPreferences
+ */
+export type Dashboard$appPreferencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PrincipalAppPreference
+   */
+  select?: Prisma.PrincipalAppPreferenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PrincipalAppPreference
+   */
+  omit?: Prisma.PrincipalAppPreferenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PrincipalAppPreferenceInclude<ExtArgs> | null
+  where?: Prisma.PrincipalAppPreferenceWhereInput
+  orderBy?: Prisma.PrincipalAppPreferenceOrderByWithRelationInput | Prisma.PrincipalAppPreferenceOrderByWithRelationInput[]
+  cursor?: Prisma.PrincipalAppPreferenceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PrincipalAppPreferenceScalarFieldEnum | Prisma.PrincipalAppPreferenceScalarFieldEnum[]
 }
 
 /**

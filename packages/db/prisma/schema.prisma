@@ -9,19 +9,22 @@ datasource db {
 }
 
 model Tenant {
-  id          String       @id @default(cuid())
-  slug        String       @unique
-  name        String
-  memberships Membership[]
-  datasets    Dataset[]
-  workbooks   Workbook[]
-  dashboards  Dashboard[]
+  id                String                   @id @default(cuid())
+  slug              String                   @unique
+  name              String
+  memberships       Membership[]
+  datasets          Dataset[]
+  workbooks         Workbook[]
+  dashboards        Dashboard[]
+  visibilityRules   DashboardVisibilityRule[]
+  appPreferences    PrincipalAppPreference[]
 }
 
 model Principal {
-  id            String       @id @default(cuid())
-  externalUserId String      @unique
-  memberships   Membership[]
+  id                   String                 @id @default(cuid())
+  externalUserId       String                 @unique
+  memberships          Membership[]
+  appPreferences       PrincipalAppPreference[]
 }
 
 model Membership {
@@ -64,12 +67,14 @@ model Workbook {
 }
 
 model Dashboard {
-  id        String            @id @default(cuid())
-  tenantId  String
-  workbookId String?
-  name      String
-  tenant    Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  widgets   DashboardWidget[]
+  id              String                  @id @default(cuid())
+  tenantId        String
+  workbookId      String?
+  name            String
+  tenant          Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  widgets         DashboardWidget[]
+  visibilityRules DashboardVisibilityRule[]
+  appPreferences  PrincipalAppPreference[]
 }
 
 model DashboardWidget {
@@ -81,4 +86,27 @@ model DashboardWidget {
   config      Json?
   dashboard   Dashboard  @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
   dataset     Dataset?   @relation(fields: [datasetId], references: [id], onDelete: SetNull)
+}
+
+model DashboardVisibilityRule {
+  id          String    @id @default(cuid())
+  tenantId    String
+  dashboardId String
+  subjectType String
+  subjectId   String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, dashboardId])
+}
+
+model PrincipalAppPreference {
+  principalId         String
+  tenantId            String
+  selectedDashboardId String?
+  principal           Principal  @relation(fields: [principalId], references: [id], onDelete: Cascade)
+  tenant              Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  selectedDashboard   Dashboard? @relation(fields: [selectedDashboardId], references: [id], onDelete: SetNull)
+
+  @@id([principalId, tenantId])
 }
