@@ -1,10 +1,14 @@
+import React from "react";
 import { AppSwitcher } from "./app-switcher";
 
-export function PortalShell() {
+export function PortalShell(props: {
+  apps: string[];
+  currentApp: string;
+}) {
   return (
     <main>
       <h1>Canvas Portal</h1>
-      <AppSwitcher />
+      <AppSwitcher apps={props.apps} currentApp={props.currentApp} />
     </main>
   );
 }
