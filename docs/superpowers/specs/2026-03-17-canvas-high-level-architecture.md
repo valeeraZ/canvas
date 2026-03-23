@@ -1,115 +1,125 @@
-# Canvas High-Level Architecture Revision
+# Canvas High-Level Architecture
 
-Date: 2026-03-17
-Status: Approved refinement
-Scope: Backend packaging simplification and high-level diagram alignment
+Date: 2026-03-23
+Status: Current system architecture
+Scope: System boundaries for Canvas Portal, Embed SDK Viewer, backend platform, external auth, and shared storage
 
 ## Decision
 
-`canvas` uses a simplified backend packaging model:
+Canvas operates as one hosted platform with two frontend entry surfaces:
 
-- one Node.js/TypeScript backend project: `canvas-backend`
-- one Docker image
-- two runtime modes
-  - `API mode`
-  - `Worker mode`
+- `Canvas Portal`
+- `Embed SDK Viewer`
 
-This keeps day-one delivery simple while preserving clean module boundaries for future extraction.
+Both surfaces are backed by the same Canvas backend platform, which integrates with external authentication and shared storage systems.
 
-## Why this is the recommended shape
+## System areas
 
-- simpler local development
-- simpler CI/CD and image management
-- simpler Kubernetes deployment model
-- no version skew between API and worker code
-- still allows API and background jobs to scale independently
+The high-level architecture is organized into six system areas:
 
-## Internal backend modules
-
-- `auth/session`
-- `tenant/rbac`
-- `datasets`
-- `ingestion`
-- `query`
-- `charts`
-- `workbooks`
-- `dashboards`
-- `realtime`
-- `shared` (`db`, `redis`, `s3`, `config`, `logging`)
-
-## Deployment model
-
-- `canvas-backend-api`
-  - runs REST APIs and WebSocket gateway
-- `canvas-backend-worker`
-  - runs import, normalization, export, and async jobs
-- both deployments use the same Docker image with different start commands
-
-## Diagram layout
-
-The high-level draw.io diagram is organized as four vertical swimlanes:
-
-- `Host`
-- `Embed SDK`
+- `User Access`
+- `Host Application`
+- `Canvas Portal`
 - `Canvas Platform / Backend`
+- `External Auth`
 - `Shared Storage`
 
-This keeps the main traffic paths readable and avoids having connection lines run directly through module labels.
+## Component responsibilities
+
+### User Access
+
+- users interact either through Canvas Portal or a host application
+
+### Host Application
+
+- hosts the customer product shell
+- mounts the Embed SDK Viewer
+- keeps its own product UI and session environment
+
+### Canvas Portal
+
+- owns Canvas login initiation
+- lets a user choose an app
+- exposes dashboard management operations
+
+### Canvas Platform / Backend
+
+- API mode
+  - session exchange
+  - app-scoped auth context
+  - visibility evaluation
+  - dashboard, workbook, and dataset APIs
+  - realtime gateway
+- Worker mode
+  - imports
+  - normalization
+  - exports
+  - async jobs
+
+### External Auth
+
+- Canvas-managed SSO issues `amtoken`
+- authorization APIs resolve current user and app-scoped roles
+- external groups remain outside Canvas ownership
+
+### Shared Storage
+
+- `Postgres` for app metadata, principals, dashboards, visibility, preferences, and normalized data
+- `Redis` for queues and pub/sub
+- `S3` for uploads and exports
 
 ## Mermaid reference
 
 ```mermaid
 flowchart LR
+    User["End User"]
+
     subgraph Host["Host Application"]
-        User["End User"]
-        Frontend["Host Frontend<br/>Next.js"]
-        Backend["Host Backend<br/>Session signer / Data push"]
-        User --> Frontend
-        Frontend --> Backend
+        HostFrontend["Host Frontend"]
+        Viewer["Embed SDK Viewer"]
     end
 
-    SDK["canvas-embed-sdk<br/>Embedded UI package"]
-
-    subgraph Canvas["Canvas Platform"]
-        subgraph K8s["Kubernetes"]
-            subgraph API["canvas-backend API mode"]
-                Session["Session/Auth"]
-                RBAC["Tenant/RBAC"]
-                Datasets["Dataset API"]
-                Query["Query/Chart API"]
-                Dashboards["Workbook/Dashboard API"]
-                Realtime["Realtime Gateway"]
-            end
-
-            subgraph Worker["canvas-backend Worker mode"]
-                Import["Import Jobs"]
-                Normalize["Normalize Jobs"]
-                Async["Export/Async Jobs"]
-            end
-
-            PG["Postgres"]
-            Redis["Redis"]
-            S3["S3"]
-        end
+    subgraph Portal["Canvas Portal"]
+        PortalUI["Portal UI"]
     end
 
-    Frontend --> SDK
-    Backend --> Session
-    Backend --> Datasets
-    SDK --> Session
-    SDK --> Datasets
-    SDK --> Query
-    SDK --> Dashboards
-    SDK <--> Realtime
+    subgraph Platform["Canvas Platform"]
+        Api["Canvas Backend API"]
+        Worker["Canvas Backend Worker"]
+    end
 
-    API --> PG
-    API --> Redis
-    API --> S3
-    Worker --> Redis
+    subgraph External["External Auth"]
+        SSO["Canvas-managed SSO"]
+        AuthAPI["Authorization APIs"]
+    end
+
+    subgraph Storage["Shared Storage"]
+        PG["Postgres"]
+        Redis["Redis"]
+        S3["S3"]
+    end
+
+    User --> PortalUI
+    User --> HostFrontend
+    HostFrontend --> Viewer
+
+    PortalUI --> SSO
+    PortalUI --> Api
+    Viewer --> Api
+
+    Api --> AuthAPI
+    Api --> PG
+    Api --> Redis
+    Api --> S3
+
     Worker --> PG
+    Worker --> Redis
     Worker --> S3
 ```
 
-## Implementation note
+## Diagram notes
 
-This revision replaces the earlier “many backend services” presentation at the high level. Internally the code should still keep strong boundaries so we can split services later if scale or team structure demands it.
+- the diagram is intentionally system-level only
+- it does not include detailed user workflows
+- `app` is the isolation boundary behind all API and data paths
+- both Portal and Viewer depend on the same backend platform
