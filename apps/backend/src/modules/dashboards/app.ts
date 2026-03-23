@@ -3,10 +3,17 @@ import { decodeCanvasAccessToken } from "../../../../../packages/auth/src/canvas
 import {
   createDashboardStore,
   createDashboardVisibilityStore,
+  createPrincipalAppPreferenceStore,
   createPrincipalStore
 } from "../../../../../packages/db/src";
 import type { DashboardRecord } from "../../../../../packages/contracts/src/dashboards";
 import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client";
+import { shareDashboard } from "./routes/share-dashboard";
+import {
+  getSelectedDashboard,
+  setSelectedDashboard
+} from "./routes/set-selected-dashboard";
+import type { DashboardVisibilitySubjectType } from "./routes/share-dashboard";
 
 export type DashboardsService = {
   listDashboards: () => Promise<DashboardRecord[]>;
@@ -21,6 +28,39 @@ export type DashboardsService = {
     name: string;
     workbookId?: string;
   }) => Promise<DashboardRecord>;
+  shareDashboard: (input: {
+    dashboardId: string;
+    subjects: Array<{
+      type: DashboardVisibilitySubjectType;
+      id: string;
+    }>;
+  }) => Promise<{
+    dashboardId: string;
+    subjects: Array<{
+      type: DashboardVisibilitySubjectType;
+      id: string;
+    }>;
+    rules: Array<{
+      id?: string;
+      dashboardId: string;
+      appId: string;
+      subjectType: DashboardVisibilitySubjectType;
+      subjectId: string;
+    }>;
+  }>;
+  getSelectedDashboard: (input: {
+    tenantId: string;
+    externalUserId: string;
+  }) => Promise<{
+    dashboardId: string | null;
+  }>;
+  setSelectedDashboard: (input: {
+    tenantId: string;
+    externalUserId: string;
+    dashboardId: string | null;
+  }) => Promise<{
+    dashboardId: string | null;
+  }>;
 };
 
 export type DashboardsModuleOptions = {
@@ -34,6 +74,7 @@ export function createDashboardsService(input: {
   const dashboards = createDashboardStore(input.db);
   const visibility = createDashboardVisibilityStore(input.db);
   const principals = createPrincipalStore(input.db);
+  const preferences = createPrincipalAppPreferenceStore(input.db);
 
   return {
     listDashboards() {
@@ -86,6 +127,31 @@ export function createDashboardsService(input: {
         tenantId: input.tenantId,
         name: payload.name,
         workbookId: payload.workbookId
+      });
+    },
+    shareDashboard(payload) {
+      return shareDashboard({
+        appId: input.tenantId,
+        dashboardId: payload.dashboardId,
+        subjects: payload.subjects,
+        replaceRules: visibility.replaceRules
+      });
+    },
+    getSelectedDashboard(viewer) {
+      return getSelectedDashboard({
+        appId: input.tenantId,
+        externalUserId: viewer.externalUserId,
+        findPrincipalByExternalUserId: principals.findByExternalUserId,
+        getPreference: preferences.get
+      });
+    },
+    setSelectedDashboard(viewer) {
+      return setSelectedDashboard({
+        appId: input.tenantId,
+        externalUserId: viewer.externalUserId,
+        dashboardId: viewer.dashboardId,
+        upsertPrincipal: principals.upsert,
+        setPreference: preferences.set
       });
     }
   };
@@ -155,6 +221,64 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     }
 
     return dashboard;
+  });
+
+  app.post<{
+    Params: {
+      dashboardId: string;
+    };
+    Body: {
+      subjects?: Array<{
+        type: DashboardVisibilitySubjectType;
+        id: string;
+      }>;
+    };
+  }>("/dashboards/:dashboardId/share", async (request) => {
+    return options.dashboards.shareDashboard({
+      dashboardId: request.params.dashboardId,
+      subjects: request.body?.subjects ?? []
+    });
+  });
+
+  app.get("/dashboards/selected-dashboard", async (request, reply) => {
+    const token = readBearerToken(request.headers.authorization);
+
+    if (!token) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    const claims = decodeCanvasAccessToken(token);
+
+    return options.dashboards.getSelectedDashboard({
+      tenantId: claims.tenantId,
+      externalUserId: claims.externalUserId
+    });
+  });
+
+  app.post<{
+    Body: {
+      dashboardId?: string | null;
+    };
+  }>("/dashboards/selected-dashboard", async (request, reply) => {
+    const token = readBearerToken(request.headers.authorization);
+
+    if (!token) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    const claims = decodeCanvasAccessToken(token);
+
+    return options.dashboards.setSelectedDashboard({
+      tenantId: claims.tenantId,
+      externalUserId: claims.externalUserId,
+      dashboardId: request.body?.dashboardId ?? null
+    });
   });
 
   app.post<{

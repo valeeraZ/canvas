@@ -12,6 +12,9 @@ afterEach(async () => {
 describe("dashboard routes", () => {
   it("creates, lists, and fetches dashboards", async () => {
     let visibleRequest: unknown;
+    let shareRequest: unknown;
+    let selectedReadRequest: unknown;
+    let selectedWriteRequest: unknown;
 
     const app = createApiApp({
       authBaseUrl: "http://auth.local",
@@ -54,7 +57,35 @@ describe("dashboard routes", () => {
           tenantId: "tenant_demo",
           name: input.name,
           workbookId: input.workbookId ?? null
-        })
+        }),
+        shareDashboard: async (input: unknown) => {
+          shareRequest = input;
+          return {
+            dashboardId: "dash_1",
+            subjects: [{ type: "role", id: "ADMIN" }],
+            rules: [
+              {
+                id: "rule_1",
+                dashboardId: "dash_1",
+                appId: "canvas",
+                subjectType: "role",
+                subjectId: "ADMIN"
+              }
+            ]
+          };
+        },
+        getSelectedDashboard: async (input: unknown) => {
+          selectedReadRequest = input;
+          return {
+            dashboardId: "dash_1"
+          };
+        },
+        setSelectedDashboard: async (input: unknown) => {
+          selectedWriteRequest = input;
+          return {
+            dashboardId: "dash_2"
+          };
+        }
       }
     });
 
@@ -114,5 +145,45 @@ describe("dashboard routes", () => {
     expect((visibleRequest as { roles?: string[] })?.roles).toContain("ADMIN");
     expect((visibleRequest as { tenantId?: string })?.tenantId).toBe("canvas");
     expect(authorizedVisible.json()[0]?.id).toBe("dash_1");
+
+    const shareResponse = await app.inject({
+      method: "POST",
+      url: "/dashboards/dash_1/share",
+      payload: {
+        subjects: [{ type: "role", id: "ADMIN" }]
+      }
+    });
+    expect(shareResponse.statusCode).toBe(200);
+    expect((shareRequest as { dashboardId?: string })?.dashboardId).toBe("dash_1");
+    expect(shareResponse.json().rules[0]?.subjectId).toBe("ADMIN");
+
+    const selectedResponse = await app.inject({
+      method: "GET",
+      url: "/dashboards/selected-dashboard",
+      headers: {
+        authorization: `Bearer ${session.json().accessToken as string}`
+      }
+    });
+    expect(selectedResponse.statusCode).toBe(200);
+    expect(
+      (selectedReadRequest as { externalUserId?: string })?.externalUserId
+    ).toBe("dev-1");
+    expect(selectedResponse.json().dashboardId).toBe("dash_1");
+
+    const selectedWriteResponse = await app.inject({
+      method: "POST",
+      url: "/dashboards/selected-dashboard",
+      headers: {
+        authorization: `Bearer ${session.json().accessToken as string}`
+      },
+      payload: {
+        dashboardId: "dash_2"
+      }
+    });
+    expect(selectedWriteResponse.statusCode).toBe(200);
+    expect(
+      (selectedWriteRequest as { dashboardId?: string })?.dashboardId
+    ).toBe("dash_2");
+    expect(selectedWriteResponse.json().dashboardId).toBe("dash_2");
   });
 });
