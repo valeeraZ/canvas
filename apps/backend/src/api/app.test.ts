@@ -113,7 +113,8 @@ describe("createApiApp", () => {
     expect(openapi.json()).toMatchObject({
       openapi: expect.any(String),
       info: {
-        title: "Canvas API"
+        title: "Canvas API",
+        description: expect.stringContaining("amtoken")
       },
       components: {
         securitySchemes: {
@@ -129,6 +130,16 @@ describe("createApiApp", () => {
           url: "/"
         }
       ],
+      tags: expect.arrayContaining([
+        expect.objectContaining({
+          name: "session",
+          description: expect.stringMatching(/server session/i)
+        }),
+        expect.objectContaining({
+          name: "dashboards",
+          description: expect.stringMatching(/dashboard/i)
+        })
+      ]),
       paths: expect.any(Object)
     });
 
@@ -139,21 +150,30 @@ describe("createApiApp", () => {
     ]);
     expect(
       openapi.json().paths["/auth/me"].get.responses["401"].content["application/json"].schema
-    ).toEqual({
+    ).toMatchObject({
       type: "object",
+      description: expect.stringContaining("error"),
       properties: {
         message: {
+          description: expect.stringContaining("message"),
           type: "string"
         }
       },
       required: ["message"]
     });
+    expect(openapi.json().paths["/auth/me"].get.description).toContain(
+      "Authorization: Bearer <amtoken>"
+    );
+    expect(
+      openapi.json().paths["/session/exchange"].post.description
+    ).toContain("canvas_session");
     expect(
       openapi.json().paths["/workbooks"].get.responses["200"].content["application/json"].schema
-    ).toEqual({
+    ).toMatchObject({
       type: "array",
       items: {
         type: "object",
+        description: expect.stringContaining("Workbook"),
         properties: {
           id: {
             type: "string"
@@ -190,10 +210,11 @@ describe("createApiApp", () => {
     });
     expect(
       openapi.json().paths["/datasets"].get.responses["200"].content["application/json"].schema
-    ).toEqual({
+    ).toMatchObject({
       type: "array",
       items: {
         type: "object",
+        description: expect.stringContaining("Dataset"),
         properties: {
           id: {
             type: "string"

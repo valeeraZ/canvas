@@ -44,6 +44,8 @@ export const workbooksModule: FastifyPluginAsync<WorkbooksModuleOptions> = async
     schema: {
       tags: ["workbooks"],
       summary: "List workbooks for the current app",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Returns workbooks for the selected app.",
       security: [
         {
           bearerAuth: []
@@ -83,6 +85,8 @@ export const workbooksModule: FastifyPluginAsync<WorkbooksModuleOptions> = async
     schema: {
       tags: ["workbooks"],
       summary: "Get one workbook",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Returns one workbook scoped to the selected app.",
       security: [
         {
           bearerAuth: []
@@ -93,6 +97,7 @@ export const workbooksModule: FastifyPluginAsync<WorkbooksModuleOptions> = async
         required: ["workbookId"],
         properties: {
           workbookId: {
+            description: "Workbook identifier inside the active app.",
             type: "string"
           }
         }
@@ -141,6 +146,8 @@ export const workbooksModule: FastifyPluginAsync<WorkbooksModuleOptions> = async
     schema: {
       tags: ["workbooks"],
       summary: "Create a workbook",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Creates a workbook inside the selected app.",
       security: [
         {
           bearerAuth: []
@@ -150,6 +157,7 @@ export const workbooksModule: FastifyPluginAsync<WorkbooksModuleOptions> = async
         type: "object",
         properties: {
           name: {
+            description: "Workbook display name.",
             type: "string"
           }
         }

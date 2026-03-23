@@ -99,6 +99,8 @@ export const authModule: FastifyPluginAsync<AuthModuleOptions> = async (
     schema: {
       tags: ["auth"],
       summary: "Read the current app-scoped principal context",
+      description:
+        "Requires Authorization: Bearer <amtoken> plus a valid canvas_session cookie. Returns the current principal resolved for the active app stored in the Canvas server session.",
       security: [
         {
           bearerAuth: []
@@ -135,6 +137,8 @@ export const authModule: FastifyPluginAsync<AuthModuleOptions> = async (
     schema: {
       tags: ["auth"],
       summary: "Switch the current app in the Canvas server session",
+      description:
+        "Requires Authorization: Bearer <amtoken> and updates the Canvas-managed canvas_session cookie so later requests resolve identity and permissions for the selected app.",
       security: [
         {
           bearerAuth: []
@@ -145,6 +149,7 @@ export const authModule: FastifyPluginAsync<AuthModuleOptions> = async (
         required: ["appName"],
         properties: {
           appName: {
+            description: "App identifier to store as the active Canvas app.",
             type: "string"
           }
         }

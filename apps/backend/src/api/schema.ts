@@ -1,7 +1,9 @@
 export const messageResponseSchema = {
   type: "object",
+  description: "Standard error response payload.",
   properties: {
     message: {
+      description: "Human-readable error message.",
       type: "string"
     }
   },
@@ -10,20 +12,25 @@ export const messageResponseSchema = {
 
 export const tenantContextSchema = {
   type: "object",
+  description: "Resolved app-scoped principal context for the current request.",
   properties: {
     tenantId: {
+      description: "Active app identifier stored in the Canvas server session.",
       type: "string"
     },
     externalUserId: {
+      description: "External user identifier returned by the upstream authorization service.",
       type: "string"
     },
     roles: {
+      description: "Effective external roles for the current principal in the active app.",
       type: "array",
       items: {
         type: "string"
       }
     },
     groups: {
+      description: "Effective external groups associated with the current principal.",
       type: "array",
       items: {
         type: "string"
@@ -35,23 +42,30 @@ export const tenantContextSchema = {
 
 export const sessionExchangeResponseSchema = {
   type: "object",
+  description: "Session bootstrap payload returned after resolving an amtoken into a Canvas server session.",
   properties: {
     expiresIn: {
+      description: "Session lifetime in seconds.",
       type: "number"
     },
     selectedApp: {
+      description: "App that was written into the Canvas server-side session.",
       type: "string"
     },
     principal: {
+      description: "Principal snapshot resolved from external authorization APIs.",
       type: "object",
       properties: {
         employeeId: {
+          description: "External employee or user identifier.",
           type: "string"
         },
         displayName: {
+          description: "Display name returned by the upstream user profile service.",
           type: "string"
         },
         roles: {
+          description: "App-scoped external roles for the selected app.",
           type: "array",
           items: {
             type: "string"
@@ -66,11 +80,14 @@ export const sessionExchangeResponseSchema = {
 
 export const selectAppResponseSchema = {
   type: "object",
+  description: "Active app selection result for the current Canvas server session.",
   properties: {
     tenantId: {
+      description: "Newly selected app identifier.",
       type: "string"
     },
     roles: {
+      description: "Resolved external roles for the newly selected app.",
       type: "array",
       items: {
         type: "string"
@@ -82,17 +99,22 @@ export const selectAppResponseSchema = {
 
 export const datasetSummarySchema = {
   type: "object",
+  description: "Dataset summary shown in app-scoped dataset lists.",
   properties: {
     id: {
+      description: "Dataset identifier.",
       type: "string"
     },
     name: {
+      description: "Dataset display name.",
       type: "string"
     },
     status: {
+      description: "Current ingestion status for the dataset.",
       type: "string"
     },
     warningCount: {
+      description: "Count of ingestion warnings associated with the dataset.",
       type: "number"
     }
   },
@@ -101,25 +123,32 @@ export const datasetSummarySchema = {
 
 export const datasetDetailSchema = {
   type: "object",
+  description: "Full dataset detail payload.",
   properties: {
     id: {
+      description: "Dataset identifier.",
       type: "string"
     },
     name: {
+      description: "Dataset display name.",
       type: "string"
     },
     status: {
+      description: "Current ingestion status for the dataset.",
       type: "string"
     },
     warnings: {
+      description: "Detailed warning list generated during ingestion.",
       type: "array",
       items: {
         type: "object",
         properties: {
           code: {
+            description: "Stable warning code.",
             type: "string"
           },
           message: {
+            description: "Optional human-readable warning detail.",
             type: "string"
           }
         },
@@ -132,11 +161,14 @@ export const datasetDetailSchema = {
 
 export const uploadSessionSchema = {
   type: "object",
+  description: "Storage destination for a dataset upload.",
   properties: {
     bucket: {
+      description: "Target storage bucket.",
       type: "string"
     },
     objectKey: {
+      description: "Target object key inside the bucket.",
       type: "string"
     }
   },
@@ -145,6 +177,7 @@ export const uploadSessionSchema = {
 
 export const createUploadResponseSchema = {
   type: "object",
+  description: "Dataset upload session creation result.",
   properties: {
     upload: uploadSessionSchema,
     dataset: datasetSummarySchema
@@ -154,14 +187,18 @@ export const createUploadResponseSchema = {
 
 export const workbookSchema = {
   type: "object",
+  description: "Workbook record scoped to the current app.",
   properties: {
     id: {
+      description: "Workbook identifier.",
       type: "string"
     },
     tenantId: {
+      description: "App identifier owning the workbook.",
       type: "string"
     },
     name: {
+      description: "Workbook display name.",
       type: "string"
     }
   },
@@ -170,17 +207,22 @@ export const workbookSchema = {
 
 export const dashboardSchema = {
   type: "object",
+  description: "Dashboard record scoped to the current app.",
   properties: {
     id: {
+      description: "Dashboard identifier.",
       type: "string"
     },
     tenantId: {
+      description: "App identifier owning the dashboard.",
       type: "string"
     },
     name: {
+      description: "Dashboard display name.",
       type: "string"
     },
     workbookId: {
+      description: "Workbook identifier backing the dashboard, or null when unassigned.",
       type: ["string", "null"]
     }
   },
@@ -189,8 +231,10 @@ export const dashboardSchema = {
 
 export const selectedDashboardSchema = {
   type: "object",
+  description: "Per-user selected dashboard for the active app.",
   properties: {
     dashboardId: {
+      description: "Selected dashboard identifier, or null when no preference is stored.",
       type: ["string", "null"]
     }
   },

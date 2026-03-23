@@ -165,6 +165,7 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     schema: {
       tags: ["dashboards"],
       summary: "List dashboards for the current app",
+      description: "Returns dashboard records owned by the currently selected app.",
       response: {
         200: {
           type: "array",
@@ -180,6 +181,8 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     schema: {
       tags: ["dashboards"],
       summary: "List dashboards visible to the current principal",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Returns dashboards in the selected app that are shared with the current principal by user, role, or group.",
       security: [
         {
           bearerAuth: []
@@ -224,11 +227,13 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     schema: {
       tags: ["dashboards"],
       summary: "Get one dashboard",
+      description: "Returns one dashboard record for the selected app.",
       params: {
         type: "object",
         required: ["dashboardId"],
         properties: {
           dashboardId: {
+            description: "Dashboard identifier inside the active app.",
             type: "string"
           }
         }
@@ -267,6 +272,8 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     schema: {
       tags: ["dashboards"],
       summary: "Replace dashboard visibility subjects",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Replaces explicit visibility subjects for the given dashboard in the selected app.",
       security: [
         {
           bearerAuth: []
@@ -277,6 +284,7 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
         required: ["dashboardId"],
         properties: {
           dashboardId: {
+            description: "Dashboard identifier inside the active app.",
             type: "string"
           }
         }
@@ -290,9 +298,11 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
               type: "object",
               properties: {
                 type: {
+                  description: "Visibility subject type. Expected values are user, group, or role.",
                   type: "string"
                 },
                 id: {
+                  description: "Opaque subject identifier from Canvas or the external auth system.",
                   type: "string"
                 }
               },
@@ -319,6 +329,8 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     schema: {
       tags: ["dashboards"],
       summary: "Get the selected dashboard for the current principal",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Returns the per-user dashboard preference for the selected app.",
       security: [
         {
           bearerAuth: []
@@ -358,6 +370,8 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     schema: {
       tags: ["dashboards"],
       summary: "Set the selected dashboard for the current principal",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Stores the per-user dashboard preference for the selected app.",
       security: [
         {
           bearerAuth: []
@@ -367,6 +381,7 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
         type: "object",
         properties: {
           dashboardId: {
+            description: "Dashboard identifier to save as the current preference, or null to clear it.",
             type: ["string", "null"]
           }
         }
@@ -407,13 +422,16 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     schema: {
       tags: ["dashboards"],
       summary: "Create a dashboard",
+      description: "Creates a dashboard record inside the currently selected app.",
       body: {
         type: "object",
         properties: {
           name: {
+            description: "Dashboard display name.",
             type: "string"
           },
           workbookId: {
+            description: "Optional workbook identifier to attach to the dashboard.",
             type: "string"
           }
         }

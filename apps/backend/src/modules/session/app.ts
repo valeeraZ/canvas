@@ -31,6 +31,8 @@ export const sessionModule: FastifyPluginAsync<SessionModuleOptions> = async (
     schema: {
       tags: ["session"],
       summary: "Get a local development signed assertion placeholder",
+      description:
+        "Returns a placeholder assertion for local development flows that still expect a signed assertion round-trip.",
       response: {
         200: {
           type: "object",
@@ -55,13 +57,17 @@ export const sessionModule: FastifyPluginAsync<SessionModuleOptions> = async (
     schema: {
       tags: ["session"],
       summary: "Exchange an amtoken for a Canvas server session",
+      description:
+        "Resolves Authorization: Bearer <amtoken> or a posted token against external authorization APIs, persists the selected app in the Canvas-managed canvas_session cookie, and returns a principal snapshot.",
       body: {
         type: "object",
         properties: {
           token: {
+            description: "Optional amtoken. When omitted, local development defaults are used.",
             type: "string"
           },
           appName: {
+            description: "App to resolve and store as the active Canvas session app.",
             type: "string"
           }
         }

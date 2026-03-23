@@ -100,6 +100,8 @@ export const datasetsModule: FastifyPluginAsync<DatasetsModuleOptions> = async (
     schema: {
       tags: ["datasets"],
       summary: "List datasets for the current app",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Returns dataset summaries for the currently selected app.",
       security: [
         {
           bearerAuth: []
@@ -140,6 +142,8 @@ export const datasetsModule: FastifyPluginAsync<DatasetsModuleOptions> = async (
     schema: {
       tags: ["datasets"],
       summary: "Get one dataset",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Returns the detailed dataset record for the current app.",
       security: [
         {
           bearerAuth: []
@@ -150,6 +154,7 @@ export const datasetsModule: FastifyPluginAsync<DatasetsModuleOptions> = async (
         required: ["datasetId"],
         properties: {
           datasetId: {
+            description: "Dataset identifier inside the active app.",
             type: "string"
           }
         }
@@ -199,6 +204,8 @@ export const datasetsModule: FastifyPluginAsync<DatasetsModuleOptions> = async (
     schema: {
       tags: ["datasets"],
       summary: "Create an upload session for a dataset import",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Creates an upload target and queued dataset record in the selected app.",
       security: [
         {
           bearerAuth: []
@@ -208,9 +215,11 @@ export const datasetsModule: FastifyPluginAsync<DatasetsModuleOptions> = async (
         type: "object",
         properties: {
           filename: {
+            description: "Original file name that will be stored in the upload target.",
             type: "string"
           },
           name: {
+            description: "Dataset display name to create in the active app.",
             type: "string"
           }
         }

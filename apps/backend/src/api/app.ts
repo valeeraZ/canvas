@@ -76,9 +76,36 @@ export function createApiApp(options: CreateApiAppOptions) {
       openapi: "3.0.3",
       info: {
         title: "Canvas API",
-        description: "Fastify runtime for the Canvas portal and embed viewer.",
+        description:
+          "Fastify runtime for the Canvas portal and embed viewer. Send Authorization: Bearer <amtoken> and let Canvas manage the active app in the canvas_session cookie.",
         version: "0.1.0"
       },
+      tags: [
+        {
+          name: "system",
+          description: "Service health and machine-readable documentation endpoints."
+        },
+        {
+          name: "session",
+          description: "Canvas server session bootstrap and amtoken exchange endpoints."
+        },
+        {
+          name: "auth",
+          description: "App-scoped identity and active app selection endpoints."
+        },
+        {
+          name: "datasets",
+          description: "Dataset ingestion and inspection endpoints scoped to the selected app."
+        },
+        {
+          name: "workbooks",
+          description: "Workbook management endpoints scoped to the selected app."
+        },
+        {
+          name: "dashboards",
+          description: "Dashboard management, visibility, and per-user selection endpoints."
+        }
+      ],
       components: {
         securitySchemes: {
           bearerAuth: {
@@ -105,6 +132,7 @@ export function createApiApp(options: CreateApiAppOptions) {
     schema: {
       tags: ["system"],
       summary: "Health check",
+      description: "Simple readiness endpoint for local development, probes, and smoke checks.",
       response: {
         200: {
           type: "object",
@@ -127,6 +155,7 @@ export function createApiApp(options: CreateApiAppOptions) {
     schema: {
       tags: ["system"],
       summary: "OpenAPI document",
+      description: "Machine-readable OpenAPI document that powers the Swagger UI at /docs.",
       hide: true,
       response: {
         200: {
