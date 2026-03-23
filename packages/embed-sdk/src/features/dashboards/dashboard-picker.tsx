@@ -1,3 +1,4 @@
+import React from "react";
 import type { VisibleDashboard } from "../../../../../contracts/src/embed-viewer";
 
 export function DashboardPicker(props: {
@@ -18,6 +19,7 @@ export function DashboardPicker(props: {
             >
               {dashboard.name}
             </button>
+            {dashboard.id === props.selectedDashboardId ? <span> Selected</span> : null}
           </li>
         ))}
       </ul>
