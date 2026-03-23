@@ -1,7 +1,16 @@
 import Fastify from "fastify";
-import type { AuthorizationContext } from "../../../../packages/auth/src/authorization-api";
+import cookie from "@fastify/cookie";
+import swagger from "@fastify/swagger";
+import swaggerUi from "@fastify/swagger-ui";
+import {
+  createCachedAuthorizationResolver,
+  createMemoryExpiringStore,
+  type AuthorizationContext,
+  type AuthorizationResolver,
+  type ExpiringStore
+} from "../../../../packages/auth/src";
 import type { PrismaClient } from "../../../../packages/db/src/generated/prisma/client";
-import { authModule } from "../modules/auth/app";
+import { attachAuthContext, authModule } from "../modules/auth/app";
 import {
   createDatasetsService,
   datasetsModule,
@@ -18,12 +27,22 @@ import {
   type WorkbooksService,
   workbooksModule
 } from "../modules/workbooks/app";
+import {
+  createCanvasSessionStore,
+  DEFAULT_SESSION_TTL_SECONDS,
+  type CanvasSessionStore
+} from "../modules/session/session-store";
 
 export type CreateApiAppOptions = {
   authBaseUrl: string;
   mockContext?: AuthorizationContext;
   db?: PrismaClient;
   tenantId?: string;
+  authCacheStore?: ExpiringStore;
+  sessionBackingStore?: ExpiringStore;
+  authorizationResolver?: AuthorizationResolver;
+  sessionStore?: CanvasSessionStore;
+  sessionTtlSeconds?: number;
   datasets?: DatasetsService;
   workbooks?: WorkbooksService;
   dashboards?: DashboardsService;
@@ -31,15 +50,111 @@ export type CreateApiAppOptions = {
 
 export function createApiApp(options: CreateApiAppOptions) {
   const app = Fastify();
+  const authCacheStore = options.authCacheStore ?? createMemoryExpiringStore();
+  const sessionBackingStore =
+    options.sessionBackingStore ?? createMemoryExpiringStore();
+  const sessionTtlSeconds = options.sessionTtlSeconds ?? DEFAULT_SESSION_TTL_SECONDS;
+  const authorizationResolver =
+    options.authorizationResolver ??
+    createCachedAuthorizationResolver({
+      authBaseUrl: options.authBaseUrl,
+      defaultMockContext: options.mockContext,
+      cache: authCacheStore,
+      ttlSeconds: sessionTtlSeconds
+    });
+  const sessionStore =
+    options.sessionStore ??
+    createCanvasSessionStore({
+      backingStore: sessionBackingStore,
+      ttlSeconds: sessionTtlSeconds
+    });
 
-  app.get("/health", async () => {
+  void app.register(cookie);
+
+  void app.register(swagger, {
+    openapi: {
+      openapi: "3.0.3",
+      info: {
+        title: "Canvas API",
+        description: "Fastify runtime for the Canvas portal and embed viewer.",
+        version: "0.1.0"
+      },
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT"
+          }
+        }
+      },
+      servers: [
+        {
+          url: "/",
+          description: "Current origin"
+        }
+      ]
+    }
+  });
+
+  void app.register(swaggerUi, {
+    routePrefix: "/docs"
+  });
+
+  app.get("/health", {
+    schema: {
+      tags: ["system"],
+      summary: "Health check",
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            status: {
+              type: "string"
+            }
+          },
+          required: ["status"]
+        }
+      }
+    }
+  }, async () => {
     return {
       status: "ok" as const
     };
   });
 
-  void app.register(authModule);
-  void app.register(sessionModule, options);
+  app.get("/openapi.json", {
+    schema: {
+      tags: ["system"],
+      summary: "OpenAPI document",
+      hide: true,
+      response: {
+        200: {
+          type: "object",
+          additionalProperties: true
+        }
+      }
+    }
+  }, async () => app.swagger());
+
+  void attachAuthContext(app, {
+    authBaseUrl: options.authBaseUrl,
+    mockContext: options.mockContext,
+    authorizationResolver,
+    sessionStore
+  });
+  void app.register(authModule, {
+    authBaseUrl: options.authBaseUrl,
+    mockContext: options.mockContext,
+    authorizationResolver,
+    sessionStore
+  });
+  void app.register(sessionModule, {
+    ...options,
+    authorizationResolver,
+    sessionStore,
+    sessionTtlSeconds
+  });
 
   const datasets =
     options.datasets ??

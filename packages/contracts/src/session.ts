@@ -10,8 +10,8 @@ export type SessionExchangeInput = {
 };
 
 export type SessionExchangeResult = {
-  accessToken: string;
   expiresIn: number;
+  selectedApp: string;
   principal: {
     employeeId: string;
     displayName: string;

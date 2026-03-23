@@ -3,6 +3,15 @@ import { createApiApp } from "../../api/app";
 
 const apps: Array<ReturnType<typeof createApiApp>> = [];
 
+function readSessionCookie(value: string | string[] | undefined) {
+  if (!value) {
+    return "";
+  }
+
+  const cookie = Array.isArray(value) ? value[0] : value;
+  return cookie.split(";")[0] ?? "";
+}
+
 afterEach(async () => {
   while (apps.length > 0) {
     await apps.pop()?.close();
@@ -10,6 +19,29 @@ afterEach(async () => {
 });
 
 describe("auth routes", () => {
+  it("returns 401 json when tenant context is missing", async () => {
+    const app = createApiApp({
+      authBaseUrl: "http://auth.local",
+      mockContext: {
+        displayName: "Local Dev",
+        employeeId: "dev-1",
+        roles: ["ADMIN"]
+      }
+    });
+
+    apps.push(app);
+
+    const auth = await app.inject({
+      method: "GET",
+      url: "/auth/me"
+    });
+
+    expect(auth.statusCode).toBe(401);
+    expect(auth.json()).toEqual({
+      message: "Missing bearer token"
+    });
+  });
+
   it("returns tenant context for a valid canvas token", async () => {
     const app = createApiApp({
       authBaseUrl: "http://auth.local",
@@ -35,7 +67,8 @@ describe("auth routes", () => {
       method: "GET",
       url: "/auth/me",
       headers: {
-        authorization: `Bearer ${session.json().accessToken as string}`
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
       }
     });
 
@@ -69,7 +102,8 @@ describe("auth routes", () => {
       method: "POST",
       url: "/auth/select-app",
       headers: {
-        authorization: `Bearer ${session.json().accessToken as string}`
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
       },
       payload: {
         appName: "canvas-ops"
@@ -78,6 +112,6 @@ describe("auth routes", () => {
 
     expect(switched.statusCode).toBe(200);
     expect(switched.json().tenantId).toBe("canvas-ops");
-    expect(switched.json().accessToken).toContain("canvas.canvas-ops.dev-1.");
+    expect(switched.json().roles).toContain("ADMIN");
   });
 });

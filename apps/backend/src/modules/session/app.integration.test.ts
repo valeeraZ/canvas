@@ -7,6 +7,15 @@ const databaseUrl = process.env.DATABASE_URL;
 const describeIfDatabase =
   databaseUrl && databaseUrl.length > 0 ? describe : describe.skip;
 
+function readSessionCookie(value: string | string[] | undefined) {
+  if (!value) {
+    return "";
+  }
+
+  const cookie = Array.isArray(value) ? value[0] : value;
+  return cookie.split(";")[0] ?? "";
+}
+
 describeIfDatabase("session exchange with prisma", () => {
   const tenantSlug = "canvas-auth";
   const externalUserId = "dev-1";
@@ -102,7 +111,8 @@ describeIfDatabase("session exchange with prisma", () => {
       method: "GET",
       url: "/auth/me",
       headers: {
-        authorization: `Bearer ${session.json().accessToken as string}`
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
       }
     });
 

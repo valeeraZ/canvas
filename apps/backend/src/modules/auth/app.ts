@@ -1,7 +1,19 @@
-import type { FastifyPluginAsync } from "fastify";
-import { decodeCanvasAccessToken } from "../../../../../packages/auth/src/canvas-token-decode";
-import { assertTenantContext } from "../../../../../packages/auth/src/tenant-context";
+import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import type {
+  AuthorizationContext,
+  AuthorizationResolver
+} from "../../../../../packages/auth/src";
 import { selectApp } from "./routes/select-app";
+import {
+  messageResponseSchema,
+  selectAppResponseSchema,
+  tenantContextSchema
+} from "../../api/schema";
+import type { CanvasSessionStore } from "../session/session-store";
+import {
+  readCanvasSessionId,
+  writeCanvasSessionCookie
+} from "../session/session-store";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -13,6 +25,13 @@ declare module "fastify" {
     };
   }
 }
+
+export type AuthModuleOptions = {
+  authBaseUrl: string;
+  mockContext?: AuthorizationContext;
+  authorizationResolver: AuthorizationResolver;
+  sessionStore: CanvasSessionStore;
+};
 
 function readBearerToken(header: string | undefined): string | null {
   if (!header?.startsWith("Bearer ")) {
@@ -33,35 +52,110 @@ function readGroups(header: string | undefined): string[] {
     .filter(Boolean);
 }
 
-export const authModule: FastifyPluginAsync = async (app) => {
+export async function attachAuthContext(
+  app: FastifyInstance,
+  options: AuthModuleOptions
+) {
   app.decorateRequest("tenantContext", null);
 
   app.addHook("preHandler", async (request) => {
     const token = readBearerToken(request.headers.authorization);
+    const sessionId = readCanvasSessionId(request);
 
-    if (!token) {
+    if (!token || !sessionId) {
       return;
     }
 
-    const claims = decodeCanvasAccessToken(token);
+    const session = await options.sessionStore.get(sessionId);
+
+    if (!session) {
+      return;
+    }
+
+    const claims = await options.authorizationResolver.resolve({
+      amtoken: token,
+      appName: session.selectedApp,
+      authBaseUrl: options.authBaseUrl,
+      mockContext: options.mockContext
+    });
 
     request.tenantContext = {
-      tenantId: claims.tenantId,
-      externalUserId: claims.externalUserId,
+      tenantId: claims.appName,
+      externalUserId: claims.employeeId,
       roles: claims.roles,
-      groups: readGroups(request.headers["x-canvas-groups"] as string | undefined)
+      groups: [
+        ...claims.groups,
+        ...readGroups(request.headers["x-canvas-groups"] as string | undefined)
+      ]
     };
   });
+}
 
-  app.get("/auth/me", async (request) => {
-    return assertTenantContext(request.tenantContext);
+export const authModule: FastifyPluginAsync<AuthModuleOptions> = async (
+  app,
+  options
+) => {
+  app.get("/auth/me", {
+    schema: {
+      tags: ["auth"],
+      summary: "Read the current app-scoped principal context",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      response: {
+        200: tenantContextSchema,
+        401: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
+    return request.tenantContext;
   });
 
   app.post<{
     Body: {
       appName?: string;
     };
-  }>("/auth/select-app", async (request, reply) => {
+  }>("/auth/select-app", {
+    schema: {
+      tags: ["auth"],
+      summary: "Switch the current app in the Canvas server session",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      body: {
+        type: "object",
+        required: ["appName"],
+        properties: {
+          appName: {
+            type: "string"
+          }
+        }
+      },
+      response: {
+        200: selectAppResponseSchema,
+        400: messageResponseSchema,
+        401: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
     const token = readBearerToken(request.headers.authorization);
 
     if (!token) {
@@ -78,9 +172,29 @@ export const authModule: FastifyPluginAsync = async (app) => {
       };
     }
 
+    const resolved = await options.authorizationResolver.resolve({
+      amtoken: token,
+      appName: request.body.appName,
+      authBaseUrl: options.authBaseUrl,
+      mockContext: options.mockContext
+    });
+
+    const existingSessionId = readCanvasSessionId(request);
+    const session = existingSessionId
+      ? await options.sessionStore.set(existingSessionId, {
+          selectedApp: resolved.appName,
+          externalUserId: resolved.employeeId
+        })
+      : await options.sessionStore.create({
+          selectedApp: resolved.appName,
+          externalUserId: resolved.employeeId
+        });
+
+    writeCanvasSessionCookie(reply, session.sessionId);
+
     return selectApp({
-      accessToken: token,
-      appName: request.body.appName
+      appName: resolved.appName,
+      roles: resolved.roles
     });
   });
 };

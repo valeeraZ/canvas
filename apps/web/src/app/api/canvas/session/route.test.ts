@@ -15,14 +15,14 @@ describe("canvas session route", () => {
 
     const response = await POST(request);
     const payload = (await response.json()) as {
-      accessToken: string;
+      selectedApp: string;
       principal: {
         displayName: string;
         employeeId: string;
       };
     };
 
-    expect(payload.accessToken).toContain("dev-1");
+    expect(payload.selectedApp).toBe("canvas");
     expect(payload.principal.displayName).toBe("Local Dev");
     expect(payload.principal.employeeId).toBe("dev-1");
   });

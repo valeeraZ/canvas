@@ -15,6 +15,7 @@ In practical terms:
 
 - users sign in through Canvas-managed SSO
 - Canvas translates external authorization into app-scoped user context
+- Canvas keeps only the active app in a lightweight server-side session
 - users can work across multiple apps, but every request is scoped to one active app
 - dashboards are shared explicitly by user, external group, or external role
 - host applications embed a viewer experience rather than the full management surface
@@ -54,12 +55,14 @@ Instead:
 
 - Canvas-managed SSO obtains `amtoken`
 - Canvas backend calls external authorization APIs
+- Canvas caches short-lived `(amtoken, app)` authorization snapshots
 - those APIs provide current user identity and app-scoped role information
 - external groups remain opaque identifiers owned by the external auth system
 
 Leadership takeaway:
 
 - Canvas centralizes analytics behavior without becoming the system of record for identity
+- Canvas session state stays intentionally small, which keeps the platform safer to scale across many users
 
 ## 4. Platform Shape
 
@@ -126,6 +129,7 @@ API mode handles:
 
 - session exchange
 - app context enforcement
+- server-side app session management
 - datasets, workbooks, dashboards, visibility, and preference APIs
 - realtime communication
 
@@ -160,6 +164,8 @@ Redis provides:
 - queues
 - pub/sub
 - short-lived coordination
+- app session storage
+- authorization cache
 
 ### S3
 

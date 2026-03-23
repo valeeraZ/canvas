@@ -1,0 +1,23 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "canvas:db setup",
+      "type": "shell",
+      "command": "corepack pnpm db:up && corepack pnpm db:push",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "canvas:db down",
+      "type": "shell",
+      "command": "corepack pnpm db:down",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

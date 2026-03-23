@@ -1,6 +1,7 @@
-import { buildHostAssertion } from "../../../../../../packages/auth/src/host-assertion";
-import type { AuthorizationContext } from "../../../../../../packages/auth/src/authorization-api";
-import { mintCanvasAccessToken } from "../../../../../../packages/auth/src/canvas-token";
+import type {
+  AuthorizationContext,
+  AuthorizationResolver
+} from "../../../../../../packages/auth/src";
 import {
   createMembershipStore,
   createPrincipalStore,
@@ -13,11 +14,16 @@ export async function exchangeHostAssertion(input: {
   authBaseUrl: string;
   token: string;
   appName: string;
-  fetchImpl?: typeof fetch;
   mockContext?: AuthorizationContext;
+  authorizationResolver: AuthorizationResolver;
   db?: PrismaClient;
 }): Promise<SessionExchangeResult> {
-  const assertion = await buildHostAssertion(input);
+  const assertion = await input.authorizationResolver.resolve({
+    amtoken: input.token,
+    appName: input.appName,
+    authBaseUrl: input.authBaseUrl,
+    mockContext: input.mockContext
+  });
 
   if (input.db) {
     const tenantStore = createTenantStore(input.db);
@@ -25,11 +31,11 @@ export async function exchangeHostAssertion(input: {
     const membershipStore = createMembershipStore(input.db);
 
     const tenant = await tenantStore.upsert({
-      slug: assertion.tenantId,
-      name: assertion.tenantId
+      slug: assertion.appName,
+      name: assertion.appName
     });
     const principal = await principalStore.upsert({
-      externalUserId: assertion.externalUserId
+      externalUserId: assertion.employeeId
     });
 
     for (const role of assertion.roles) {
@@ -41,17 +47,11 @@ export async function exchangeHostAssertion(input: {
     }
   }
 
-  const accessToken = mintCanvasAccessToken({
-    tenantId: assertion.tenantId,
-    externalUserId: assertion.externalUserId,
-    roles: assertion.roles
-  });
-
   return {
-    accessToken,
-    expiresIn: 900,
+    expiresIn: 1800,
+    selectedApp: assertion.appName,
     principal: {
-      employeeId: assertion.externalUserId,
+      employeeId: assertion.employeeId,
       displayName: assertion.displayName,
       roles: assertion.roles
     }

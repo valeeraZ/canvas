@@ -1,6 +1,12 @@
 import type { FastifyPluginAsync } from "fastify";
 import { createDatasetStore, createImportJobStore } from "../../../../../packages/db/src";
 import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client";
+import {
+  createUploadResponseSchema,
+  datasetDetailSchema,
+  datasetSummarySchema,
+  messageResponseSchema
+} from "../../api/schema";
 import { createUploadSession } from "./routes/create-upload";
 import { mapDatasetDetail } from "./routes/get-dataset";
 import { mapDatasetSummary } from "./routes/list-datasets";
@@ -27,11 +33,12 @@ type UploadSessionModel = {
 };
 
 export type DatasetsService = {
-  listDatasets: () => Promise<DatasetModel[]>;
-  getDataset: (datasetId: string) => Promise<DatasetModel | null>;
+  listDatasets: (tenantId: string) => Promise<DatasetModel[]>;
+  getDataset: (datasetId: string, tenantId: string) => Promise<DatasetModel | null>;
   createUpload: (input: {
     filename: string;
     name: string;
+    tenantId: string;
   }) => Promise<UploadSessionModel>;
 };
 
@@ -51,25 +58,29 @@ export function createDatasetsService(
   const importJobs = createImportJobStore(input.db);
 
   return {
-    listDatasets() {
-      return datasets.listByTenant(input.tenantId);
+    listDatasets(tenantId: string) {
+      return datasets.listByTenant(tenantId);
     },
-    getDataset(datasetId: string) {
-      return datasets.findByTenantAndId(input.tenantId, datasetId);
+    getDataset(datasetId: string, tenantId: string) {
+      return datasets.findByTenantAndId(tenantId, datasetId);
     },
-    async createUpload(uploadInput: { filename: string; name: string }) {
+    async createUpload(uploadInput: {
+      filename: string;
+      name: string;
+      tenantId: string;
+    }) {
       const dataset = await datasets.create({
-        tenantId: input.tenantId,
+        tenantId: uploadInput.tenantId,
         name: uploadInput.name
       });
       const upload = await createUploadSession({
-        tenantId: input.tenantId,
+        tenantId: uploadInput.tenantId,
         filename: uploadInput.filename
       });
 
       await importJobs.create({
         datasetId: dataset.id,
-        tenantId: input.tenantId,
+        tenantId: uploadInput.tenantId,
         objectKey: upload.objectKey
       });
 
@@ -85,8 +96,39 @@ export const datasetsModule: FastifyPluginAsync<DatasetsModuleOptions> = async (
   app,
   options
 ) => {
-  app.get("/datasets", async () => {
-    const datasets = await options.datasets.listDatasets();
+  app.get("/datasets", {
+    schema: {
+      tags: ["datasets"],
+      summary: "List datasets for the current app",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      response: {
+        200: {
+          type: "array",
+          items: datasetSummarySchema
+        },
+        401: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
+    const datasets = await options.datasets.listDatasets(request.tenantContext.tenantId);
     return datasets.map(mapDatasetSummary);
   });
 
@@ -94,8 +136,49 @@ export const datasetsModule: FastifyPluginAsync<DatasetsModuleOptions> = async (
     Params: {
       datasetId: string;
     };
-  }>("/datasets/:datasetId", async (request, reply) => {
-    const dataset = await options.datasets.getDataset(request.params.datasetId);
+  }>("/datasets/:datasetId", {
+    schema: {
+      tags: ["datasets"],
+      summary: "Get one dataset",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      params: {
+        type: "object",
+        required: ["datasetId"],
+        properties: {
+          datasetId: {
+            type: "string"
+          }
+        }
+      },
+      response: {
+        200: datasetDetailSchema,
+        401: messageResponseSchema,
+        404: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
+    const dataset = await options.datasets.getDataset(
+      request.params.datasetId,
+      request.tenantContext.tenantId
+    );
 
     if (!dataset) {
       reply.status(404);
@@ -112,10 +195,50 @@ export const datasetsModule: FastifyPluginAsync<DatasetsModuleOptions> = async (
       filename?: string;
       name?: string;
     };
-  }>("/datasets/uploads", async (request) => {
+  }>("/datasets/uploads", {
+    schema: {
+      tags: ["datasets"],
+      summary: "Create an upload session for a dataset import",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      body: {
+        type: "object",
+        properties: {
+          filename: {
+            type: "string"
+          },
+          name: {
+            type: "string"
+          }
+        }
+      },
+      response: {
+        200: createUploadResponseSchema,
+        401: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
     const result = await options.datasets.createUpload({
       filename: request.body?.filename ?? "dataset.csv",
-      name: request.body?.name ?? "Dataset Upload"
+      name: request.body?.name ?? "Dataset Upload",
+      tenantId: request.tenantContext.tenantId
     });
 
     return {

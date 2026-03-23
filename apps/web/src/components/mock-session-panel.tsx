@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 
 type SessionModel = {
-  accessToken: string;
   expiresIn: number;
+  selectedApp: string;
   principal: {
     displayName: string;
     employeeId: string;
@@ -55,8 +55,8 @@ export function MockSessionPanel() {
           <p>
             Signed in as {session.principal.displayName} ({session.principal.employeeId})
           </p>
+          <p>Selected App: {session.selectedApp}</p>
           <p>Roles: {session.principal.roles.join(", ")}</p>
-          <p>Access Token: {session.accessToken}</p>
           <p>Expires In: {session.expiresIn}s</p>
         </div>
       ) : null}

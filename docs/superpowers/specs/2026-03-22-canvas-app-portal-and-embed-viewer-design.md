@@ -32,11 +32,22 @@ Scope: Product model v2 (`tenant` expressed as `app`)
    - `GET {auth_base_url}/v1/authorization/current_user`
    - `GET {auth_base_url}/v1/authorization/roles/{app_name}`
 5. Canvas maps `amtoken -> principal + app-scoped roles (+ groups when available from external auth source)`.
-6. Canvas issues short-lived Canvas access token for API/SDK usage.
+6. Canvas stores the active `app` in a Canvas-managed server-side session and cookie.
+7. Canvas caches resolved authorization context for `(amtoken, app)` with a short TTL.
+
+### Current backend session model
+
+- `amtoken` is the only identity credential sent to Canvas APIs
+- Canvas does not rely on a separate long-lived Canvas access token in the main runtime path
+- Canvas-managed session state stores only lightweight app context:
+  - `sessionId`
+  - `selectedApp`
+  - `externalUserId`
+- authorization cache and session state are short-lived and designed for Redis-backed storage with in-memory fallback for local development and tests
 
 ### Host app path
 
-Host frontends also have `amtoken` in their own cookies. For SDK bootstrapping, host integrations pass proof/context so Canvas backend can resolve principal and app visibility using the same external authorization truth source.
+Host frontends also have `amtoken` in their own cookies. Host integrations forward `Authorization: Bearer <amtoken>` to Canvas backend so Canvas can resolve principal and app visibility using the same external authorization truth source.
 
 ## 3. Product Surfaces
 
@@ -86,16 +97,16 @@ Each principal also has a per-app preference:
 ### Contracts/runtime naming
 
 - replace request `tenantContext` with `appContext`
-- token claims include `appId/appName`, `principalId`, and roles
+- Canvas session stores selected app, while `amtoken` remains the source credential
 - route authorization checks are app-scoped
 
 ## 6. API Shape (v2)
 
 ### Auth/session
 
-- `POST /session/exchange` (accepts or resolves `amtoken`, returns Canvas token and app list)
-- `GET /auth/me` (principal + selected app + effective roles/groups snapshot)
-- `POST /auth/select-app` (switch active app context)
+- `POST /session/exchange` (accepts `amtoken`, resolves the selected app, sets Canvas session cookie)
+- `GET /auth/me` (principal + selected app + effective roles/groups snapshot using `amtoken + session`)
+- `POST /auth/select-app` (switch active app context inside Canvas session)
 
 ### Dashboard management (Portal)
 
@@ -136,4 +147,5 @@ Each principal also has a per-app preference:
 
 - External group semantics are owned by external auth system; Canvas must treat group IDs as opaque.
 - App context switching is security-sensitive; every route and realtime channel must require app context.
-- Existing `tenant` naming in code can create subtle regressions during migration if mixed with new claims.
+- Session state must stay intentionally small because active user count can be large; Redis-backed TTL storage is the primary target.
+- Existing `tenant` naming in code can create subtle regressions during migration if mixed with new app-scoped session logic.

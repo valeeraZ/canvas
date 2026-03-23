@@ -3,6 +3,15 @@ import { createApiApp } from "../../api/app";
 
 const apps: Array<ReturnType<typeof createApiApp>> = [];
 
+function readSessionCookie(value: string | string[] | undefined) {
+  if (!value) {
+    return "";
+  }
+
+  const cookie = Array.isArray(value) ? value[0] : value;
+  return cookie.split(";")[0] ?? "";
+}
+
 afterEach(async () => {
   while (apps.length > 0) {
     await apps.pop()?.close();
@@ -135,7 +144,8 @@ describe("dashboard routes", () => {
       method: "GET",
       url: "/dashboards/visible",
       headers: {
-        authorization: `Bearer ${session.json().accessToken as string}`
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
       }
     });
     expect(authorizedVisible.statusCode).toBe(200);
@@ -161,7 +171,8 @@ describe("dashboard routes", () => {
       method: "GET",
       url: "/dashboards/selected-dashboard",
       headers: {
-        authorization: `Bearer ${session.json().accessToken as string}`
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
       }
     });
     expect(selectedResponse.statusCode).toBe(200);
@@ -174,7 +185,8 @@ describe("dashboard routes", () => {
       method: "POST",
       url: "/dashboards/selected-dashboard",
       headers: {
-        authorization: `Bearer ${session.json().accessToken as string}`
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
       },
       payload: {
         dashboardId: "dash_2"

@@ -5,8 +5,12 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "backend:dev": "corepack pnpm --dir apps/backend dev",
+    "web:dev": "corepack pnpm --dir apps/web dev",
     "db:up": "docker compose -f infra/local/docker-compose.yml up -d",
     "db:down": "docker compose -f infra/local/docker-compose.yml down",
+    "db:push": "DATABASE_URL=postgres://canvas:canvas@localhost:5432/canvas corepack pnpm --dir packages/db db:push",
+    "dev:local": "corepack pnpm db:up && corepack pnpm db:push && corepack pnpm --parallel --filter @canvas/backend --filter @canvas/web dev",
     "lint": "turbo run lint",
     "test": "turbo run test"
   },

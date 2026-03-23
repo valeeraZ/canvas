@@ -1,3 +1,7 @@
+import {
+  createCachedAuthorizationResolver,
+  createMemoryExpiringStore
+} from "../../../../../../../packages/auth/src";
 import { exchangeHostAssertion } from "../../../../../../../apps/backend/src/modules/session/routes/exchange-session";
 
 const defaultMockContext = {
@@ -27,6 +31,15 @@ export async function POST(request: Request) {
     authBaseUrl: process.env.AUTH_BASE_URL ?? "http://auth.local",
     token: body.token ?? "local-dev-token",
     appName: body.appName ?? "canvas",
+    authorizationResolver: createCachedAuthorizationResolver({
+      authBaseUrl: process.env.AUTH_BASE_URL ?? "http://auth.local",
+      defaultMockContext: {
+        displayName: body.mockContext?.displayName ?? defaultMockContext.displayName,
+        employeeId: body.mockContext?.employeeId ?? defaultMockContext.employeeId,
+        roles: body.mockContext?.roles ?? [...defaultMockContext.roles]
+      },
+      cache: createMemoryExpiringStore()
+    }),
     mockContext: {
       displayName: body.mockContext?.displayName ?? defaultMockContext.displayName,
       employeeId: body.mockContext?.employeeId ?? defaultMockContext.employeeId,

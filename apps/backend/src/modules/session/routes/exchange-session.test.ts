@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { exchangeHostAssertion } from "./exchange-session";
 
 describe("exchangeHostAssertion", () => {
-  it("creates a canvas access token from upstream authorization APIs", async () => {
+  it("creates a Canvas server session payload from upstream authorization APIs", async () => {
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(
@@ -22,23 +22,38 @@ describe("exchangeHostAssertion", () => {
       authBaseUrl: "https://auth.internal",
       token: "token-123",
       appName: "canvas",
-      fetchImpl
+      authorizationResolver: {
+        resolve: async () => ({
+          appName: "canvas",
+          displayName: "Ada Lovelace",
+          employeeId: "emp-42",
+          roles: ["USER", "ADMIN"],
+          groups: []
+        })
+      }
     });
 
-    expect(result.accessToken).toContain("emp-42");
-    expect(result.expiresIn).toBe(900);
+    expect(result.selectedApp).toBe("canvas");
+    expect(result.expiresIn).toBe(1800);
     expect(result.principal.displayName).toBe("Ada Lovelace");
     expect(result.principal.roles).toEqual(["USER", "ADMIN"]);
+    expect(fetchImpl).toHaveBeenCalledTimes(0);
   });
 
   it("can issue a session from local mock auth data", async () => {
-    const fetchImpl = vi.fn();
-
     const result = await exchangeHostAssertion({
       authBaseUrl: "https://auth.internal",
       token: "token-123",
       appName: "canvas",
-      fetchImpl,
+      authorizationResolver: {
+        resolve: async () => ({
+          appName: "canvas",
+          displayName: "Local Dev",
+          employeeId: "dev-1",
+          roles: ["ADMIN"],
+          groups: []
+        })
+      },
       mockContext: {
         displayName: "Local Dev",
         employeeId: "dev-1",
@@ -46,8 +61,7 @@ describe("exchangeHostAssertion", () => {
       }
     });
 
-    expect(result.accessToken).toContain("dev-1");
+    expect(result.selectedApp).toBe("canvas");
     expect(result.principal.roles).toEqual(["ADMIN"]);
-    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });

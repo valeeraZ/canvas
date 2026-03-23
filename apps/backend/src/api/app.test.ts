@@ -40,6 +40,184 @@ describe("createApiApp", () => {
     });
 
     expect(session.statusCode).toBe(200);
-    expect(session.json().accessToken).toContain("canvas.");
+    expect(session.json().selectedApp).toBe("canvas");
+    expect(session.headers["set-cookie"]).toBeTruthy();
+  });
+
+  it("serves OpenAPI json and Swagger UI", async () => {
+    const app = createApiApp({
+      authBaseUrl: "http://auth.local",
+      mockContext: {
+        displayName: "Local Dev",
+        employeeId: "dev-1",
+        roles: ["ADMIN"]
+      },
+      datasets: {
+        listDatasets: async () => [],
+        getDataset: async () => null,
+        createUpload: async () => ({
+          upload: {
+            bucket: "uploads",
+            objectKey: "tenant_demo/file.csv"
+          },
+          dataset: {
+            id: "dataset_1",
+            tenantId: "tenant_demo",
+            name: "Dataset Upload",
+            status: "queued",
+            warnings: []
+          }
+        })
+      },
+      workbooks: {
+        listWorkbooks: async () => [],
+        getWorkbook: async () => null,
+        createWorkbook: async () => ({
+          id: "workbook_1",
+          tenantId: "tenant_demo",
+          name: "Workbook"
+        })
+      },
+      dashboards: {
+        listDashboards: async () => [],
+        listVisibleDashboards: async () => [],
+        getDashboard: async () => null,
+        createDashboard: async () => ({
+          id: "dashboard_1",
+          tenantId: "tenant_demo",
+          name: "Dashboard",
+          workbookId: null
+        }),
+        shareDashboard: async () => ({
+          dashboardId: "dashboard_1",
+          subjects: [],
+          rules: []
+        }),
+        getSelectedDashboard: async () => ({
+          dashboardId: null
+        }),
+        setSelectedDashboard: async () => ({
+          dashboardId: null
+        })
+      }
+    });
+
+    apps.push(app);
+
+    const openapi = await app.inject({
+      method: "GET",
+      url: "/openapi.json"
+    });
+
+    expect(openapi.statusCode).toBe(200);
+    expect(openapi.json()).toMatchObject({
+      openapi: expect.any(String),
+      info: {
+        title: "Canvas API"
+      },
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT"
+          }
+        }
+      },
+      servers: [
+        {
+          url: "/"
+        }
+      ],
+      paths: expect.any(Object)
+    });
+
+    expect(openapi.json().paths["/auth/me"].get.security).toEqual([
+      {
+        bearerAuth: []
+      }
+    ]);
+    expect(
+      openapi.json().paths["/auth/me"].get.responses["401"].content["application/json"].schema
+    ).toEqual({
+      type: "object",
+      properties: {
+        message: {
+          type: "string"
+        }
+      },
+      required: ["message"]
+    });
+    expect(
+      openapi.json().paths["/workbooks"].get.responses["200"].content["application/json"].schema
+    ).toEqual({
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string"
+          },
+          tenantId: {
+            type: "string"
+          },
+          name: {
+            type: "string"
+          }
+        },
+        required: ["id", "tenantId", "name"]
+      }
+    });
+    expect(
+      openapi.json().paths["/dashboards/{dashboardId}"].get.responses["200"].content["application/json"].schema
+    ).toMatchObject({
+      type: "object",
+      properties: {
+        id: {
+          type: "string"
+        },
+        tenantId: {
+          type: "string"
+        },
+        name: {
+          type: "string"
+        },
+        workbookId: {
+          type: expect.arrayContaining(["string", "null"])
+        }
+      },
+      required: ["id", "tenantId", "name", "workbookId"]
+    });
+    expect(
+      openapi.json().paths["/datasets"].get.responses["200"].content["application/json"].schema
+    ).toEqual({
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string"
+          },
+          name: {
+            type: "string"
+          },
+          status: {
+            type: "string"
+          },
+          warningCount: {
+            type: "number"
+          }
+        },
+        required: ["id", "name", "status", "warningCount"]
+      }
+    });
+
+    const docs = await app.inject({
+      method: "GET",
+      url: "/docs"
+    });
+
+    expect(docs.statusCode).toBe(200);
+    expect(docs.headers["content-type"]).toContain("text/html");
   });
 });

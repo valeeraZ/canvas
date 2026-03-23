@@ -47,6 +47,8 @@ The high-level architecture is organized into six system areas:
 - API mode
   - session exchange
   - app-scoped auth context
+  - server-side session for selected app
+  - short-lived authorization cache keyed by `amtoken + app`
   - visibility evaluation
   - dashboard, workbook, and dataset APIs
   - realtime gateway
@@ -65,7 +67,7 @@ The high-level architecture is organized into six system areas:
 ### Shared Storage
 
 - `Postgres` for app metadata, principals, dashboards, visibility, preferences, and normalized data
-- `Redis` for queues and pub/sub
+- `Redis` for queues, pub/sub, server-side sessions, and authorization cache
 - `S3` for uploads and exports
 
 ## Mermaid reference
@@ -123,3 +125,4 @@ flowchart LR
 - it does not include detailed user workflows
 - `app` is the isolation boundary behind all API and data paths
 - both Portal and Viewer depend on the same backend platform
+- `amtoken` is the identity credential, while Canvas-managed session state stores only the active app context

@@ -1,5 +1,4 @@
 import type { FastifyPluginAsync } from "fastify";
-import { decodeCanvasAccessToken } from "../../../../../packages/auth/src/canvas-token-decode";
 import {
   createDashboardStore,
   createDashboardVisibilityStore,
@@ -14,6 +13,11 @@ import {
   setSelectedDashboard
 } from "./routes/set-selected-dashboard";
 import type { DashboardVisibilitySubjectType } from "./routes/share-dashboard";
+import {
+  dashboardSchema,
+  messageResponseSchema,
+  selectedDashboardSchema
+} from "../../api/schema";
 
 export type DashboardsService = {
   listDashboards: () => Promise<DashboardRecord[]>;
@@ -81,10 +85,6 @@ export function createDashboardsService(input: {
       return dashboards.listByTenant(input.tenantId);
     },
     async listVisibleDashboards(viewer) {
-      if (viewer.tenantId !== input.tenantId) {
-        return [];
-      }
-
       const principal = await principals.findByExternalUserId(
         viewer.externalUserId
       );
@@ -107,7 +107,7 @@ export function createDashboardsService(input: {
       }
 
       const matchedRules = await visibility.listByAppAndSubjects({
-        appId: input.tenantId,
+        appId: viewer.tenantId,
         subjects
       });
       const visibleIds = new Set(matchedRules.map((rule) => rule.dashboardId));
@@ -116,7 +116,7 @@ export function createDashboardsService(input: {
         return [];
       }
 
-      const scopedDashboards = await dashboards.listByTenant(input.tenantId);
+      const scopedDashboards = await dashboards.listByTenant(viewer.tenantId);
       return scopedDashboards.filter((dashboard) => visibleIds.has(dashboard.id));
     },
     getDashboard(dashboardId: string) {
@@ -139,7 +139,7 @@ export function createDashboardsService(input: {
     },
     getSelectedDashboard(viewer) {
       return getSelectedDashboard({
-        appId: input.tenantId,
+        appId: viewer.tenantId,
         externalUserId: viewer.externalUserId,
         findPrincipalByExternalUserId: principals.findByExternalUserId,
         getPreference: preferences.get
@@ -147,7 +147,7 @@ export function createDashboardsService(input: {
     },
     setSelectedDashboard(viewer) {
       return setSelectedDashboard({
-        appId: input.tenantId,
+        appId: viewer.tenantId,
         externalUserId: viewer.externalUserId,
         dashboardId: viewer.dashboardId,
         upsertPrincipal: principals.upsert,
@@ -161,46 +161,58 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
   app,
   options
 ) => {
-  function readBearerToken(header: string | undefined): string | null {
-    if (!header?.startsWith("Bearer ")) {
-      return null;
+  app.get("/dashboards", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "List dashboards for the current app",
+      response: {
+        200: {
+          type: "array",
+          items: dashboardSchema
+        }
+      }
     }
-
-    return header.slice("Bearer ".length).trim() || null;
-  }
-
-  function readGroups(header: string | undefined): string[] {
-    if (!header) {
-      return [];
-    }
-
-    return header
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean);
-  }
-
-  app.get("/dashboards", async () => {
+  }, async () => {
     return options.dashboards.listDashboards();
   });
 
-  app.get("/dashboards/visible", async (request, reply) => {
-    const token = readBearerToken(request.headers.authorization);
-
-    if (!token) {
+  app.get("/dashboards/visible", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "List dashboards visible to the current principal",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      response: {
+        200: {
+          type: "array",
+          items: dashboardSchema
+        },
+        401: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
       reply.status(401);
       return {
         message: "Missing bearer token"
       };
     }
 
-    const claims = decodeCanvasAccessToken(token);
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
 
     return options.dashboards.listVisibleDashboards({
-      tenantId: claims.tenantId,
-      externalUserId: claims.externalUserId,
-      roles: claims.roles,
-      groups: readGroups(request.headers["x-canvas-groups"] as string | undefined)
+      tenantId: request.tenantContext.tenantId,
+      externalUserId: request.tenantContext.externalUserId,
+      roles: request.tenantContext.roles,
+      groups: request.tenantContext.groups
     });
   });
 
@@ -208,7 +220,25 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     Params: {
       dashboardId: string;
     };
-  }>("/dashboards/:dashboardId", async (request, reply) => {
+  }>("/dashboards/:dashboardId", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Get one dashboard",
+      params: {
+        type: "object",
+        required: ["dashboardId"],
+        properties: {
+          dashboardId: {
+            type: "string"
+          }
+        }
+      },
+      response: {
+        200: dashboardSchema,
+        404: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
     const dashboard = await options.dashboards.getDashboard(
       request.params.dashboardId
     );
@@ -233,28 +263,90 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
         id: string;
       }>;
     };
-  }>("/dashboards/:dashboardId/share", async (request) => {
+  }>("/dashboards/:dashboardId/share", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Replace dashboard visibility subjects",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      params: {
+        type: "object",
+        required: ["dashboardId"],
+        properties: {
+          dashboardId: {
+            type: "string"
+          }
+        }
+      },
+      body: {
+        type: "object",
+        properties: {
+          subjects: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                type: {
+                  type: "string"
+                },
+                id: {
+                  type: "string"
+                }
+              },
+              required: ["type", "id"]
+            }
+          }
+        }
+      },
+      response: {
+        200: {
+          type: "object",
+          additionalProperties: true
+        }
+      }
+    }
+  }, async (request) => {
     return options.dashboards.shareDashboard({
       dashboardId: request.params.dashboardId,
       subjects: request.body?.subjects ?? []
     });
   });
 
-  app.get("/dashboards/selected-dashboard", async (request, reply) => {
-    const token = readBearerToken(request.headers.authorization);
-
-    if (!token) {
+  app.get("/dashboards/selected-dashboard", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Get the selected dashboard for the current principal",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      response: {
+        200: selectedDashboardSchema,
+        401: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
       reply.status(401);
       return {
         message: "Missing bearer token"
       };
     }
 
-    const claims = decodeCanvasAccessToken(token);
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
 
     return options.dashboards.getSelectedDashboard({
-      tenantId: claims.tenantId,
-      externalUserId: claims.externalUserId
+      tenantId: request.tenantContext.tenantId,
+      externalUserId: request.tenantContext.externalUserId
     });
   });
 
@@ -262,21 +354,46 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     Body: {
       dashboardId?: string | null;
     };
-  }>("/dashboards/selected-dashboard", async (request, reply) => {
-    const token = readBearerToken(request.headers.authorization);
-
-    if (!token) {
+  }>("/dashboards/selected-dashboard", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Set the selected dashboard for the current principal",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      body: {
+        type: "object",
+        properties: {
+          dashboardId: {
+            type: ["string", "null"]
+          }
+        }
+      },
+      response: {
+        200: selectedDashboardSchema,
+        401: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
       reply.status(401);
       return {
         message: "Missing bearer token"
       };
     }
 
-    const claims = decodeCanvasAccessToken(token);
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
 
     return options.dashboards.setSelectedDashboard({
-      tenantId: claims.tenantId,
-      externalUserId: claims.externalUserId,
+      tenantId: request.tenantContext.tenantId,
+      externalUserId: request.tenantContext.externalUserId,
       dashboardId: request.body?.dashboardId ?? null
     });
   });
@@ -286,7 +403,26 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
       name?: string;
       workbookId?: string;
     };
-  }>("/dashboards", async (request) => {
+  }>("/dashboards", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Create a dashboard",
+      body: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string"
+          },
+          workbookId: {
+            type: "string"
+          }
+        }
+      },
+      response: {
+        200: dashboardSchema
+      }
+    }
+  }, async (request) => {
     return options.dashboards.createDashboard({
       name: request.body?.name ?? "Untitled Dashboard",
       workbookId: request.body?.workbookId
