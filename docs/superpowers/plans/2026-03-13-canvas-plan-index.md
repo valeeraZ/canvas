@@ -13,13 +13,15 @@ Recommended execution order:
 1. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-22-canvas-auth-app-context-plan.md`
 2. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-22-canvas-dashboard-distribution-plan.md`
 3. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-22-canvas-portal-plan.md`
-4. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-22-canvas-embed-sdk-viewer-plan.md`
+4. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-24-canvas-portal-shadcn-mvp-plan.md`
+5. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-22-canvas-embed-sdk-viewer-plan.md`
 
 Why this order:
 
 - `Auth and App Context` establishes `amtoken` to app-scoped principal context and app switching.
 - `Dashboard Distribution` defines visibility and per-user selection semantics used by both Portal and SDK.
 - `Canvas Portal` then builds management and authoring UX on stable backend semantics.
+- `Portal Shadcn MVP` refines the Portal into the concrete login and management experience that can be used for day-to-day validation.
 - `Embed SDK Viewer` finalizes host-facing read/selection UX with minimized churn.
 
 ## Recommended execution order
