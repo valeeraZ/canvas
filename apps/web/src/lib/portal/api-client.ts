@@ -12,6 +12,15 @@ export type PortalApiClient = {
     };
   }>;
   listApps: () => Promise<string[]>;
+  selectApp: (input: { appName: string }) => Promise<{
+    expiresIn: number;
+    selectedApp: string;
+    principal: {
+      displayName: string;
+      employeeId: string;
+      roles: string[];
+    };
+  }>;
   listDashboards: () => Promise<{
     dashboards: Array<{ id: string; name: string }>;
     selectedDashboardId: string | null;
@@ -41,6 +50,17 @@ export function createPortalApiClient(): PortalApiClient {
     },
     async listApps() {
       return ["canvas", "canvas-ops"];
+    },
+    async selectApp(input) {
+      const response = await fetch("/api/canvas/auth/select-app", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify(input)
+      });
+
+      return response.json();
     },
     async listDashboards() {
       const response = await fetch("/api/canvas/dashboards");

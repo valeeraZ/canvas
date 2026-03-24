@@ -1,19 +1,9 @@
-import {
-  createCachedAuthorizationResolver,
-  createMemoryExpiringStore
-} from "../../../../../../../packages/auth/src";
-import { exchangeHostAssertion } from "../../../../../../../apps/backend/src/modules/session/routes/exchange-session";
 import { NextResponse } from "next/server";
 import {
   encodePortalSession,
   PORTAL_SESSION_COOKIE
 } from "../../../../lib/portal/session";
-
-const defaultMockContext = {
-  displayName: "Local Dev",
-  employeeId: "dev-1",
-  roles: ["ADMIN"]
-} as const;
+import { resolvePortalSession } from "../../../../lib/portal/resolve-session";
 
 export async function GET() {
   return Response.json({
@@ -32,24 +22,10 @@ export async function POST(request: Request) {
     };
   };
 
-  const session = await exchangeHostAssertion({
-    authBaseUrl: process.env.AUTH_BASE_URL ?? "http://auth.local",
-    token: body.token ?? "local-dev-token",
+  const session = await resolvePortalSession({
+    token: body.token,
     appName: body.appName ?? "canvas",
-    authorizationResolver: createCachedAuthorizationResolver({
-      authBaseUrl: process.env.AUTH_BASE_URL ?? "http://auth.local",
-      defaultMockContext: {
-        displayName: body.mockContext?.displayName ?? defaultMockContext.displayName,
-        employeeId: body.mockContext?.employeeId ?? defaultMockContext.employeeId,
-        roles: body.mockContext?.roles ?? [...defaultMockContext.roles]
-      },
-      cache: createMemoryExpiringStore()
-    }),
-    mockContext: {
-      displayName: body.mockContext?.displayName ?? defaultMockContext.displayName,
-      employeeId: body.mockContext?.employeeId ?? defaultMockContext.employeeId,
-      roles: body.mockContext?.roles ?? [...defaultMockContext.roles]
-    }
+    mockContext: body.mockContext
   });
 
   const response = NextResponse.json(session);
