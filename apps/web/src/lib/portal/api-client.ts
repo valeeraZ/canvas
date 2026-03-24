@@ -1,4 +1,16 @@
 export type PortalApiClient = {
+  createSession: (input: {
+    token: string;
+    appName: string;
+  }) => Promise<{
+    expiresIn: number;
+    selectedApp: string;
+    principal: {
+      displayName: string;
+      employeeId: string;
+      roles: string[];
+    };
+  }>;
   listApps: () => Promise<string[]>;
   listDashboards: () => Promise<{
     dashboards: Array<{ id: string; name: string }>;
@@ -16,6 +28,17 @@ export type PortalApiClient = {
 
 export function createPortalApiClient(): PortalApiClient {
   return {
+    async createSession(input) {
+      const response = await fetch("/api/canvas/session", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify(input)
+      });
+
+      return response.json();
+    },
     async listApps() {
       return ["canvas", "canvas-ops"];
     },

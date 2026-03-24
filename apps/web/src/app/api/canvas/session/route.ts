@@ -3,6 +3,11 @@ import {
   createMemoryExpiringStore
 } from "../../../../../../../packages/auth/src";
 import { exchangeHostAssertion } from "../../../../../../../apps/backend/src/modules/session/routes/exchange-session";
+import { NextResponse } from "next/server";
+import {
+  encodePortalSession,
+  PORTAL_SESSION_COOKIE
+} from "../../../../lib/portal/session";
 
 const defaultMockContext = {
   displayName: "Local Dev",
@@ -47,5 +52,18 @@ export async function POST(request: Request) {
     }
   });
 
-  return Response.json(session);
+  const response = NextResponse.json(session);
+  response.cookies.set({
+    name: PORTAL_SESSION_COOKIE,
+    value: encodePortalSession({
+      token: body.token ?? "local-dev-token",
+      selectedApp: session.selectedApp,
+      principal: session.principal
+    }),
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/"
+  });
+
+  return response;
 }
