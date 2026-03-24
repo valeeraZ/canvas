@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+:root {
+  --canvas-bg: #f4f2ec;
+  --canvas-panel: #fffdf8;
+  --canvas-panel-muted: #f0ece3;
+  --canvas-ink: #1f2937;
+  --canvas-muted: #6b7280;
+  --canvas-border: #d8d2c6;
+  --canvas-accent: #0f766e;
+  --canvas-accent-foreground: #f8fafc;
+  --canvas-warning: #b45309;
+  --canvas-danger: #b91c1c;
+}
+
+@theme inline {
+  --color-canvas-bg: var(--canvas-bg);
+  --color-canvas-panel: var(--canvas-panel);
+  --color-canvas-panel-muted: var(--canvas-panel-muted);
+  --color-canvas-ink: var(--canvas-ink);
+  --color-canvas-muted: var(--canvas-muted);
+  --color-canvas-border: var(--canvas-border);
+  --color-canvas-accent: var(--canvas-accent);
+  --color-canvas-accent-foreground: var(--canvas-accent-foreground);
+  --color-canvas-warning: var(--canvas-warning);
+  --color-canvas-danger: var(--canvas-danger);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--canvas-bg);
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", "Avenir Next", "Segoe UI", sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
