@@ -3,30 +3,16 @@ import { resolvePortalSession } from "../../../../../lib/portal/resolve-session"
 import {
   encodePortalSession,
   PORTAL_SESSION_COOKIE,
-  readPortalSession
+  readPortalSessionFromCookieHeader
 } from "../../../../../lib/portal/session";
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     appName?: string;
   };
-  const cookieHeader = request.headers.get("cookie") ?? "";
-  const cookieMap = new Map(
-    cookieHeader
-      .split(";")
-      .map((entry) => entry.trim())
-      .filter(Boolean)
-      .map((entry) => {
-        const [name, ...rest] = entry.split("=");
-        return [name, rest.join("=")];
-      })
+  const session = readPortalSessionFromCookieHeader(
+    request.headers.get("cookie") ?? ""
   );
-  const session = readPortalSession({
-    get(name) {
-      const value = cookieMap.get(name);
-      return value ? { value } : undefined;
-    }
-  });
 
   if (!session) {
     return NextResponse.json(

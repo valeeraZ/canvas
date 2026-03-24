@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createDbClient } from "../../../../../packages/db/src";
+import { createDbClient } from "../../../../../packages/db/src/index.js";
 import { createApiApp } from "../../api/app";
 
 const databaseUrl = process.env.DATABASE_URL;

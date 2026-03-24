@@ -2,9 +2,9 @@ import {
   createMemoryExpiringStore,
   createRedisExpiringStore,
   type AuthorizationContext
-} from "../../../packages/auth/src";
-import { createDbClient } from "../../../packages/db/src/client";
-import type { PrismaClient } from "../../../packages/db/src/generated/prisma/client";
+} from "../../../packages/auth/src/index.js";
+import { createDbClient } from "../../../packages/db/src/client.js";
+import type { PrismaClient } from "../../../packages/db/src/generated/prisma/client.js";
 import { createApiApp } from "./api/app";
 
 const DEFAULT_HOST = "127.0.0.1";

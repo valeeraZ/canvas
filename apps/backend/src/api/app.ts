@@ -8,8 +8,8 @@ import {
   type AuthorizationContext,
   type AuthorizationResolver,
   type ExpiringStore
-} from "../../../../packages/auth/src";
-import type { PrismaClient } from "../../../../packages/db/src/generated/prisma/client";
+} from "../../../../packages/auth/src/index.js";
+import type { PrismaClient } from "../../../../packages/db/src/generated/prisma/client.js";
 import { attachAuthContext, authModule } from "../modules/auth/app";
 import {
   createDatasetsService,

@@ -3,7 +3,11 @@ import { GET, POST } from "./route";
 
 describe("canvas selected dashboard demo route", () => {
   it("reads and updates the selected dashboard", async () => {
-    const initial = await GET();
+    const initial = await GET(
+      new Request(
+        "http://localhost:3000/api/canvas/dashboards/selected-dashboard"
+      )
+    );
     const initialPayload = (await initial.json()) as {
       dashboardId: string | null;
     };

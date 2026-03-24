@@ -1,5 +1,5 @@
-import type { DashboardRecord } from "../../../packages/contracts/src/dashboards";
-import type { PrismaClient } from "./generated/prisma/client";
+import type { DashboardRecord } from "../../../packages/contracts/src/dashboards.js";
+import type { PrismaClient } from "./generated/prisma/client.js";
 
 type PersistedDashboard = {
   id: string;

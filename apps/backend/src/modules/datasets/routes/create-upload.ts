@@ -1,4 +1,4 @@
-import { buildObjectKey } from "../../../../../../packages/storage/src/presign";
+import { buildObjectKey } from "../../../../../../packages/storage/src/presign.js";
 
 export async function createUploadSession(input: {
   tenantId: string;

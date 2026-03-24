@@ -1,5 +1,6 @@
 import { shareDashboard } from "../../../../../../../../backend/src/modules/dashboards/routes/share-dashboard";
 import { getPortalDemoStore } from "../../../../../../lib/portal/demo-store";
+import { readPortalSessionFromCookieHeader } from "../../../../../../lib/portal/session";
 
 export async function POST(
   request: Request,
@@ -18,9 +19,12 @@ export async function POST(
 
   const { dashboardId } = await context.params;
   const store = getPortalDemoStore();
+  const session = readPortalSessionFromCookieHeader(
+    request.headers.get("cookie") ?? ""
+  );
 
   const result = await shareDashboard({
-    appId: "canvas",
+    appId: session?.selectedApp ?? "canvas",
     dashboardId,
     subjects: (body.subjects ?? [])
       .filter((subject): subject is { type: "user" | "group" | "role"; id: string } =>

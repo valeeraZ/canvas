@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import type { AuthorizationContext, AuthorizationApiInput } from "./authorization-api";
-import { fetchAuthorizationContext } from "./authorization-api";
-import type { ExpiringStore } from "./expiring-store";
+import type { AuthorizationContext, AuthorizationApiInput } from "./authorization-api.js";
+import { fetchAuthorizationContext } from "./authorization-api.js";
+import type { ExpiringStore } from "./expiring-store.js";
 
 export type ResolvedAuthorizationContext = {
   appName: string;

@@ -41,3 +41,23 @@ export function decodePortalSession(value: string | undefined) {
 export function readPortalSession(cookieStore: CookieStoreLike) {
   return decodePortalSession(cookieStore.get(PORTAL_SESSION_COOKIE)?.value);
 }
+
+export function readPortalSessionFromCookieHeader(cookieHeader: string) {
+  const cookieMap = new Map(
+    cookieHeader
+      .split(";")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map((entry) => {
+        const [name, ...rest] = entry.split("=");
+        return [name, rest.join("=")];
+      })
+  );
+
+  return readPortalSession({
+    get(name) {
+      const value = cookieMap.get(name);
+      return value ? { value } : undefined;
+    }
+  });
+}

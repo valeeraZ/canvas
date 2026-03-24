@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
-import { createWorkbookStore } from "../../../../../packages/db/src";
-import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client";
-import type { WorkbookRecord } from "../../../../../packages/contracts/src/workbooks";
+import { createWorkbookStore } from "../../../../../packages/db/src/index.js";
+import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
+import type { WorkbookRecord } from "../../../../../packages/contracts/src/workbooks.js";
 import { messageResponseSchema, workbookSchema } from "../../api/schema";
 
 export type WorkbooksService = {

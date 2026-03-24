@@ -1,4 +1,4 @@
-import { assertTenantContext, type TenantContext } from "./tenant-context";
+import { assertTenantContext, type TenantContext } from "./tenant-context.js";
 
 export function requireHttpTenantContext(value: TenantContext | undefined): TenantContext {
   return assertTenantContext(value);

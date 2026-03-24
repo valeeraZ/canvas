@@ -1,4 +1,4 @@
-import type { ExpiringStore } from "./expiring-store";
+import type { ExpiringStore } from "./expiring-store.js";
 
 type Entry = {
   value: string;

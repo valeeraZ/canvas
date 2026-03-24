@@ -4,9 +4,9 @@ import {
   createDashboardVisibilityStore,
   createPrincipalAppPreferenceStore,
   createPrincipalStore
-} from "../../../../../packages/db/src";
-import type { DashboardRecord } from "../../../../../packages/contracts/src/dashboards";
-import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client";
+} from "../../../../../packages/db/src/index.js";
+import type { DashboardRecord } from "../../../../../packages/contracts/src/dashboards.js";
+import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
 import { shareDashboard } from "./routes/share-dashboard";
 import {
   getSelectedDashboard,

@@ -1,8 +1,6 @@
-import {
-  createCachedAuthorizationResolver,
-  createMemoryExpiringStore
-} from "../../../../../packages/auth/src";
-import { exchangeHostAssertion } from "../../../../../apps/backend/src/modules/session/routes/exchange-session";
+import { createCachedAuthorizationResolver } from "../../../../../packages/auth/src/cached-authorization-resolver.js";
+import { createMemoryExpiringStore } from "../../../../../packages/auth/src/memory-expiring-store.js";
+import { exchangeHostAssertion } from "../../../../../apps/backend/src/modules/session/routes/exchange-session.js";
 
 const defaultMockContext = {
   displayName: "Local Dev",

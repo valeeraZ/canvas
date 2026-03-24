@@ -1,5 +1,5 @@
-import type { PrincipalRecord } from "./principal-repository";
-import type { PrismaClient } from "./generated/prisma/client";
+import type { PrincipalRecord } from "./principal-repository.js";
+import type { PrismaClient } from "./generated/prisma/client.js";
 
 type PersistedPrincipal = {
   id: string;

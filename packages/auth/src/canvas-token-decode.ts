@@ -1,4 +1,4 @@
-import type { TenantContext } from "./tenant-context";
+import type { TenantContext } from "./tenant-context.js";
 
 export function decodeCanvasAccessToken(token: string): {
   tenantId: string;

@@ -1,14 +1,10 @@
-import type {
-  AuthorizationContext,
-  AuthorizationResolver
-} from "../../../../../../packages/auth/src";
-import {
-  createMembershipStore,
-  createPrincipalStore,
-  createTenantStore
-} from "../../../../../../packages/db/src";
-import type { PrismaClient } from "../../../../../../packages/db/src/generated/prisma/client";
-import type { SessionExchangeResult } from "../../../../../../packages/contracts/src/session";
+import type { AuthorizationContext } from "../../../../../../packages/auth/src/authorization-api.js";
+import type { AuthorizationResolver } from "../../../../../../packages/auth/src/cached-authorization-resolver.js";
+import { createMembershipStore } from "../../../../../../packages/db/src/membership-store.js";
+import { createPrincipalStore } from "../../../../../../packages/db/src/principal-store.js";
+import { createTenantStore } from "../../../../../../packages/db/src/tenant-store.js";
+import type { PrismaClient } from "../../../../../../packages/db/src/generated/prisma/client.js";
+import type { SessionExchangeResult } from "../../../../../../packages/contracts/src/session.js";
 
 export async function exchangeHostAssertion(input: {
   authBaseUrl: string;

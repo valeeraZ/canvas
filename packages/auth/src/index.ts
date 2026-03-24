@@ -1,20 +1,20 @@
-export { fetchAuthorizationContext } from "./authorization-api";
-export type { AuthorizationApiInput, AuthorizationContext } from "./authorization-api";
+export { fetchAuthorizationContext } from "./authorization-api.js";
+export type { AuthorizationApiInput, AuthorizationContext } from "./authorization-api.js";
 export {
   createCachedAuthorizationResolver
-} from "./cached-authorization-resolver";
+} from "./cached-authorization-resolver.js";
 export type {
   AuthorizationResolver,
   ResolvedAuthorizationContext
-} from "./cached-authorization-resolver";
-export type { ExpiringStore } from "./expiring-store";
-export { createMemoryExpiringStore } from "./memory-expiring-store";
-export { createRedisExpiringStore } from "./redis-expiring-store";
-export { buildHostAssertion } from "./host-assertion";
-export type { HostAssertion } from "./host-assertion";
-export { mintCanvasAccessToken } from "./canvas-token";
-export type { CanvasTokenClaims } from "./canvas-token";
-export { assertTenantContext } from "./tenant-context";
-export type { TenantContext } from "./tenant-context";
-export { readBearerToken, requireHttpTenantContext } from "./http-auth";
-export { requireSocketTenantContext } from "./socket-auth";
+} from "./cached-authorization-resolver.js";
+export type { ExpiringStore } from "./expiring-store.js";
+export { createMemoryExpiringStore } from "./memory-expiring-store.js";
+export { createRedisExpiringStore } from "./redis-expiring-store.js";
+export { buildHostAssertion } from "./host-assertion.js";
+export type { HostAssertion } from "./host-assertion.js";
+export { mintCanvasAccessToken } from "./canvas-token.js";
+export type { CanvasTokenClaims } from "./canvas-token.js";
+export { assertTenantContext } from "./tenant-context.js";
+export type { TenantContext } from "./tenant-context.js";
+export { readBearerToken, requireHttpTenantContext } from "./http-auth.js";
+export { requireSocketTenantContext } from "./socket-auth.js";

@@ -1,4 +1,4 @@
-import type { DashboardRecord } from "../../../../../../packages/contracts/src/dashboards";
+import type { DashboardRecord } from "../../../../../../packages/contracts/src/dashboards.js";
 
 export async function listVisibleDashboards(_: {
   principalId: string;

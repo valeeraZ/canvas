@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildImportJobPayload } from "../../../../../packages/queue/src/import-jobs";
+import { buildImportJobPayload } from "../../../../../packages/queue/src/import-jobs.js";
 
 describe("buildImportJobPayload", () => {
   it("includes the dataset and object location", () => {

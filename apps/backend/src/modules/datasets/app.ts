@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
-import { createDatasetStore, createImportJobStore } from "../../../../../packages/db/src";
-import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client";
+import { createDatasetStore, createImportJobStore } from "../../../../../packages/db/src/index.js";
+import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
 import {
   createUploadResponseSchema,
   datasetDetailSchema,

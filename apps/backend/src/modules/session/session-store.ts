@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import type { ExpiringStore } from "../../../../../packages/auth/src/expiring-store";
+import type { ExpiringStore } from "../../../../../packages/auth/src/expiring-store.js";
 
 export const CANVAS_SESSION_COOKIE = "canvas_session";
 export const DEFAULT_SESSION_TTL_SECONDS = 1800;

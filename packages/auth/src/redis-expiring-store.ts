@@ -1,5 +1,5 @@
 import Redis from "ioredis";
-import type { ExpiringStore } from "./expiring-store";
+import type { ExpiringStore } from "./expiring-store.js";
 
 export type RedisExpiringStore = ExpiringStore & {
   disconnect(): Promise<void>;

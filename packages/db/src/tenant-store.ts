@@ -1,5 +1,5 @@
-import type { TenantRecord } from "./tenant-repository";
-import type { PrismaClient } from "./generated/prisma/client";
+import type { TenantRecord } from "./tenant-repository.js";
+import type { PrismaClient } from "./generated/prisma/client.js";
 
 type PersistedTenant = {
   id: string;

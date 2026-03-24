@@ -1,4 +1,4 @@
-import { buildImportJobPayload } from "../../../../../packages/queue/src/import-jobs";
+import { buildImportJobPayload } from "../../../../../packages/queue/src/import-jobs.js";
 
 export async function runImportJob(input: {
   tenantId: string;

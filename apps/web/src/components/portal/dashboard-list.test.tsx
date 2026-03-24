@@ -4,7 +4,7 @@ import { renderToString } from "react-dom/server";
 import { DashboardList } from "./dashboard-list";
 
 describe("DashboardList", () => {
-  it("renders dashboard titles and selected state", () => {
+  it("renders dashboard cards with management affordances", () => {
     const html = renderToString(
       <DashboardList
         dashboards={[
@@ -15,8 +15,10 @@ describe("DashboardList", () => {
       />
     );
 
+    expect(html).toContain("Dashboard inventory");
     expect(html).toContain("Executive Overview");
     expect(html).toContain("Finance Drilldown");
-    expect(html).toContain("Selected for Embed");
+    expect(html).toContain("/portal/dashboards/dash_1");
+    expect(html).toContain("Selected for embed");
   });
 });

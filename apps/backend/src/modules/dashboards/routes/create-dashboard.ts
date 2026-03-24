@@ -1,4 +1,4 @@
-import { buildDashboardRecord } from "../../../../../../packages/db/src/dashboard-repository";
+import { buildDashboardRecord } from "../../../../../../packages/db/src/dashboard-repository.js";
 
 export async function createDashboard(input: {
   tenantId: string;

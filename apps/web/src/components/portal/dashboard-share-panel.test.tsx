@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { renderToString } from "react-dom/server";
-import { DashboardEditor } from "./dashboard-editor";
+import { DashboardSharePanel } from "./dashboard-share-panel";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -9,12 +9,11 @@ vi.mock("next/navigation", () => ({
   })
 }));
 
-describe("DashboardEditor", () => {
-  it("renders a management view for one dashboard", () => {
+describe("DashboardSharePanel", () => {
+  it("renders editable visibility subjects", () => {
     const html = renderToString(
-      <DashboardEditor
-        dashboard={{ id: "dash_1", name: "Executive Overview" }}
-        selectedDashboardId="dash_1"
+      <DashboardSharePanel
+        dashboardId="dash_1"
         shareSubjects={[
           { type: "role", id: "ADMIN" },
           { type: "group", id: "finance" }
@@ -22,11 +21,9 @@ describe("DashboardEditor", () => {
       />
     );
 
-    expect(html).toContain("Executive Overview");
-    expect(html).toContain("Selected for embed");
     expect(html).toContain("Visibility subjects");
-    expect(html).toContain("Export dashboard");
-    expect(html).toContain("Import dashboard");
     expect(html).toContain("ADMIN");
+    expect(html).toContain("Add subject");
+    expect(html).toContain("Save sharing");
   });
 });

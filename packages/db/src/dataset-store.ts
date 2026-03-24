@@ -1,5 +1,5 @@
-import type { DatasetRecord } from "../../../packages/contracts/src/datasets";
-import type { PrismaClient } from "./generated/prisma/client";
+import type { DatasetRecord } from "../../../packages/contracts/src/datasets.js";
+import type { PrismaClient } from "./generated/prisma/client.js";
 
 type WarningRecord = {
   code: string;

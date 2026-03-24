@@ -1,5 +1,5 @@
-import type { WorkbookRecord } from "../../../packages/contracts/src/workbooks";
-import type { PrismaClient } from "./generated/prisma/client";
+import type { WorkbookRecord } from "../../../packages/contracts/src/workbooks.js";
+import type { PrismaClient } from "./generated/prisma/client.js";
 
 type PersistedWorkbook = {
   id: string;

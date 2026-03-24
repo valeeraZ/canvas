@@ -1,5 +1,5 @@
-import { fetchAuthorizationContext } from "./authorization-api";
-import type { AuthorizationContext } from "./authorization-api";
+import { fetchAuthorizationContext } from "./authorization-api.js";
+import type { AuthorizationContext } from "./authorization-api.js";
 
 export type HostAssertion = {
   tenantId: string;

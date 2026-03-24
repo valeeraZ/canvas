@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import type {
   AuthorizationContext,
   AuthorizationResolver
-} from "../../../../../packages/auth/src";
+} from "../../../../../packages/auth/src/index.js";
 import { selectApp } from "./routes/select-app";
 import {
   messageResponseSchema,

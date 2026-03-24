@@ -2,8 +2,8 @@ import type { FastifyPluginAsync } from "fastify";
 import type {
   AuthorizationContext,
   AuthorizationResolver
-} from "../../../../../packages/auth/src";
-import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client";
+} from "../../../../../packages/auth/src/index.js";
+import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
 import { sessionExchangeResponseSchema } from "../../api/schema";
 import { exchangeHostAssertion } from "./routes/exchange-session";
 import type { CanvasSessionStore } from "./session-store";
