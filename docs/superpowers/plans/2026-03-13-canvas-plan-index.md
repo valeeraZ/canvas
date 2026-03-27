@@ -14,7 +14,8 @@ Recommended execution order:
 2. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-22-canvas-dashboard-distribution-plan.md`
 3. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-22-canvas-portal-plan.md`
 4. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-24-canvas-portal-shadcn-mvp-plan.md`
-5. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-22-canvas-embed-sdk-viewer-plan.md`
+5. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-27-canvas-portal-shadcn-console-plan.md`
+6. `/Users/sylvain/Work/canvas/docs/superpowers/plans/2026-03-22-canvas-embed-sdk-viewer-plan.md`
 
 Why this order:
 
@@ -22,6 +23,7 @@ Why this order:
 - `Dashboard Distribution` defines visibility and per-user selection semantics used by both Portal and SDK.
 - `Canvas Portal` then builds management and authoring UX on stable backend semantics.
 - `Portal Shadcn MVP` refines the Portal into the concrete login and management experience that can be used for day-to-day validation.
+- `Portal Shadcn Console Redesign` upgrades that MVP into the denser sidebar-based console the product actually wants.
 - `Embed SDK Viewer` finalizes host-facing read/selection UX with minimized churn.
 
 ## Recommended execution order
