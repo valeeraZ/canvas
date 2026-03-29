@@ -15,24 +15,28 @@ import {
 import type { DashboardVisibilitySubjectType } from "./routes/share-dashboard";
 import {
   dashboardSchema,
+  dashboardExportPackageSchema,
   messageResponseSchema,
   selectedDashboardSchema
 } from "../../api/schema";
+import type { DashboardExportPackage } from "../../../../../packages/contracts/src/dashboard-portability.js";
 
 export type DashboardsService = {
-  listDashboards: () => Promise<DashboardRecord[]>;
+  listDashboards: (tenantId: string) => Promise<DashboardRecord[]>;
   listVisibleDashboards: (input: {
     tenantId: string;
     externalUserId: string;
     roles: string[];
     groups: string[];
   }) => Promise<DashboardRecord[]>;
-  getDashboard: (dashboardId: string) => Promise<DashboardRecord | null>;
+  getDashboard: (dashboardId: string, tenantId: string) => Promise<DashboardRecord | null>;
   createDashboard: (input: {
+    tenantId: string;
     name: string;
     workbookId?: string;
   }) => Promise<DashboardRecord>;
   shareDashboard: (input: {
+    tenantId: string;
     dashboardId: string;
     subjects: Array<{
       type: DashboardVisibilitySubjectType;
@@ -52,6 +56,31 @@ export type DashboardsService = {
       subjectId: string;
     }>;
   }>;
+  getDashboardShare: (input: {
+    tenantId: string;
+    dashboardId: string;
+  }) => Promise<{
+    dashboardId: string;
+    subjects: Array<{
+      type: DashboardVisibilitySubjectType;
+      id: string;
+    }>;
+    rules: Array<{
+      id?: string;
+      dashboardId: string;
+      appId: string;
+      subjectType: DashboardVisibilitySubjectType;
+      subjectId: string;
+    }>;
+  }>;
+  exportDashboard: (input: {
+    tenantId: string;
+    dashboardId: string;
+  }) => Promise<DashboardExportPackage | null>;
+  importDashboard: (input: {
+    tenantId: string;
+    package: DashboardExportPackage;
+  }) => Promise<DashboardRecord>;
   getSelectedDashboard: (input: {
     tenantId: string;
     externalUserId: string;
@@ -73,7 +102,6 @@ export type DashboardsModuleOptions = {
 
 export function createDashboardsService(input: {
   db: PrismaClient;
-  tenantId: string;
 }): DashboardsService {
   const dashboards = createDashboardStore(input.db);
   const visibility = createDashboardVisibilityStore(input.db);
@@ -81,8 +109,8 @@ export function createDashboardsService(input: {
   const preferences = createPrincipalAppPreferenceStore(input.db);
 
   return {
-    listDashboards() {
-      return dashboards.listByTenant(input.tenantId);
+    listDashboards(tenantId: string) {
+      return dashboards.listByTenant(tenantId);
     },
     async listVisibleDashboards(viewer) {
       const principal = await principals.findByExternalUserId(
@@ -119,23 +147,85 @@ export function createDashboardsService(input: {
       const scopedDashboards = await dashboards.listByTenant(viewer.tenantId);
       return scopedDashboards.filter((dashboard) => visibleIds.has(dashboard.id));
     },
-    getDashboard(dashboardId: string) {
-      return dashboards.findByTenantAndId(input.tenantId, dashboardId);
+    getDashboard(dashboardId: string, tenantId: string) {
+      return dashboards.findByTenantAndId(tenantId, dashboardId);
     },
-    createDashboard(payload: { name: string; workbookId?: string }) {
+    createDashboard(payload: { tenantId: string; name: string; workbookId?: string }) {
       return dashboards.create({
-        tenantId: input.tenantId,
+        tenantId: payload.tenantId,
         name: payload.name,
         workbookId: payload.workbookId
       });
     },
     shareDashboard(payload) {
       return shareDashboard({
-        appId: input.tenantId,
+        appId: payload.tenantId,
         dashboardId: payload.dashboardId,
         subjects: payload.subjects,
         replaceRules: visibility.replaceRules
       });
+    },
+    async getDashboardShare(payload) {
+      const rules = await visibility.listByDashboard({
+        appId: payload.tenantId,
+        dashboardId: payload.dashboardId
+      });
+
+      return {
+        dashboardId: payload.dashboardId,
+        rules,
+        subjects: rules.map((rule) => ({
+          type: rule.subjectType,
+          id: rule.subjectId
+        }))
+      };
+    },
+    async exportDashboard(payload) {
+      const dashboard = await dashboards.findByTenantAndId(
+        payload.tenantId,
+        payload.dashboardId
+      );
+
+      if (!dashboard) {
+        return null;
+      }
+
+      const share = await visibility.listByDashboard({
+        appId: payload.tenantId,
+        dashboardId: payload.dashboardId
+      });
+
+      return {
+        version: 1,
+        dashboard: {
+          name: dashboard.name,
+          workbookId: dashboard.workbookId
+        },
+        shareSubjects: share.map((rule) => ({
+          type: rule.subjectType,
+          id: rule.subjectId
+        }))
+      };
+    },
+    async importDashboard(payload) {
+      const dashboard = await dashboards.create({
+        tenantId: payload.tenantId,
+        name: payload.package.dashboard.name,
+        workbookId: payload.package.dashboard.workbookId ?? undefined
+      });
+
+      await visibility.replaceRules({
+        appId: payload.tenantId,
+        dashboardId: dashboard.id,
+        rules: payload.package.shareSubjects.map((subject) => ({
+          dashboardId: dashboard.id,
+          appId: payload.tenantId,
+          subjectType: subject.type,
+          subjectId: subject.id
+        }))
+      });
+
+      return dashboard;
     },
     getSelectedDashboard(viewer) {
       return getSelectedDashboard({
@@ -165,16 +255,37 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     schema: {
       tags: ["dashboards"],
       summary: "List dashboards for the current app",
-      description: "Returns dashboard records owned by the currently selected app.",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Returns dashboard records owned by the currently selected app.",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
       response: {
         200: {
           type: "array",
           items: dashboardSchema
-        }
+        },
+        401: messageResponseSchema
       }
     }
-  }, async () => {
-    return options.dashboards.listDashboards();
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
+    return options.dashboards.listDashboards(request.tenantContext.tenantId);
   });
 
   app.get("/dashboards/visible", {
@@ -227,7 +338,13 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     schema: {
       tags: ["dashboards"],
       summary: "Get one dashboard",
-      description: "Returns one dashboard record for the selected app.",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Returns one dashboard record for the selected app.",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
       params: {
         type: "object",
         required: ["dashboardId"],
@@ -240,12 +357,28 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
       },
       response: {
         200: dashboardSchema,
+        401: messageResponseSchema,
         404: messageResponseSchema
       }
     }
   }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
     const dashboard = await options.dashboards.getDashboard(
-      request.params.dashboardId
+      request.params.dashboardId,
+      request.tenantContext.tenantId
     );
 
     if (!dashboard) {
@@ -315,14 +448,145 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
         200: {
           type: "object",
           additionalProperties: true
-        }
+        },
+        401: messageResponseSchema
       }
     }
-  }, async (request) => {
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
     return options.dashboards.shareDashboard({
+      tenantId: request.tenantContext.tenantId,
       dashboardId: request.params.dashboardId,
       subjects: request.body?.subjects ?? []
     });
+  });
+
+  app.get<{
+    Params: {
+      dashboardId: string;
+    };
+  }>("/dashboards/:dashboardId/share", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Read dashboard visibility subjects",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Returns explicit visibility subjects for the given dashboard in the selected app.",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      params: {
+        type: "object",
+        required: ["dashboardId"],
+        properties: {
+          dashboardId: {
+            description: "Dashboard identifier inside the active app.",
+            type: "string"
+          }
+        }
+      },
+      response: {
+        200: {
+          type: "object",
+          additionalProperties: true
+        },
+        401: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
+    return options.dashboards.getDashboardShare({
+      tenantId: request.tenantContext.tenantId,
+      dashboardId: request.params.dashboardId
+    });
+  });
+
+  app.get<{
+    Params: {
+      dashboardId: string;
+    };
+  }>("/dashboards/:dashboardId/export", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Export a portable dashboard package",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Returns a lightweight dashboard package with dashboard metadata and explicit share subjects.",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      params: {
+        type: "object",
+        required: ["dashboardId"],
+        properties: {
+          dashboardId: {
+            description: "Dashboard identifier inside the active app.",
+            type: "string"
+          }
+        }
+      },
+      response: {
+        200: dashboardExportPackageSchema,
+        401: messageResponseSchema,
+        404: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
+    const exported = await options.dashboards.exportDashboard({
+      tenantId: request.tenantContext.tenantId,
+      dashboardId: request.params.dashboardId
+    });
+
+    if (!exported) {
+      reply.status(404);
+      return {
+        message: "Dashboard not found"
+      };
+    }
+
+    return exported;
   });
 
   app.get("/dashboards/selected-dashboard", {
@@ -359,6 +623,46 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     return options.dashboards.getSelectedDashboard({
       tenantId: request.tenantContext.tenantId,
       externalUserId: request.tenantContext.externalUserId
+    });
+  });
+
+  app.post<{
+    Body: DashboardExportPackage;
+  }>("/dashboards/import", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Import a portable dashboard package",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Creates a new dashboard in the selected app and restores explicit share subjects from the package.",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      body: dashboardExportPackageSchema,
+      response: {
+        200: dashboardSchema,
+        401: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
+    return options.dashboards.importDashboard({
+      tenantId: request.tenantContext.tenantId,
+      package: request.body
     });
   });
 
@@ -422,7 +726,13 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     schema: {
       tags: ["dashboards"],
       summary: "Create a dashboard",
-      description: "Creates a dashboard record inside the currently selected app.",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Creates a dashboard record inside the currently selected app.",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
       body: {
         type: "object",
         properties: {
@@ -437,11 +747,27 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
         }
       },
       response: {
-        200: dashboardSchema
+        200: dashboardSchema,
+        401: messageResponseSchema
       }
     }
-  }, async (request) => {
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
     return options.dashboards.createDashboard({
+      tenantId: request.tenantContext.tenantId,
       name: request.body?.name ?? "Untitled Dashboard",
       workbookId: request.body?.workbookId
     });

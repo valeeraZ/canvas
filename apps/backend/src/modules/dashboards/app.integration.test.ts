@@ -78,9 +78,24 @@ describeIfDatabase("dashboard routes with prisma", () => {
   });
 
   it("creates and lists persisted dashboards", async () => {
+    const session = await app.inject({
+      method: "POST",
+      url: "/session/exchange",
+      payload: {
+        token: "local-dev-token",
+        appName: tenantId
+      }
+    });
+
+    const headers = {
+      authorization: "Bearer local-dev-token",
+      cookie: (session.headers["set-cookie"] as string).split(";")[0] ?? ""
+    };
+
     const createResponse = await app.inject({
       method: "POST",
       url: "/dashboards",
+      headers,
       payload: {
         name: "Overview",
         workbookId
@@ -93,7 +108,8 @@ describeIfDatabase("dashboard routes with prisma", () => {
 
     const listResponse = await app.inject({
       method: "GET",
-      url: "/dashboards"
+      url: "/dashboards",
+      headers
     });
 
     expect(listResponse.statusCode).toBe(200);
@@ -101,7 +117,8 @@ describeIfDatabase("dashboard routes with prisma", () => {
 
     const detailResponse = await app.inject({
       method: "GET",
-      url: `/dashboards/${createResponse.json().id as string}`
+      url: `/dashboards/${createResponse.json().id as string}`,
+      headers
     });
 
     expect(detailResponse.statusCode).toBe(200);

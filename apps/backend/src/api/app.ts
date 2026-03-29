@@ -215,8 +215,7 @@ export function createApiApp(options: CreateApiAppOptions) {
     options.dashboards ??
     (options.db
       ? createDashboardsService({
-          db: options.db,
-          tenantId: options.tenantId ?? "tenant_demo"
+          db: options.db
         })
       : null);
 

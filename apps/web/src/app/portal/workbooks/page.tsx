@@ -1,8 +1,8 @@
 import React from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { DashboardList } from "../../../components/portal/dashboard-list";
 import { PortalShell } from "../../../components/portal/portal-shell";
+import { WorkbookList } from "../../../components/portal/workbook-list";
 import { Button } from "../../../components/ui/button";
 import {
   Card,
@@ -14,7 +14,7 @@ import {
 import { createPortalBackendClient } from "../../../lib/portal/backend-client";
 import { readPortalSession } from "../../../lib/portal/session";
 
-export default async function PortalDashboardsPage() {
+export default async function PortalWorkbooksPage() {
   const session = readPortalSession(await cookies());
 
   if (!session) {
@@ -22,9 +22,9 @@ export default async function PortalDashboardsPage() {
       <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-10">
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Sign in to manage dashboards</CardTitle>
+            <CardTitle>Sign in to review workbooks</CardTitle>
             <CardDescription>
-              The dashboard inventory uses the current Canvas portal session.
+              Workbook inventory uses the current Canvas portal session.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -37,11 +37,7 @@ export default async function PortalDashboardsPage() {
     );
   }
 
-  const client = createPortalBackendClient(session);
-  const [dashboards, selected] = await Promise.all([
-    client.listDashboards(),
-    client.getSelectedDashboard()
-  ]);
+  const workbooks = await createPortalBackendClient(session).listWorkbooks();
 
   return (
     <PortalShell
@@ -50,25 +46,19 @@ export default async function PortalDashboardsPage() {
       )}
       currentApp={session.selectedApp}
       principal={session.principal}
-      title="Dashboards"
-      description="Inspect the dashboard inventory for the active app, then drill into sharing and embed selection."
-      currentSection="dashboards"
+      title="Workbooks"
+      description="Inspect workbook inventory for the active app and validate the structural layer behind dashboards."
+      currentSection="workbooks"
       breadcrumbs={[
         { label: "Portal", href: "/portal" },
-        { label: "Dashboards" }
+        { label: "Workbooks" }
       ]}
-      actions={
-        <Button asChild variant="outline">
-          <Link href="/portal">Back to portal</Link>
-        </Button>
-      }
     >
-      <DashboardList
-        dashboards={dashboards.map((dashboard) => ({
-          id: dashboard.id,
-          name: dashboard.name
+      <WorkbookList
+        workbooks={workbooks.map((workbook) => ({
+          id: workbook.id,
+          name: workbook.name
         }))}
-        selectedDashboardId={selected.dashboardId}
       />
     </PortalShell>
   );

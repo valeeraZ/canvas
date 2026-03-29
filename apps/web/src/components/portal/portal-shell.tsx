@@ -2,7 +2,9 @@ import React from "react";
 import Link from "next/link";
 import {
   AppWindow,
+  BookOpen,
   ChevronRight,
+  Database,
   LayoutDashboard,
   ShieldCheck,
   Sparkles
@@ -51,7 +53,7 @@ type PortalShellProps = {
   } | null;
   title: string;
   description: string;
-  currentSection: "overview" | "dashboards" | "session";
+  currentSection: "overview" | "dashboards" | "datasets" | "workbooks" | "session";
   breadcrumbs: Array<{
     label: string;
     href?: string;
@@ -108,6 +110,32 @@ export function PortalShell(props: PortalShellProps) {
                     <Link href="/portal/dashboards">
                       <LayoutDashboard />
                       <span>Dashboards</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={props.currentSection === "datasets"}
+                    tooltip="Datasets"
+                    className="h-10 rounded-xl px-3 text-[15px] font-medium text-sidebar-foreground/78 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground data-active:bg-sidebar-accent data-active:text-sidebar-foreground data-active:shadow-[inset_0_0_0_1px_var(--color-sidebar-border)]"
+                  >
+                    <Link href="/portal/datasets">
+                      <Database />
+                      <span>Datasets</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={props.currentSection === "workbooks"}
+                    tooltip="Workbooks"
+                    className="h-10 rounded-xl px-3 text-[15px] font-medium text-sidebar-foreground/78 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground data-active:bg-sidebar-accent data-active:text-sidebar-foreground data-active:shadow-[inset_0_0_0_1px_var(--color-sidebar-border)]"
+                  >
+                    <Link href="/portal/workbooks">
+                      <BookOpen />
+                      <span>Workbooks</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

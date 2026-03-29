@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { notFound } from "next/navigation";
 import { DashboardEditor } from "../../../../components/portal/dashboard-editor";
 import { PortalShell } from "../../../../components/portal/portal-shell";
 import { Button } from "../../../../components/ui/button";
@@ -11,7 +12,7 @@ import {
   CardHeader,
   CardTitle
 } from "../../../../components/ui/card";
-import { getPortalDemoStore } from "../../../../lib/portal/demo-store";
+import { createPortalBackendClient } from "../../../../lib/portal/backend-client";
 import { readPortalSession } from "../../../../lib/portal/session";
 
 export default async function PortalDashboardDetailPage(props: {
@@ -42,9 +43,16 @@ export default async function PortalDashboardDetailPage(props: {
   }
 
   const { dashboardId } = await props.params;
-  const store = getPortalDemoStore();
-  const dashboard =
-    store.dashboards.find((item) => item.id === dashboardId) ?? store.dashboards[0];
+  const client = createPortalBackendClient(session);
+  const [dashboard, selected, share] = await Promise.all([
+    client.getDashboard(dashboardId).catch(() => null),
+    client.getSelectedDashboard(),
+    client.getDashboardShare(dashboardId)
+  ]);
+
+  if (!dashboard) {
+    notFound();
+  }
 
   return (
     <PortalShell
@@ -69,8 +77,8 @@ export default async function PortalDashboardDetailPage(props: {
     >
       <DashboardEditor
         dashboard={dashboard}
-        selectedDashboardId={store.selectedDashboardId}
-        shareSubjects={store.shareRules[dashboard.id] ?? []}
+        selectedDashboardId={selected.dashboardId}
+        shareSubjects={share.subjects}
       />
     </PortalShell>
   );

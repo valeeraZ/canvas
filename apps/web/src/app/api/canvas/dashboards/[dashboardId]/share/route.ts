@@ -1,6 +1,5 @@
-import { shareDashboard } from "../../../../../../../../backend/src/modules/dashboards/routes/share-dashboard";
-import { getPortalDemoStore } from "../../../../../../lib/portal/demo-store";
 import { readPortalSessionFromCookieHeader } from "../../../../../../lib/portal/session";
+import { createPortalBackendClient } from "../../../../../../lib/portal/backend-client";
 
 export async function POST(
   request: Request,
@@ -18,13 +17,22 @@ export async function POST(
   };
 
   const { dashboardId } = await context.params;
-  const store = getPortalDemoStore();
   const session = readPortalSessionFromCookieHeader(
     request.headers.get("cookie") ?? ""
   );
 
-  const result = await shareDashboard({
-    appId: session?.selectedApp ?? "canvas",
+  if (!session) {
+    return Response.json(
+      {
+        message: "Missing portal session"
+      },
+      {
+        status: 401
+      }
+    );
+  }
+
+  const result = await createPortalBackendClient(session).shareDashboard({
     dashboardId,
     subjects: (body.subjects ?? [])
       .filter((subject): subject is { type: "user" | "group" | "role"; id: string } =>
@@ -33,18 +41,7 @@ export async function POST(
       .map((subject) => ({
         type: subject.type,
         id: subject.id
-      })),
-    replaceRules: async (input) => {
-      store.shareRules[input.dashboardId] = input.rules.map((rule) => ({
-        type: rule.subjectType,
-        id: rule.subjectId
-      }));
-
-      return input.rules.map((rule, index) => ({
-        ...rule,
-        id: `rule_${index + 1}`
-      }));
-    }
+      }))
   });
 
   return Response.json(result);

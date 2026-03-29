@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolvePortalSession } from "../../../../../lib/portal/resolve-session";
+import { createPortalBackendClient } from "../../../../../lib/portal/backend-client";
 import {
   encodePortalSession,
   PORTAL_SESSION_COOKIE,
@@ -25,15 +25,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const nextSession = await resolvePortalSession({
-    token: session.token,
-    appName: body.appName ?? session.selectedApp,
-    mockContext: {
-      displayName: session.principal.displayName,
-      employeeId: session.principal.employeeId,
-      roles: session.principal.roles
+  const nextApp = await createPortalBackendClient(session).selectApp(
+    body.appName ?? session.selectedApp
+  );
+  const nextSession = {
+    expiresIn: 1800,
+    selectedApp: nextApp.tenantId,
+    principal: {
+      ...session.principal,
+      roles: nextApp.roles
     }
-  });
+  };
 
   const response = NextResponse.json(nextSession);
   response.cookies.set({

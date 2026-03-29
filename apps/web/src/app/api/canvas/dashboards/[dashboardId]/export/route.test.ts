@@ -3,18 +3,18 @@ import {
   encodePortalSession,
   PORTAL_SESSION_COOKIE
 } from "../../../../../../lib/portal/session";
-import { POST } from "./route";
+import { GET } from "./route";
 
 const fetchMock = vi.fn<typeof fetch>();
 
-describe("canvas dashboard share route", () => {
+describe("canvas dashboard export route", () => {
   afterEach(() => {
     fetchMock.mockReset();
     vi.unstubAllGlobals();
     delete process.env.CANVAS_BACKEND_BASE_URL;
   });
 
-  it("updates dashboard share subjects through the backend", async () => {
+  it("proxies dashboard export from the backend", async () => {
     vi.stubGlobal("fetch", fetchMock);
     process.env.CANVAS_BACKEND_BASE_URL = "http://127.0.0.1:3001";
 
@@ -30,22 +30,21 @@ describe("canvas dashboard share route", () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            dashboardId: "dash_1",
-            rules: [
-              { subjectId: "ADMIN" },
-              { subjectId: "finance" }
-            ]
+            version: 1,
+            dashboard: {
+              name: "Executive Overview",
+              workbookId: "wb_1"
+            },
+            shareSubjects: [{ type: "role", id: "ADMIN" }]
           }),
           { status: 200 }
         )
       );
 
     const request = new Request(
-      "http://localhost:3000/api/canvas/dashboards/dash_1/share",
+      "http://localhost:3000/api/canvas/dashboards/dash_1/export",
       {
-        method: "POST",
         headers: {
-          "content-type": "application/json",
           cookie: `${PORTAL_SESSION_COOKIE}=${encodePortalSession({
             token: "amtoken-1",
             selectedApp: "canvas",
@@ -55,32 +54,25 @@ describe("canvas dashboard share route", () => {
               roles: ["ADMIN"]
             }
           })}`
-        },
-        body: JSON.stringify({
-          subjects: [
-            { type: "role", id: "ADMIN" },
-            { type: "group", id: "finance" }
-          ]
-        })
+        }
       }
     );
 
-    const response = await POST(request, {
+    const response = await GET(request, {
       params: Promise.resolve({
         dashboardId: "dash_1"
       })
     });
     const payload = (await response.json()) as {
-      dashboardId: string;
-      rules: Array<{ subjectId: string }>;
+      version: number;
+      dashboard: { name: string };
     };
 
-    expect(payload.dashboardId).toBe("dash_1");
-    expect(payload.rules[0]?.subjectId).toBe("ADMIN");
-    expect(payload.rules[1]?.subjectId).toBe("finance");
+    expect(payload.version).toBe(1);
+    expect(payload.dashboard.name).toBe("Executive Overview");
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[1]?.[0]).toBe(
-      "http://127.0.0.1:3001/dashboards/dash_1/share"
+      "http://127.0.0.1:3001/dashboards/dash_1/export"
     );
   });
 });

@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { DashboardList } from "../../../components/portal/dashboard-list";
+import { DatasetList } from "../../../components/portal/dataset-list";
 import { PortalShell } from "../../../components/portal/portal-shell";
 import { Button } from "../../../components/ui/button";
 import {
@@ -14,7 +14,7 @@ import {
 import { createPortalBackendClient } from "../../../lib/portal/backend-client";
 import { readPortalSession } from "../../../lib/portal/session";
 
-export default async function PortalDashboardsPage() {
+export default async function PortalDatasetsPage() {
   const session = readPortalSession(await cookies());
 
   if (!session) {
@@ -22,9 +22,9 @@ export default async function PortalDashboardsPage() {
       <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-10">
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Sign in to manage dashboards</CardTitle>
+            <CardTitle>Sign in to review datasets</CardTitle>
             <CardDescription>
-              The dashboard inventory uses the current Canvas portal session.
+              Dataset inventory uses the current Canvas portal session.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -37,11 +37,7 @@ export default async function PortalDashboardsPage() {
     );
   }
 
-  const client = createPortalBackendClient(session);
-  const [dashboards, selected] = await Promise.all([
-    client.listDashboards(),
-    client.getSelectedDashboard()
-  ]);
+  const datasets = await createPortalBackendClient(session).listDatasets();
 
   return (
     <PortalShell
@@ -50,26 +46,15 @@ export default async function PortalDashboardsPage() {
       )}
       currentApp={session.selectedApp}
       principal={session.principal}
-      title="Dashboards"
-      description="Inspect the dashboard inventory for the active app, then drill into sharing and embed selection."
-      currentSection="dashboards"
+      title="Datasets"
+      description="Inspect dataset ingestion health and warning counts for the active app."
+      currentSection="datasets"
       breadcrumbs={[
         { label: "Portal", href: "/portal" },
-        { label: "Dashboards" }
+        { label: "Datasets" }
       ]}
-      actions={
-        <Button asChild variant="outline">
-          <Link href="/portal">Back to portal</Link>
-        </Button>
-      }
     >
-      <DashboardList
-        dashboards={dashboards.map((dashboard) => ({
-          id: dashboard.id,
-          name: dashboard.name
-        }))}
-        selectedDashboardId={selected.dashboardId}
-      />
+      <DatasetList datasets={datasets} />
     </PortalShell>
   );
 }

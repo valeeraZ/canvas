@@ -1,10 +1,35 @@
-import { getPortalDemoStore } from "../../../../lib/portal/demo-store";
+import {
+  readPortalSessionFromCookieHeader
+} from "../../../../lib/portal/session";
+import { createPortalBackendClient } from "../../../../lib/portal/backend-client";
 
-export async function GET() {
-  const store = getPortalDemoStore();
+export async function GET(request: Request) {
+  const session = readPortalSessionFromCookieHeader(
+    request.headers.get("cookie") ?? ""
+  );
+
+  if (!session) {
+    return Response.json(
+      {
+        message: "Missing portal session"
+      },
+      {
+        status: 401
+      }
+    );
+  }
+
+  const client = createPortalBackendClient(session);
+  const [dashboards, selected] = await Promise.all([
+    client.listDashboards(),
+    client.getSelectedDashboard()
+  ]);
 
   return Response.json({
-    dashboards: store.dashboards,
-    selectedDashboardId: store.selectedDashboardId
+    dashboards: dashboards.map((dashboard) => ({
+      id: dashboard.id,
+      name: dashboard.name
+    })),
+    selectedDashboardId: selected.dashboardId
   });
 }

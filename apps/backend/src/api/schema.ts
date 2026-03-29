@@ -240,3 +240,46 @@ export const selectedDashboardSchema = {
   },
   required: ["dashboardId"]
 } as const;
+
+export const dashboardExportPackageSchema = {
+  type: "object",
+  description: "Portable dashboard package used for lightweight export and import flows.",
+  properties: {
+    version: {
+      description: "Contract version for dashboard portability payloads.",
+      type: "number"
+    },
+    dashboard: {
+      type: "object",
+      description: "Portable dashboard metadata.",
+      properties: {
+        name: {
+          description: "Dashboard display name.",
+          type: "string"
+        },
+        workbookId: {
+          description: "Optional workbook identifier preserved in the export package.",
+          type: ["string", "null"]
+        }
+      },
+      required: ["name", "workbookId"]
+    },
+    shareSubjects: {
+      type: "array",
+      description: "Explicit visibility subjects included in the package.",
+      items: {
+        type: "object",
+        properties: {
+          type: {
+            type: "string"
+          },
+          id: {
+            type: "string"
+          }
+        },
+        required: ["type", "id"]
+      }
+    }
+  },
+  required: ["version", "dashboard", "shareSubjects"]
+} as const;

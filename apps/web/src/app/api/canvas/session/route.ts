@@ -3,7 +3,7 @@ import {
   encodePortalSession,
   PORTAL_SESSION_COOKIE
 } from "../../../../lib/portal/session";
-import { resolvePortalSession } from "../../../../lib/portal/resolve-session";
+import { exchangePortalSession } from "../../../../lib/portal/backend-client";
 
 export async function GET() {
   return Response.json({
@@ -15,17 +15,11 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     appName?: string;
     token?: string;
-    mockContext?: {
-      displayName?: string;
-      employeeId?: string;
-      roles?: string[];
-    };
   };
 
-  const session = await resolvePortalSession({
+  const session = await exchangePortalSession({
     token: body.token,
-    appName: body.appName ?? "canvas",
-    mockContext: body.mockContext
+    appName: body.appName ?? "canvas"
   });
 
   const response = NextResponse.json(session);

@@ -75,7 +75,7 @@ export function DashboardEditor(props: {
           </p>
         </div>
         <div className="flex gap-2">
-          <DashboardExportButton />
+          <DashboardExportButton dashboardId={props.dashboard.id} />
           <DashboardImportDialog />
         </div>
       </div>
@@ -165,7 +165,7 @@ export function DashboardEditor(props: {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <DashboardExportButton />
+                <DashboardExportButton dashboardId={props.dashboard.id} />
               </CardContent>
             </Card>
             <Card>
