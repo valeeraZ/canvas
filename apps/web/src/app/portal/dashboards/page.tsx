@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { DashboardList } from "../../../components/portal/dashboard-list";
+import { PortalShell } from "../../../components/portal/portal-shell";
 import { Button } from "../../../components/ui/button";
 import {
   Card,
@@ -39,20 +40,29 @@ export default async function PortalDashboardsPage() {
   const store = getPortalDemoStore();
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-sm text-canvas-muted">Active app</p>
-          <h1 className="text-3xl font-semibold">{session.selectedApp}</h1>
-        </div>
+    <PortalShell
+      apps={[session.selectedApp, "canvas", "canvas-ops"].filter(
+        (value, index, items) => items.indexOf(value) === index
+      )}
+      currentApp={session.selectedApp}
+      principal={session.principal}
+      title="Dashboards"
+      description="Inspect the dashboard inventory for the active app, then drill into sharing and embed selection."
+      currentSection="dashboards"
+      breadcrumbs={[
+        { label: "Portal", href: "/portal" },
+        { label: "Dashboards" }
+      ]}
+      actions={
         <Button asChild variant="outline">
           <Link href="/portal">Back to portal</Link>
         </Button>
-      </div>
+      }
+    >
       <DashboardList
         dashboards={store.dashboards}
         selectedDashboardId={store.selectedDashboardId}
       />
-    </main>
+    </PortalShell>
   );
 }

@@ -1,9 +1,22 @@
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, LayoutDashboard, ShieldCheck } from "lucide-react";
+import {
+  AppWindow,
+  ChevronRight,
+  LayoutDashboard,
+  ShieldCheck,
+  Sparkles
+} from "lucide-react";
 import { AppSwitcher } from "./app-switcher";
 import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from "../ui/breadcrumb";
 import {
   Card,
   CardContent,
@@ -11,9 +24,24 @@ import {
   CardHeader,
   CardTitle
 } from "../ui/card";
-import { Separator } from "../ui/separator";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarSeparator,
+  SidebarTrigger
+} from "../ui/sidebar";
 
-export function PortalShell(props: {
+type PortalShellProps = {
   apps: string[];
   currentApp: string;
   principal?: {
@@ -21,102 +49,168 @@ export function PortalShell(props: {
     employeeId: string;
     roles: string[];
   } | null;
-}) {
+  title: string;
+  description: string;
+  currentSection: "overview" | "dashboards" | "session";
+  breadcrumbs: Array<{
+    label: string;
+    href?: string;
+  }>;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+};
+
+export function PortalShell(props: PortalShellProps) {
   return (
-    <main className="min-h-screen">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-8">
-        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <Card className="overflow-hidden">
-            <CardHeader className="gap-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <CardTitle className="text-3xl">Canvas Portal</CardTitle>
-                  <CardDescription className="mt-1">
-                    Manage dashboards, app visibility, and embed defaults for the
-                    currently active Canvas app.
-                  </CardDescription>
-                </div>
-                <Badge variant="accent">App scoped</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="grid gap-6">
-              <AppSwitcher apps={props.apps} currentApp={props.currentApp} />
-              <Separator />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Card className="bg-canvas-panel-muted">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Current app</CardTitle>
-                    <CardDescription>
-                      The active app context stored in the Canvas session.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <p className="text-lg font-semibold">{props.currentApp}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-canvas-panel-muted">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Dashboard management</CardTitle>
-                    <CardDescription>
-                      Jump straight into dashboard list, sharing, and embed selection.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <Button asChild>
-                      <Link href="/portal/dashboards">
-                        Open dashboards
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <ShieldCheck className="h-4 w-4 text-canvas-accent" />
-                Current principal
-              </CardTitle>
-              <CardDescription>
-                Principal details resolved from the upstream authorization service.
+    <SidebarProvider defaultOpen>
+      <Sidebar collapsible="icon" variant="inset">
+        <SidebarHeader className="gap-3 border-b border-sidebar-border">
+          <div className="flex items-center gap-3 px-2">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
+              <Sparkles className="size-4" />
+            </div>
+            <div className="grid flex-1 text-left">
+              <span className="text-sm font-medium">Canvas Portal</span>
+              <span className="text-xs text-sidebar-foreground/65">
+                Data console
+              </span>
+            </div>
+          </div>
+          <div className="px-2">
+            <AppSwitcher apps={props.apps} currentApp={props.currentApp} />
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel>Console navigation</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-1.5">
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={props.currentSection === "overview"}
+                    tooltip="Overview"
+                    className="h-10 rounded-xl px-3 text-[15px] font-medium text-sidebar-foreground/78 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground data-active:bg-sidebar-accent data-active:text-sidebar-foreground data-active:shadow-[inset_0_0_0_1px_var(--color-sidebar-border)]"
+                  >
+                    <Link href="/portal">
+                      <AppWindow />
+                      <span>Overview</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={props.currentSection === "dashboards"}
+                    tooltip="Dashboards"
+                    className="h-10 rounded-xl px-3 text-[15px] font-medium text-sidebar-foreground/78 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground data-active:bg-sidebar-accent data-active:text-sidebar-foreground data-active:shadow-[inset_0_0_0_1px_var(--color-sidebar-border)]"
+                  >
+                    <Link href="/portal/dashboards">
+                      <LayoutDashboard />
+                      <span>Dashboards</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={props.currentSection === "session"}
+                    tooltip="Session context"
+                    className="h-10 rounded-xl px-3 text-[15px] font-medium text-sidebar-foreground/78 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground data-active:bg-sidebar-accent data-active:text-sidebar-foreground data-active:shadow-[inset_0_0_0_1px_var(--color-sidebar-border)]"
+                  >
+                    <Link href="/portal">
+                      <ShieldCheck />
+                      <span>Session context</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <SidebarSeparator />
+          <Card size="sm" className="bg-sidebar-accent/40 text-sidebar-foreground ring-sidebar-border">
+            <CardHeader className="border-b border-sidebar-border">
+              <CardTitle className="text-sm">Current principal</CardTitle>
+              <CardDescription className="text-sidebar-foreground/70">
+                External authorization snapshot
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-3 text-sm">
-              <p>
-                <span className="font-medium">Display name:</span>{" "}
-                {props.principal?.displayName ?? "Not signed in"}
-              </p>
-              <p>
-                <span className="font-medium">Employee ID:</span>{" "}
-                {props.principal?.employeeId ?? "Unavailable"}
-              </p>
+            <CardContent className="grid gap-3 text-xs">
+              <div className="grid gap-1">
+                <span className="text-sidebar-foreground/60">Display name</span>
+                <span>{props.principal?.displayName ?? "Not signed in"}</span>
+              </div>
+              <div className="grid gap-1">
+                <span className="text-sidebar-foreground/60">Employee ID</span>
+                <span>{props.principal?.employeeId ?? "Unavailable"}</span>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {(props.principal?.roles ?? []).length ? (
                   props.principal?.roles.map((role) => (
-                    <Badge key={role}>{role}</Badge>
+                    <Badge key={role} variant="secondary">
+                      {role}
+                    </Badge>
                   ))
                 ) : (
-                  <Badge variant="warning">No roles loaded</Badge>
+                  <Badge variant="outline">No roles loaded</Badge>
                 )}
               </div>
             </CardContent>
           </Card>
-        </section>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <LayoutDashboard className="h-4 w-4 text-canvas-accent" />
-              What you can do next
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-2 text-sm text-canvas-muted">
-            <p>Open the dashboard list, review who can see each dashboard, and mark one as the current embed choice.</p>
-            <p>Export and import affordances stay visible in the detail view, but they remain placeholders until the backend workflow is ready.</p>
-          </CardContent>
-        </Card>
-      </div>
-    </main>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset className="bg-background">
+        <header className="flex h-16 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur md:px-6">
+          <SidebarTrigger className="-ml-1" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              {props.breadcrumbs.map((item, index) => {
+                const isLast = index === props.breadcrumbs.length - 1;
+
+                return (
+                  <React.Fragment key={`${item.label}-${index}`}>
+                    <BreadcrumbItem>
+                      {item.href && !isLast ? (
+                        <BreadcrumbLink asChild>
+                          <Link href={item.href}>{item.label}</Link>
+                        </BreadcrumbLink>
+                      ) : (
+                        <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                      )}
+                    </BreadcrumbItem>
+                    {!isLast ? (
+                      <BreadcrumbSeparator>
+                        <ChevronRight />
+                      </BreadcrumbSeparator>
+                    ) : null}
+                  </React.Fragment>
+                );
+              })}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </header>
+        <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div className="grid gap-1">
+              <p className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                Active app: {props.currentApp}
+              </p>
+              <h1 className="text-3xl font-semibold tracking-tight">
+                {props.title}
+              </h1>
+              <p className="max-w-3xl text-sm text-muted-foreground">
+                {props.description}
+              </p>
+            </div>
+            {props.actions ? (
+              <div className="flex items-center gap-2">{props.actions}</div>
+            ) : null}
+          </div>
+          {props.children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

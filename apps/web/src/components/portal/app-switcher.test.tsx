@@ -17,6 +17,6 @@ describe("AppSwitcher", () => {
 
     expect(html).toContain("Active Canvas app");
     expect(html).toContain("Switch active app");
-    expect(html).toContain("Update");
+    expect(html).toContain("Apply app");
   });
 });

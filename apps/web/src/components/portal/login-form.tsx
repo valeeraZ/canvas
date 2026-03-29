@@ -78,9 +78,9 @@ export function LoginForm(props: { defaultApp: string }) {
             />
           </div>
           {error ? (
-            <p className="text-sm text-canvas-danger">{error}</p>
+            <p className="text-sm text-destructive">{error}</p>
           ) : (
-            <p className="text-sm text-canvas-muted">
+            <p className="text-sm text-muted-foreground">
               Local development defaults to a mock profile when external auth is not
               reachable.
             </p>

@@ -2,7 +2,13 @@
 
 import React, { startTransition, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, LoaderCircle, PanelTopOpen } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  LoaderCircle,
+  PanelTopOpen,
+  Share2
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DashboardExportButton } from "./dashboard-export-button";
 import { DashboardImportDialog } from "./dashboard-import-dialog";
@@ -17,6 +23,7 @@ import {
   CardHeader,
   CardTitle
 } from "../ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 export function DashboardEditor(props: {
   dashboard: {
@@ -53,20 +60,17 @@ export function DashboardEditor(props: {
     <section className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="grid gap-2">
-          <Link
-            className="inline-flex items-center gap-2 text-sm text-canvas-muted"
-            href="/portal/dashboards"
-          >
+          <Link className="inline-flex items-center gap-2 text-sm text-muted-foreground" href="/portal/dashboards">
             <ArrowLeft className="h-4 w-4" />
             Back to dashboards
           </Link>
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-3xl font-semibold">{props.dashboard.name}</h2>
-            <Badge variant={isSelected ? "accent" : "default"}>
+            <Badge variant={isSelected ? "secondary" : "outline"}>
               {isSelected ? "Selected for embed" : "Available for embed"}
             </Badge>
           </div>
-          <p className="text-sm text-canvas-muted">
+          <p className="text-sm text-muted-foreground">
             Dashboard ID: {props.dashboard.id}
           </p>
         </div>
@@ -75,42 +79,109 @@ export function DashboardEditor(props: {
           <DashboardImportDialog />
         </div>
       </div>
-      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <PanelTopOpen className="h-4 w-4 text-canvas-accent" />
-              Embed default
-            </CardTitle>
-            <CardDescription>
-              Pick whether this dashboard should be the current default for the active
-              app.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="flex items-center gap-2 text-sm text-canvas-muted">
-              <CheckCircle2 className="h-4 w-4" />
-              {isSelected
-                ? "Selected for embed"
-                : "Not selected for embed"}
-            </div>
-            <Button
-              type="button"
-              onClick={setSelectedDashboard}
-              disabled={pending}
-            >
-              {pending ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : null}
-              {isSelected ? "Keep selected" : "Make selected dashboard"}
-            </Button>
-          </CardContent>
-        </Card>
-        <DashboardSharePanel
-          dashboardId={props.dashboard.id}
-          shareSubjects={props.shareSubjects}
-        />
-      </div>
+      <Tabs defaultValue="overview" className="gap-4">
+        <TabsList variant="line">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="sharing">Sharing</TabsTrigger>
+          <TabsTrigger value="io">Import / Export</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview">
+          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <PanelTopOpen className="h-4 w-4 text-muted-foreground" />
+                  Embed default
+                </CardTitle>
+                <CardDescription>
+                  Pick whether this dashboard should be the current default for the active app.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4" />
+                  {isSelected ? "Selected for embed" : "Not selected for embed"}
+                </div>
+                <Button type="button" onClick={setSelectedDashboard} disabled={pending}>
+                  {pending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+                  {isSelected ? "Keep selected" : "Make selected dashboard"}
+                </Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Distribution snapshot</CardTitle>
+                <CardDescription>
+                  Quick view of the current sharing footprint for this dashboard.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 text-sm">
+                <div className="rounded-xl border border-border bg-muted/40 p-4">
+                  <p className="font-medium">Visibility subjects</p>
+                  <p className="mt-1 text-muted-foreground">
+                    {props.shareSubjects.length} configured subjects across users,
+                    groups, and roles.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {props.shareSubjects.map((subject) => (
+                    <Badge key={`${subject.type}:${subject.id}`} variant="outline">
+                      {subject.type}:{subject.id}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        <TabsContent value="sharing">
+          <div className="grid gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Share2 className="h-4 w-4 text-muted-foreground" />
+                  Visibility subjects
+                </CardTitle>
+                <CardDescription>
+                  Share this dashboard with external users, groups, or roles.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <DashboardSharePanel
+                  dashboardId={props.dashboard.id}
+                  shareSubjects={props.shareSubjects}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        <TabsContent value="io">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Export dashboard</CardTitle>
+                <CardDescription>
+                  Package this dashboard for reuse across apps or environments.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DashboardExportButton />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Import dashboard</CardTitle>
+                <CardDescription>
+                  Bring an existing dashboard definition into the active app.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DashboardImportDialog />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </section>
   );
 }

@@ -44,21 +44,28 @@ export function AppSwitcher(props: {
   }
 
   return (
-    <section className="grid gap-4">
+    <section className="grid gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold">Active Canvas app</h2>
-          <p className="text-sm text-canvas-muted">
+          <h2 className="text-sm font-semibold tracking-tight">Active Canvas app</h2>
+          <p className="text-xs text-muted-foreground">
             Switch active app without re-entering the amtoken.
           </p>
         </div>
-        <Badge variant="accent">{props.currentApp}</Badge>
+        <Badge variant="outline" className="bg-sidebar/20 text-sidebar-foreground">
+          {props.currentApp}
+        </Badge>
       </div>
-      <div className="grid gap-2 sm:max-w-sm">
-        <Label htmlFor="portal-app-switcher">Switch active app</Label>
-        <div className="flex gap-2">
+      <div className="grid gap-2">
+        <Label htmlFor="portal-app-switcher" className="text-xs text-sidebar-foreground/70">
+          Switch active app
+        </Label>
+        <div className="grid gap-2">
           <Select value={nextApp} onValueChange={setNextApp}>
-            <SelectTrigger id="portal-app-switcher" className="bg-canvas-panel">
+            <SelectTrigger
+              id="portal-app-switcher"
+              className="h-9 w-full rounded-xl border-sidebar-border bg-sidebar-accent px-3 text-sidebar-foreground"
+            >
               <SelectValue placeholder="Choose an app" />
             </SelectTrigger>
             <SelectContent>
@@ -71,7 +78,9 @@ export function AppSwitcher(props: {
           </Select>
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
+            size="sm"
+            className="justify-center rounded-xl border border-sidebar-border bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80"
             onClick={switchApp}
             disabled={pending || nextApp === props.currentApp}
           >
@@ -80,7 +89,7 @@ export function AppSwitcher(props: {
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
-            Update
+            Apply app
           </Button>
         </div>
       </div>

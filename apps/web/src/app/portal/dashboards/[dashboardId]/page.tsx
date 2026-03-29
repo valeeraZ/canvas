@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { DashboardEditor } from "../../../../components/portal/dashboard-editor";
+import { PortalShell } from "../../../../components/portal/portal-shell";
 import { Button } from "../../../../components/ui/button";
 import {
   Card,
@@ -46,21 +47,31 @@ export default async function PortalDashboardDetailPage(props: {
     store.dashboards.find((item) => item.id === dashboardId) ?? store.dashboards[0];
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-sm text-canvas-muted">Active app</p>
-          <h1 className="text-2xl font-semibold">{session.selectedApp}</h1>
-        </div>
+    <PortalShell
+      apps={[session.selectedApp, "canvas", "canvas-ops"].filter(
+        (value, index, items) => items.indexOf(value) === index
+      )}
+      currentApp={session.selectedApp}
+      principal={session.principal}
+      title={dashboard.name}
+      description="Review embed selection, sharing visibility, and transfer operations for this dashboard."
+      currentSection="dashboards"
+      breadcrumbs={[
+        { label: "Portal", href: "/portal" },
+        { label: "Dashboards", href: "/portal/dashboards" },
+        { label: dashboard.name }
+      ]}
+      actions={
         <Button asChild variant="outline">
           <Link href="/portal/dashboards">Back to dashboards</Link>
         </Button>
-      </div>
+      }
+    >
       <DashboardEditor
         dashboard={dashboard}
         selectedDashboardId={store.selectedDashboardId}
         shareSubjects={store.shareRules[dashboard.id] ?? []}
       />
-    </main>
+    </PortalShell>
   );
 }
