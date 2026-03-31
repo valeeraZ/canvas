@@ -1,10 +1,10 @@
 import React from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { ArrowRight, LayoutDashboard, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { AppInventory } from "../../components/portal/app-inventory";
 import { LoginForm } from "../../components/portal/login-form";
 import { PortalShell } from "../../components/portal/portal-shell";
-import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import {
   Card,
@@ -13,7 +13,33 @@ import {
   CardHeader,
   CardTitle
 } from "../../components/ui/card";
+import { createPortalBackendClient } from "../../lib/portal/backend-client";
 import { readPortalSession } from "../../lib/portal/session";
+
+function sortAppNamesByRecent(apps: string[], recentApps: string[]) {
+  const recentOrder = new Map(
+    recentApps.map((appName, index) => [appName, index] as const)
+  );
+
+  return [...apps].sort((left, right) => {
+    const leftRank = recentOrder.get(left);
+    const rightRank = recentOrder.get(right);
+
+    if (leftRank !== undefined && rightRank !== undefined) {
+      return leftRank - rightRank;
+    }
+
+    if (leftRank !== undefined) {
+      return -1;
+    }
+
+    if (rightRank !== undefined) {
+      return 1;
+    }
+
+    return left.localeCompare(right);
+  });
+}
 
 export default async function PortalHomePage() {
   const cookieStore = await cookies();
@@ -46,15 +72,52 @@ export default async function PortalHomePage() {
     );
   }
 
+  const authClient = createPortalBackendClient(session);
+  const accessibleAppsResponse = await authClient.listAccessibleApps();
+  const orderedApps = sortAppNamesByRecent(
+    accessibleAppsResponse.apps.map((app) => app.appName),
+    session.recentApps ?? []
+  );
+  const appsByName = new Map(
+    accessibleAppsResponse.apps.map((app) => [app.appName, app] as const)
+  );
+  const inventory = await Promise.all(
+    orderedApps.map(async (appName) => {
+      const appClient = createPortalBackendClient({
+        ...session,
+        selectedApp: appName
+      });
+      const [dashboards, workbooks] = await Promise.all([
+        appClient.listDashboards(),
+        appClient.listWorkbooks()
+      ]);
+      const recentDashboardId = session.recentDashboardsByApp?.[appName];
+      const recentWorkbookId = session.recentWorkbooksByApp?.[appName];
+      const recentDashboard =
+        dashboards.find((dashboard) => dashboard.id === recentDashboardId) ??
+        dashboards[0] ??
+        null;
+      const recentWorkbook =
+        workbooks.find((workbook) => workbook.id === recentWorkbookId) ??
+        workbooks[0] ??
+        null;
+
+      return {
+        appName,
+        roles: appsByName.get(appName)?.roles ?? [],
+        recentDashboardName: recentDashboard?.name ?? null,
+        recentWorkbookName: recentWorkbook?.name ?? null
+      };
+    })
+  );
+
   return (
     <PortalShell
-      apps={[session.selectedApp, "canvas", "canvas-ops"].filter(
-        (value, index, items) => items.indexOf(value) === index
-      )}
+      apps={orderedApps}
       currentApp={session.selectedApp}
       principal={session.principal}
-      title="Portal overview"
-      description="Operate Canvas at app scope: inspect the current session, move between apps, and manage the dashboards that each user can see."
+      title="Your apps"
+      description="Start from the apps you can access, then enter an app to manage its dashboards and workbooks."
       currentSection="overview"
       breadcrumbs={[
         { label: "Portal", href: "/portal" },
@@ -69,78 +132,17 @@ export default async function PortalHomePage() {
         </Button>
       }
     >
-      <section className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
+      <section className="grid gap-4">
         <Card>
           <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div className="grid gap-1">
-                <CardTitle>Session summary</CardTitle>
-                <CardDescription>
-                  The Portal resolves external authorization from your amtoken and
-                  pins the current app in a Canvas-managed server session.
-                </CardDescription>
-              </div>
-              <Badge variant="secondary">Live app context</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-border bg-muted/40 p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium">
-                <Sparkles className="size-4 text-muted-foreground" />
-                Principal
-              </div>
-              <div className="grid gap-1 text-sm">
-                <span className="font-medium">{session.principal.displayName}</span>
-                <span className="text-muted-foreground">
-                  Employee ID: {session.principal.employeeId}
-                </span>
-              </div>
-            </div>
-            <div className="rounded-xl border border-border bg-muted/40 p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium">
-                <ShieldCheck className="size-4 text-muted-foreground" />
-                Current app
-              </div>
-              <div className="grid gap-2 text-sm">
-                <span className="font-medium">{session.selectedApp}</span>
-                <span className="text-muted-foreground">
-                  Stored in Canvas session cookie
-                </span>
-              </div>
-            </div>
-            <div className="rounded-xl border border-border bg-muted/40 p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium">
-                <LayoutDashboard className="size-4 text-muted-foreground" />
-                Roles
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {session.principal.roles.map((role) => (
-                  <Badge key={role} variant="outline">
-                    {role}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Next actions</CardTitle>
+            <CardTitle>Apps overview</CardTitle>
             <CardDescription>
-              Start with dashboard inventory, then review sharing and embed selection.
+              Recently used apps float to the top so you can jump back into active
+              dashboard and workbook management quickly.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3">
-            <Button asChild variant="secondary" className="justify-between">
-              <Link href="/portal/dashboards">
-                Manage dashboards
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-            <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-              Export and import remain visible in the dashboard detail flow, so the
-              main console stays focused on inventory and visibility.
-            </div>
+          <CardContent>
+            <AppInventory apps={inventory} />
           </CardContent>
         </Card>
       </section>

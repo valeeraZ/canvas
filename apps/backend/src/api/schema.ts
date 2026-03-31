@@ -97,6 +97,50 @@ export const selectAppResponseSchema = {
   required: ["tenantId", "roles"]
 } as const;
 
+export const accessibleAppsResponseSchema = {
+  type: "object",
+  description: "Accessible app inventory resolved from the upstream authorization service.",
+  properties: {
+    principal: {
+      type: "object",
+      description: "Principal identity shared across all accessible apps.",
+      properties: {
+        displayName: {
+          type: "string",
+          description: "Display name returned by the upstream current user endpoint."
+        },
+        employeeId: {
+          type: "string",
+          description: "External employee or user identifier."
+        }
+      },
+      required: ["displayName", "employeeId"]
+    },
+    apps: {
+      type: "array",
+      description: "All apps the current principal can access.",
+      items: {
+        type: "object",
+        properties: {
+          appName: {
+            type: "string",
+            description: "App identifier returned by the upstream authorization service."
+          },
+          roles: {
+            type: "array",
+            description: "Effective roles for the current principal in this app.",
+            items: {
+              type: "string"
+            }
+          }
+        },
+        required: ["appName", "roles"]
+      }
+    }
+  },
+  required: ["principal", "apps"]
+} as const;
+
 export const datasetSummarySchema = {
   type: "object",
   description: "Dataset summary shown in app-scoped dataset lists.",

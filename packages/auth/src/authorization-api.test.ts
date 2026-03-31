@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fetchAuthorizationContext } from "./authorization-api";
+import * as authorizationApi from "./authorization-api";
 
 describe("fetchAuthorizationContext", () => {
   it("loads current user and app roles with bearer auth", async () => {
@@ -18,7 +18,7 @@ describe("fetchAuthorizationContext", () => {
         new Response(JSON.stringify({ roles: ["USER", "ADMIN"] }), { status: 200 })
       );
 
-    const result = await fetchAuthorizationContext({
+    const result = await authorizationApi.fetchAuthorizationContext({
       authBaseUrl: "https://auth.internal",
       token: "token-123",
       appName: "canvas",
@@ -48,10 +48,60 @@ describe("fetchAuthorizationContext", () => {
     );
   });
 
+  it("loads the full accessible app list with bearer auth", async () => {
+    const fetchImpl = vi.fn().mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          {
+            app_name: "canvas",
+            roles: ["ADMIN"]
+          },
+          {
+            app_name: "canvas-ops",
+            roles: ["USER"]
+          }
+        ]),
+        { status: 200 }
+      )
+    );
+
+    const result = await (authorizationApi as typeof authorizationApi & {
+      fetchAccessibleApps: (input: {
+        authBaseUrl: string;
+        token: string;
+        fetchImpl: typeof fetch;
+      }) => Promise<Array<{ appName: string; roles: string[] }>>;
+    }).fetchAccessibleApps({
+      authBaseUrl: "https://auth.internal",
+      token: "token-123",
+      fetchImpl
+    });
+
+    expect(result).toEqual([
+      {
+        appName: "canvas",
+        roles: ["ADMIN"]
+      },
+      {
+        appName: "canvas-ops",
+        roles: ["USER"]
+      }
+    ]);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://auth.internal/v1/authorization/roles",
+      {
+        headers: {
+          Authorization: "Bearer token-123"
+        }
+      }
+    );
+  });
+
   it("supports local mock context without calling external endpoints", async () => {
     const fetchImpl = vi.fn();
 
-    const result = await fetchAuthorizationContext({
+    const result = await authorizationApi.fetchAuthorizationContext({
       authBaseUrl: "https://auth.internal",
       token: "token-123",
       appName: "canvas",

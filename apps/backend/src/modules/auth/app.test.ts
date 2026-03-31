@@ -77,7 +77,56 @@ describe("auth routes", () => {
     expect(auth.json().roles).toContain("ADMIN");
   });
 
-  it("switches app context and mints a new access token", async () => {
+  it("lists accessible apps for a valid amtoken", async () => {
+    const app = createApiApp({
+      authBaseUrl: "http://auth.local",
+      mockContext: {
+        displayName: "Local Dev",
+        employeeId: "dev-1",
+        roles: ["ADMIN"]
+      },
+      mockAccessibleApps: [
+        {
+          appName: "canvas",
+          roles: ["ADMIN"]
+        },
+        {
+          appName: "canvas-ops",
+          roles: ["USER"]
+        }
+      ]
+    });
+
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/auth/apps",
+      headers: {
+        authorization: "Bearer local-dev-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      principal: {
+        displayName: "Local Dev",
+        employeeId: "dev-1"
+      },
+      apps: [
+        {
+          appName: "canvas",
+          roles: ["ADMIN"]
+        },
+        {
+          appName: "canvas-ops",
+          roles: ["USER"]
+        }
+      ]
+    });
+  });
+
+  it("switches app context in the canvas session", async () => {
     const app = createApiApp({
       authBaseUrl: "http://auth.local",
       mockContext: {

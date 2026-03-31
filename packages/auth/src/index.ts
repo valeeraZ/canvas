@@ -1,5 +1,14 @@
-export { fetchAuthorizationContext } from "./authorization-api.js";
-export type { AuthorizationApiInput, AuthorizationContext } from "./authorization-api.js";
+export {
+  fetchAccessibleApps,
+  fetchAuthorizationContext,
+  fetchCurrentPrincipal
+} from "./authorization-api.js";
+export type {
+  AccessibleApp,
+  AuthorizationApiInput,
+  AuthorizationContext,
+  AuthorizationPrincipal
+} from "./authorization-api.js";
 export {
   createCachedAuthorizationResolver
 } from "./cached-authorization-resolver.js";

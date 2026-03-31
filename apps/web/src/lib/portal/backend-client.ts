@@ -95,6 +95,24 @@ export function createPortalBackendClient(session: PortalSession) {
   }
 
   return {
+    async listAccessibleApps() {
+      const response = await fetch(`${baseUrl}/auth/apps`, {
+        headers: {
+          authorization: `Bearer ${session.token}`
+        }
+      });
+
+      return readJson<{
+        principal: {
+          displayName: string;
+          employeeId: string;
+        };
+        apps: Array<{
+          appName: string;
+          roles: string[];
+        }>;
+      }>(response);
+    },
     async listDashboards() {
       const response = await authorizedFetch("/dashboards");
       return readJson<Array<{ id: string; tenantId: string; name: string; workbookId: string | null }>>(response);

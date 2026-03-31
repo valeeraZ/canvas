@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  prependRecentValue,
   encodePortalSession,
   PORTAL_SESSION_COOKIE
 } from "../../../../lib/portal/session";
@@ -28,6 +29,9 @@ export async function POST(request: Request) {
     value: encodePortalSession({
       token: body.token ?? "local-dev-token",
       selectedApp: session.selectedApp,
+      recentApps: prependRecentValue([], session.selectedApp),
+      recentDashboardsByApp: {},
+      recentWorkbooksByApp: {},
       principal: session.principal
     }),
     httpOnly: true,

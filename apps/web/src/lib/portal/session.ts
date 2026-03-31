@@ -1,6 +1,9 @@
 export type PortalSession = {
   token: string;
   selectedApp: string;
+  recentApps?: string[];
+  recentDashboardsByApp?: Record<string, string>;
+  recentWorkbooksByApp?: Record<string, string>;
   principal: {
     displayName: string;
     employeeId: string;
@@ -32,10 +35,29 @@ export function decodePortalSession(value: string | undefined) {
       return null;
     }
 
-    return parsed;
+    return {
+      ...parsed,
+      recentApps: Array.isArray(parsed.recentApps)
+        ? parsed.recentApps
+        : [parsed.selectedApp],
+      recentDashboardsByApp:
+        parsed.recentDashboardsByApp &&
+        typeof parsed.recentDashboardsByApp === "object"
+          ? parsed.recentDashboardsByApp
+          : {},
+      recentWorkbooksByApp:
+        parsed.recentWorkbooksByApp &&
+        typeof parsed.recentWorkbooksByApp === "object"
+          ? parsed.recentWorkbooksByApp
+          : {}
+    } satisfies PortalSession;
   } catch {
     return null;
   }
+}
+
+export function prependRecentValue(values: string[], nextValue: string) {
+  return [nextValue, ...values.filter((value) => value !== nextValue)];
 }
 
 export function readPortalSession(cookieStore: CookieStoreLike) {

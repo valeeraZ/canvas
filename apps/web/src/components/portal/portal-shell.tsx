@@ -6,11 +6,9 @@ import {
   ChevronRight,
   Database,
   LayoutDashboard,
-  ShieldCheck,
   Sparkles
 } from "lucide-react";
 import { AppSwitcher } from "./app-switcher";
-import { Badge } from "../ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -20,16 +18,8 @@ import {
   BreadcrumbSeparator
 } from "../ui/breadcrumb";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from "../ui/card";
-import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -39,7 +29,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarSeparator,
   SidebarTrigger
 } from "../ui/sidebar";
 
@@ -53,7 +42,7 @@ type PortalShellProps = {
   } | null;
   title: string;
   description: string;
-  currentSection: "overview" | "dashboards" | "datasets" | "workbooks" | "session";
+  currentSection: "overview" | "dashboards" | "datasets" | "workbooks";
   breadcrumbs: Array<{
     label: string;
     href?: string;
@@ -139,55 +128,10 @@ export function PortalShell(props: PortalShellProps) {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={props.currentSection === "session"}
-                    tooltip="Session context"
-                    className="h-10 rounded-xl px-3 text-[15px] font-medium text-sidebar-foreground/78 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground data-active:bg-sidebar-accent data-active:text-sidebar-foreground data-active:shadow-[inset_0_0_0_1px_var(--color-sidebar-border)]"
-                  >
-                    <Link href="/portal">
-                      <ShieldCheck />
-                      <span>Session context</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter>
-          <SidebarSeparator />
-          <Card size="sm" className="bg-sidebar-accent/40 text-sidebar-foreground ring-sidebar-border">
-            <CardHeader className="border-b border-sidebar-border">
-              <CardTitle className="text-sm">Current principal</CardTitle>
-              <CardDescription className="text-sidebar-foreground/70">
-                External authorization snapshot
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3 text-xs">
-              <div className="grid gap-1">
-                <span className="text-sidebar-foreground/60">Display name</span>
-                <span>{props.principal?.displayName ?? "Not signed in"}</span>
-              </div>
-              <div className="grid gap-1">
-                <span className="text-sidebar-foreground/60">Employee ID</span>
-                <span>{props.principal?.employeeId ?? "Unavailable"}</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(props.principal?.roles ?? []).length ? (
-                  props.principal?.roles.map((role) => (
-                    <Badge key={role} variant="secondary">
-                      {role}
-                    </Badge>
-                  ))
-                ) : (
-                  <Badge variant="outline">No roles loaded</Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset className="bg-background">
         <header className="flex h-16 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur md:px-6">

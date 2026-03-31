@@ -37,13 +37,15 @@ export default async function PortalWorkbooksPage() {
     );
   }
 
-  const workbooks = await createPortalBackendClient(session).listWorkbooks();
+  const client = createPortalBackendClient(session);
+  const [accessibleApps, workbooks] = await Promise.all([
+    client.listAccessibleApps(),
+    client.listWorkbooks()
+  ]);
 
   return (
     <PortalShell
-      apps={[session.selectedApp, "canvas", "canvas-ops"].filter(
-        (value, index, items) => items.indexOf(value) === index
-      )}
+      apps={accessibleApps.apps.map((app) => app.appName)}
       currentApp={session.selectedApp}
       principal={session.principal}
       title="Workbooks"

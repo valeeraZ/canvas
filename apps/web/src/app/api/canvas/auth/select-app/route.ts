@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createPortalBackendClient } from "../../../../../lib/portal/backend-client";
 import {
+  prependRecentValue,
   encodePortalSession,
   PORTAL_SESSION_COOKIE,
   readPortalSessionFromCookieHeader
@@ -43,6 +44,9 @@ export async function POST(request: Request) {
     value: encodePortalSession({
       token: session.token,
       selectedApp: nextSession.selectedApp,
+      recentApps: prependRecentValue(session.recentApps ?? [], nextSession.selectedApp),
+      recentDashboardsByApp: session.recentDashboardsByApp ?? {},
+      recentWorkbooksByApp: session.recentWorkbooksByApp ?? {},
       principal: nextSession.principal
     }),
     httpOnly: true,

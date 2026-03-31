@@ -72,7 +72,11 @@ export function createPortalApiClient(): PortalApiClient {
       return response.json();
     },
     async listApps() {
-      return ["canvas", "canvas-ops"];
+      const response = await fetch("/api/canvas/auth/apps");
+      const payload = (await response.json()) as {
+        apps: Array<{ appName: string }>;
+      };
+      return payload.apps.map((app) => app.appName);
     },
     async selectApp(input) {
       const response = await fetch("/api/canvas/auth/select-app", {

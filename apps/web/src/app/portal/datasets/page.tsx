@@ -37,13 +37,15 @@ export default async function PortalDatasetsPage() {
     );
   }
 
-  const datasets = await createPortalBackendClient(session).listDatasets();
+  const client = createPortalBackendClient(session);
+  const [accessibleApps, datasets] = await Promise.all([
+    client.listAccessibleApps(),
+    client.listDatasets()
+  ]);
 
   return (
     <PortalShell
-      apps={[session.selectedApp, "canvas", "canvas-ops"].filter(
-        (value, index, items) => items.indexOf(value) === index
-      )}
+      apps={accessibleApps.apps.map((app) => app.appName)}
       currentApp={session.selectedApp}
       principal={session.principal}
       title="Datasets"

@@ -1,10 +1,12 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import type {
+  AccessibleApp,
   AuthorizationContext,
   AuthorizationResolver
 } from "../../../../../packages/auth/src/index.js";
 import { selectApp } from "./routes/select-app";
 import {
+  accessibleAppsResponseSchema,
   messageResponseSchema,
   selectAppResponseSchema,
   tenantContextSchema
@@ -29,6 +31,7 @@ declare module "fastify" {
 export type AuthModuleOptions = {
   authBaseUrl: string;
   mockContext?: AuthorizationContext;
+  mockAccessibleApps?: AccessibleApp[];
   authorizationResolver: AuthorizationResolver;
   sessionStore: CanvasSessionStore;
 };
@@ -76,7 +79,8 @@ export async function attachAuthContext(
       amtoken: token,
       appName: session.selectedApp,
       authBaseUrl: options.authBaseUrl,
-      mockContext: options.mockContext
+      mockContext: options.mockContext,
+      mockAccessibleApps: options.mockAccessibleApps
     });
 
     request.tenantContext = {
@@ -95,6 +99,55 @@ export const authModule: FastifyPluginAsync<AuthModuleOptions> = async (
   app,
   options
 ) => {
+  app.get("/auth/apps", {
+    schema: {
+      tags: ["auth"],
+      summary: "List all apps accessible to the current principal",
+      description:
+        "Requires Authorization: Bearer <amtoken>. Returns the app inventory used by the Canvas Portal landing page before the user drills into app-scoped dashboard and workbook management.",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      response: {
+        200: accessibleAppsResponseSchema,
+        401: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    const token = readBearerToken(request.headers.authorization);
+
+    if (!token) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    const [principal, accessibleApps] = await Promise.all([
+      options.authorizationResolver.getPrincipal?.({
+        amtoken: token,
+        authBaseUrl: options.authBaseUrl,
+        mockContext: options.mockContext
+      }),
+      options.authorizationResolver.listAccessibleApps?.({
+        amtoken: token,
+        authBaseUrl: options.authBaseUrl,
+        mockContext: options.mockContext,
+        mockAccessibleApps: options.mockAccessibleApps
+      })
+    ]);
+
+    return {
+      principal: principal ?? {
+        displayName: options.mockContext?.displayName ?? "Unknown user",
+        employeeId: options.mockContext?.employeeId ?? "unknown"
+      },
+      apps: accessibleApps ?? []
+    };
+  });
+
   app.get("/auth/me", {
     schema: {
       tags: ["auth"],
@@ -181,7 +234,8 @@ export const authModule: FastifyPluginAsync<AuthModuleOptions> = async (
       amtoken: token,
       appName: request.body.appName,
       authBaseUrl: options.authBaseUrl,
-      mockContext: options.mockContext
+      mockContext: options.mockContext,
+      mockAccessibleApps: options.mockAccessibleApps
     });
 
     const existingSessionId = readCanvasSessionId(request);

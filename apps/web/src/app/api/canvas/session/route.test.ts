@@ -1,4 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  decodePortalSession,
+  PORTAL_SESSION_COOKIE
+} from "../../../../lib/portal/session";
 import { POST } from "./route";
 
 describe("canvas session route", () => {
@@ -55,5 +59,10 @@ describe("canvas session route", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0]?.[0]).toBe("http://127.0.0.1:3001/session/exchange");
     expect(response.headers.get("set-cookie")).toContain("canvas_portal_session=");
+    const cookieValue = response.headers
+      .get("set-cookie")
+      ?.match(new RegExp(`${PORTAL_SESSION_COOKIE}=([^;]+)`))?.[1];
+    const portalSession = decodePortalSession(cookieValue);
+    expect(portalSession?.recentApps).toEqual(["canvas"]);
   });
 });

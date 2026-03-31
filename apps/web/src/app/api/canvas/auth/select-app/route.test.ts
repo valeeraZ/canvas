@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  decodePortalSession,
   encodePortalSession,
   PORTAL_SESSION_COOKIE
 } from "../../../../../lib/portal/session";
@@ -44,6 +45,9 @@ describe("canvas auth select-app route", () => {
         cookie: `${PORTAL_SESSION_COOKIE}=${encodePortalSession({
           token: "amtoken-1",
           selectedApp: "canvas",
+          recentApps: ["canvas"],
+          recentDashboardsByApp: {},
+          recentWorkbooksByApp: {},
           principal: {
             displayName: "Local Dev",
             employeeId: "dev-1",
@@ -71,5 +75,10 @@ describe("canvas auth select-app route", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[1]?.[0]).toBe("http://127.0.0.1:3001/auth/select-app");
     expect(response.headers.get("set-cookie")).toContain("canvas_portal_session=");
+    const cookieValue = response.headers
+      .get("set-cookie")
+      ?.match(new RegExp(`${PORTAL_SESSION_COOKIE}=([^;]+)`))?.[1];
+    const portalSession = decodePortalSession(cookieValue);
+    expect(portalSession?.recentApps).toEqual(["canvas-ops", "canvas"]);
   });
 });

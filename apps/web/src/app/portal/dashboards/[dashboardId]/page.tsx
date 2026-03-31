@@ -44,7 +44,8 @@ export default async function PortalDashboardDetailPage(props: {
 
   const { dashboardId } = await props.params;
   const client = createPortalBackendClient(session);
-  const [dashboard, selected, share] = await Promise.all([
+  const [accessibleApps, dashboard, selected, share] = await Promise.all([
+    client.listAccessibleApps(),
     client.getDashboard(dashboardId).catch(() => null),
     client.getSelectedDashboard(),
     client.getDashboardShare(dashboardId)
@@ -56,9 +57,7 @@ export default async function PortalDashboardDetailPage(props: {
 
   return (
     <PortalShell
-      apps={[session.selectedApp, "canvas", "canvas-ops"].filter(
-        (value, index, items) => items.indexOf(value) === index
-      )}
+      apps={accessibleApps.apps.map((app) => app.appName)}
       currentApp={session.selectedApp}
       principal={session.principal}
       title={dashboard.name}

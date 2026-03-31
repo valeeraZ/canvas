@@ -5,6 +5,7 @@ import swaggerUi from "@fastify/swagger-ui";
 import {
   createCachedAuthorizationResolver,
   createMemoryExpiringStore,
+  type AccessibleApp,
   type AuthorizationContext,
   type AuthorizationResolver,
   type ExpiringStore
@@ -36,6 +37,7 @@ import {
 export type CreateApiAppOptions = {
   authBaseUrl: string;
   mockContext?: AuthorizationContext;
+  mockAccessibleApps?: AccessibleApp[];
   db?: PrismaClient;
   tenantId?: string;
   authCacheStore?: ExpiringStore;
@@ -59,6 +61,7 @@ export function createApiApp(options: CreateApiAppOptions) {
     createCachedAuthorizationResolver({
       authBaseUrl: options.authBaseUrl,
       defaultMockContext: options.mockContext,
+      defaultMockAccessibleApps: options.mockAccessibleApps,
       cache: authCacheStore,
       ttlSeconds: sessionTtlSeconds
     });
@@ -169,12 +172,14 @@ export function createApiApp(options: CreateApiAppOptions) {
   void attachAuthContext(app, {
     authBaseUrl: options.authBaseUrl,
     mockContext: options.mockContext,
+    mockAccessibleApps: options.mockAccessibleApps,
     authorizationResolver,
     sessionStore
   });
   void app.register(authModule, {
     authBaseUrl: options.authBaseUrl,
     mockContext: options.mockContext,
+    mockAccessibleApps: options.mockAccessibleApps,
     authorizationResolver,
     sessionStore
   });
