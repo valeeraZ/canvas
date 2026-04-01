@@ -70,7 +70,7 @@ export default async function PortalDashboardDetailPage(props: {
       ]}
       actions={
         <Button asChild variant="outline">
-          <Link href="/portal/dashboards">Back to dashboards</Link>
+          <Link href="/portal/dashboards">Back</Link>
         </Button>
       }
     >

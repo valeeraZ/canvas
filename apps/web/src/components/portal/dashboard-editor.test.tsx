@@ -22,11 +22,14 @@ describe("DashboardEditor", () => {
       />
     );
 
-    expect(html).toContain("Executive Overview");
+    expect(html).not.toContain("Executive Overview");
+    expect(html).not.toContain("Back to dashboards");
+    expect(html).toContain("Dashboard workspace");
+    expect(html).toContain("View dashboard");
+    expect(html).toContain("Edit tools");
+    expect(html).toContain("Dashboard ID:");
+    expect(html).toContain("dash_1");
     expect(html).toContain("Selected for embed");
-    expect(html).toContain("Visibility subjects");
     expect(html).toContain("Export dashboard");
-    expect(html).toContain("Import dashboard");
-    expect(html).toContain("ADMIN");
   });
 });

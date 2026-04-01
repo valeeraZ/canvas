@@ -1,3 +1,5 @@
+"use client";
+
 import React, { startTransition, useState } from "react";
 import { Download } from "lucide-react";
 import {

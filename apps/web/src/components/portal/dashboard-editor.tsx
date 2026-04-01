@@ -1,12 +1,10 @@
 "use client";
 
 import React, { startTransition, useState } from "react";
-import Link from "next/link";
 import {
-  ArrowLeft,
   CheckCircle2,
+  LayoutTemplate,
   LoaderCircle,
-  PanelTopOpen,
   Share2
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -68,20 +66,20 @@ export function DashboardEditor(props: {
   return (
     <section className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="grid gap-2">
-          <Link className="inline-flex items-center gap-2 text-sm text-muted-foreground" href="/portal/dashboards">
-            <ArrowLeft className="h-4 w-4" />
-            Back to dashboards
-          </Link>
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-3xl font-semibold">{props.dashboard.name}</h2>
-            <Badge variant={isSelected ? "secondary" : "outline"}>
-              {isSelected ? "Selected for embed" : "Available for embed"}
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Dashboard ID: {props.dashboard.id}
-          </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={isSelected ? "secondary" : "outline"}>
+            {isSelected ? "Selected for embed" : "Available for embed"}
+          </Badge>
+          <Button
+            type="button"
+            variant={isSelected ? "secondary" : "outline"}
+            size="sm"
+            onClick={setSelectedDashboard}
+            disabled={pending || isSelected}
+          >
+            {pending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <LayoutTemplate className="h-4 w-4" />}
+            {isSelected ? "Selected" : "Select for embed"}
+          </Button>
         </div>
         <div className="flex gap-2">
           <DashboardExportButton dashboardId={props.dashboard.id} />
@@ -95,29 +93,34 @@ export function DashboardEditor(props: {
           <TabsTrigger value="io">Import / Export</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
-          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <PanelTopOpen className="h-4 w-4 text-muted-foreground" />
-                  Embed default
-                </CardTitle>
-                <CardDescription>
-                  Pick whether this dashboard should be the current default for the active app.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <PortalActionAlert error={error} title="Embed selection failed" />
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4" />
-                  {isSelected ? "Selected for embed" : "Not selected for embed"}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Dashboard workspace</CardTitle>
+              <CardDescription>
+                Dashboard ID: {props.dashboard.id}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <PortalActionAlert error={error} title="Embed selection failed" />
+              <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-8">
+                <div className="grid gap-2">
+                  <p className="text-base font-medium">View dashboard</p>
+                  <p className="text-sm text-muted-foreground">
+                    Charts, widgets, and dashboard preview will appear here.
+                  </p>
                 </div>
-                <Button type="button" onClick={setSelectedDashboard} disabled={pending}>
-                  {pending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-                  {isSelected ? "Keep selected" : "Make selected dashboard"}
-                </Button>
-              </CardContent>
-            </Card>
+                <div className="mt-6 grid gap-2">
+                  <p className="text-base font-medium">Edit tools</p>
+                  <p className="text-sm text-muted-foreground">
+                    Layout, widget configuration, and authoring controls will live in this workspace area.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="sharing">
+          <div className="grid gap-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Distribution snapshot</CardTitle>
@@ -142,10 +145,6 @@ export function DashboardEditor(props: {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
-        <TabsContent value="sharing">
-          <div className="grid gap-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
