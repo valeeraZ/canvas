@@ -1,5 +1,9 @@
 import { readPortalSessionFromCookieHeader } from "../../../../../../lib/portal/session";
-import { createPortalBackendClient } from "../../../../../../lib/portal/backend-client";
+import {
+  createPortalBackendClient,
+  createPortalBackendErrorResponse
+} from "../../../../../../lib/portal/backend-client";
+import { createRouteRequestId, jsonWithRequestId } from "../../../response";
 
 export async function GET(
   request: Request,
@@ -9,22 +13,28 @@ export async function GET(
     }>;
   }
 ) {
+  const requestId = createRouteRequestId();
   const session = readPortalSessionFromCookieHeader(
     request.headers.get("cookie") ?? ""
   );
 
   if (!session) {
-    return Response.json(
+    return jsonWithRequestId(
       {
         message: "Missing portal session"
       },
       {
-        status: 401
+        status: 401,
+        requestId
       }
     );
   }
 
-  const { dashboardId } = await context.params;
-  const payload = await createPortalBackendClient(session).exportDashboard(dashboardId);
-  return Response.json(payload);
+  try {
+    const { dashboardId } = await context.params;
+    const payload = await createPortalBackendClient(session).exportDashboard(dashboardId);
+    return jsonWithRequestId(payload, { requestId });
+  } catch (error) {
+    return createPortalBackendErrorResponse(error, requestId);
+  }
 }

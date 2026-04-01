@@ -7,3 +7,5 @@ dist/
 coverage/
 .pnpm-store/
 .superpowers/
+**/.env
+!**/.env.example

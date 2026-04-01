@@ -25,6 +25,7 @@ export type BackendRuntimeConfig = {
   appName: string;
   databaseUrl?: string;
   redisUrl?: string;
+  prettyLogs: boolean;
   mockContext?: AuthorizationContext;
 };
 
@@ -77,6 +78,7 @@ export function createBackendRuntimeConfig(
     appName: source.CANVAS_APP_NAME ?? DEFAULT_APP_NAME,
     databaseUrl: source.DATABASE_URL ?? DEFAULT_DATABASE_URL,
     redisUrl: source.REDIS_URL,
+    prettyLogs: parseBooleanFlag(source.CANVAS_PRETTY_LOGS, false),
     mockContext: useMockAuth
       ? {
           displayName:
@@ -106,6 +108,7 @@ export function createBackendRuntime(
     mockContext: config.mockContext,
     db,
     tenantId: config.appName,
+    prettyLogs: config.prettyLogs,
     authCacheStore: cache,
     sessionBackingStore: cache
   });

@@ -56,6 +56,9 @@ describe("canvas session route", () => {
     expect(payload.selectedApp).toBe("canvas");
     expect(payload.principal.displayName).toBe("Local Dev");
     expect(payload.principal.employeeId).toBe("dev-1");
+    expect(response.headers.get("x-request-id")).toMatch(
+      /^[0-9a-f-]{36}$/i
+    );
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0]?.[0]).toBe("http://127.0.0.1:3001/session/exchange");
     expect(response.headers.get("set-cookie")).toContain("canvas_portal_session=");

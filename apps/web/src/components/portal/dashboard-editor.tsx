@@ -12,8 +12,13 @@ import {
 import { useRouter } from "next/navigation";
 import { DashboardExportButton } from "./dashboard-export-button";
 import { DashboardImportDialog } from "./dashboard-import-dialog";
+import { PortalActionAlert } from "./portal-action-alert";
 import { DashboardSharePanel } from "./dashboard-share-panel";
-import { createPortalApiClient } from "../../lib/portal/api-client";
+import {
+  createPortalApiClient,
+  type PortalApiError,
+  toPortalApiError
+} from "../../lib/portal/api-client";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {
@@ -40,9 +45,11 @@ export function DashboardEditor(props: {
   const apiClient = createPortalApiClient();
   const isSelected = props.selectedDashboardId === props.dashboard.id;
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<PortalApiError | null>(null);
 
   function setSelectedDashboard() {
     setPending(true);
+    setError(null);
 
     startTransition(async () => {
       try {
@@ -50,6 +57,8 @@ export function DashboardEditor(props: {
           dashboardId: props.dashboard.id
         });
         router.refresh();
+      } catch (caught) {
+        setError(toPortalApiError(caught));
       } finally {
         setPending(false);
       }
@@ -98,6 +107,7 @@ export function DashboardEditor(props: {
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
+                <PortalActionAlert error={error} title="Embed selection failed" />
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle2 className="h-4 w-4" />
                   {isSelected ? "Selected for embed" : "Not selected for embed"}

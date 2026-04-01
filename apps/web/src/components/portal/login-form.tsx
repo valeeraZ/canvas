@@ -2,15 +2,22 @@
 
 import React, { startTransition, useState } from "react";
 import { LoaderCircle, LogIn } from "lucide-react";
+import {
+  createPortalApiClient,
+  type PortalApiError,
+  toPortalApiError
+} from "../../lib/portal/api-client";
+import { PortalActionAlert } from "./portal-action-alert";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 
 export function LoginForm(props: { defaultApp: string }) {
+  const apiClient = createPortalApiClient();
   const [token, setToken] = useState("local-dev-token");
   const [appName, setAppName] = useState(props.defaultApp);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<PortalApiError | null>(null);
   const [pending, setPending] = useState(false);
 
   function submitForm(event: React.FormEvent<HTMLFormElement>) {
@@ -20,26 +27,14 @@ export function LoginForm(props: { defaultApp: string }) {
 
     startTransition(async () => {
       try {
-        const response = await fetch("/api/canvas/session", {
-          method: "POST",
-          headers: {
-            "content-type": "application/json"
-          },
-          body: JSON.stringify({
-            token,
-            appName
-          })
+        await apiClient.createSession({
+          token,
+          appName
         });
-
-        if (!response.ok) {
-          throw new Error(`Login failed: ${response.status}`);
-        }
 
         window.location.href = "/portal";
       } catch (caught) {
-        const message =
-          caught instanceof Error ? caught.message : "Unknown login failure";
-        setError(message);
+        setError(toPortalApiError(caught));
       } finally {
         setPending(false);
       }
@@ -78,7 +73,7 @@ export function LoginForm(props: { defaultApp: string }) {
             />
           </div>
           {error ? (
-            <p className="text-sm text-destructive">{error}</p>
+            <PortalActionAlert error={error} title="Login failed" />
           ) : (
             <p className="text-sm text-muted-foreground">
               Local development defaults to a mock profile when external auth is not

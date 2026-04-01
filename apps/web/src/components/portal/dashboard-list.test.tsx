@@ -12,6 +12,7 @@ describe("DashboardList", () => {
           { id: "dash_2", name: "Finance Drilldown" }
         ]}
         selectedDashboardId="dash_1"
+        actions={<button type="button">Create dashboard</button>}
       />
     );
 
@@ -20,5 +21,6 @@ describe("DashboardList", () => {
     expect(html).toContain("Finance Drilldown");
     expect(html).toContain("/portal/dashboards/dash_1");
     expect(html).toContain("Selected for embed");
+    expect(html).toContain("Create dashboard");
   });
 });

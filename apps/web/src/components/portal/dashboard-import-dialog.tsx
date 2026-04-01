@@ -2,6 +2,11 @@ import React, { startTransition, useState } from "react";
 import { Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createPortalApiClient } from "../../lib/portal/api-client";
+import {
+  type PortalApiError,
+  toPortalApiError
+} from "../../lib/portal/api-client";
+import { PortalActionAlert } from "./portal-action-alert";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -32,7 +37,7 @@ export function DashboardImportDialog() {
       2
     )
   );
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<PortalApiError | null>(null);
   const [pending, setPending] = useState(false);
 
   function importDashboard() {
@@ -47,7 +52,7 @@ export function DashboardImportDialog() {
         await apiClient.importDashboard(parsed);
         router.refresh();
       } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Import failed");
+        setError(toPortalApiError(caught));
       } finally {
         setPending(false);
       }
@@ -76,9 +81,7 @@ export function DashboardImportDialog() {
             value={value}
             onChange={(event) => setValue(event.target.value)}
           />
-          {error ? (
-            <p className="text-sm text-destructive">{error}</p>
-          ) : null}
+          <PortalActionAlert error={error} title="Import failed" />
         </div>
         <DialogFooter>
           <Button type="button" onClick={importDashboard} disabled={pending}>

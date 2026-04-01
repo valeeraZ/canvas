@@ -24,7 +24,8 @@ describe("createBackendRuntimeConfig", () => {
       AUTH_BASE_URL: "https://auth.example.com",
       CANVAS_APP_NAME: "sales",
       DATABASE_URL: "postgres://override",
-      CANVAS_USE_MOCK_AUTH: "false"
+      CANVAS_USE_MOCK_AUTH: "false",
+      CANVAS_PRETTY_LOGS: "1"
     });
 
     expect(config.host).toBe("0.0.0.0");
@@ -32,6 +33,7 @@ describe("createBackendRuntimeConfig", () => {
     expect(config.authBaseUrl).toBe("https://auth.example.com");
     expect(config.appName).toBe("sales");
     expect(config.databaseUrl).toBe("postgres://override");
+    expect(config.prettyLogs).toBe(true);
     expect(config.mockContext).toBeUndefined();
   });
 });

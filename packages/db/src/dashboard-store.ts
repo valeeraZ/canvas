@@ -1,17 +1,21 @@
 import type { DashboardRecord } from "../../../packages/contracts/src/dashboards.js";
 import type { PrismaClient } from "./generated/prisma/client.js";
+import { resolveTenantBySlug, tenantSlugInclude } from "./tenant-slug.js";
 
 type PersistedDashboard = {
   id: string;
   tenantId: string;
   name: string;
   workbookId: string | null;
+  tenant?: {
+    slug: string;
+  } | null;
 };
 
 export function toDashboardRecord(input: PersistedDashboard): DashboardRecord {
   return {
     id: input.id,
-    tenantId: input.tenantId,
+    tenantId: input.tenant?.slug ?? input.tenantId,
     name: input.name,
     workbookId: input.workbookId
   };
@@ -24,19 +28,26 @@ export function createDashboardStore(prisma: PrismaClient) {
       name: string;
       workbookId?: string;
     }) {
+      const tenant = await resolveTenantBySlug(prisma, input.tenantId);
       const dashboard = await prisma.dashboard.create({
         data: {
-          tenantId: input.tenantId,
+          tenantId: tenant.id,
           name: input.name,
           workbookId: input.workbookId ?? null
-        }
+        },
+        include: tenantSlugInclude
       });
 
       return toDashboardRecord(dashboard);
     },
     async listByTenant(tenantId: string) {
       const dashboards = await prisma.dashboard.findMany({
-        where: { tenantId },
+        where: {
+          tenant: {
+            slug: tenantId
+          }
+        },
+        include: tenantSlugInclude,
         orderBy: {
           name: "asc"
         }
@@ -48,8 +59,11 @@ export function createDashboardStore(prisma: PrismaClient) {
       const dashboard = await prisma.dashboard.findFirst({
         where: {
           id: dashboardId,
-          tenantId
-        }
+          tenant: {
+            slug: tenantId
+          }
+        },
+        include: tenantSlugInclude
       });
 
       return dashboard ? toDashboardRecord(dashboard) : null;

@@ -3,7 +3,12 @@
 import React, { startTransition, useState } from "react";
 import { LoaderCircle, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createPortalApiClient } from "../../lib/portal/api-client";
+import {
+  createPortalApiClient,
+  type PortalApiError,
+  toPortalApiError
+} from "../../lib/portal/api-client";
+import { PortalActionAlert } from "./portal-action-alert";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
@@ -23,6 +28,7 @@ export function AppSwitcher(props: {
   const apiClient = createPortalApiClient();
   const [nextApp, setNextApp] = useState(props.currentApp);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<PortalApiError | null>(null);
 
   function switchApp() {
     if (nextApp === props.currentApp) {
@@ -30,6 +36,7 @@ export function AppSwitcher(props: {
     }
 
     setPending(true);
+    setError(null);
 
     startTransition(async () => {
       try {
@@ -37,6 +44,8 @@ export function AppSwitcher(props: {
           appName: nextApp
         });
         router.refresh();
+      } catch (caught) {
+        setError(toPortalApiError(caught));
       } finally {
         setPending(false);
       }
@@ -60,6 +69,7 @@ export function AppSwitcher(props: {
         <Label htmlFor="portal-app-switcher" className="text-xs text-sidebar-foreground/70">
           Switch active app
         </Label>
+        <PortalActionAlert error={error} title="App switch failed" />
         <div className="grid gap-2">
           <Select value={nextApp} onValueChange={setNextApp}>
             <SelectTrigger

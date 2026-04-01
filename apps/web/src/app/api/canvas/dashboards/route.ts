@@ -1,35 +1,80 @@
 import {
   readPortalSessionFromCookieHeader
 } from "../../../../lib/portal/session";
-import { createPortalBackendClient } from "../../../../lib/portal/backend-client";
+import {
+  createPortalBackendClient,
+  createPortalBackendErrorResponse
+} from "../../../../lib/portal/backend-client";
+import { createRouteRequestId, jsonWithRequestId } from "../response";
 
 export async function GET(request: Request) {
+  const requestId = createRouteRequestId();
   const session = readPortalSessionFromCookieHeader(
     request.headers.get("cookie") ?? ""
   );
 
   if (!session) {
-    return Response.json(
+    return jsonWithRequestId(
       {
         message: "Missing portal session"
       },
       {
-        status: 401
+        status: 401,
+        requestId
       }
     );
   }
 
-  const client = createPortalBackendClient(session);
-  const [dashboards, selected] = await Promise.all([
-    client.listDashboards(),
-    client.getSelectedDashboard()
-  ]);
+  try {
+    const client = createPortalBackendClient(session);
+    const [dashboards, selected] = await Promise.all([
+      client.listDashboards(),
+      client.getSelectedDashboard()
+    ]);
 
-  return Response.json({
-    dashboards: dashboards.map((dashboard) => ({
-      id: dashboard.id,
-      name: dashboard.name
-    })),
-    selectedDashboardId: selected.dashboardId
-  });
+    return jsonWithRequestId({
+      dashboards: dashboards.map((dashboard) => ({
+        id: dashboard.id,
+        name: dashboard.name
+      })),
+      selectedDashboardId: selected.dashboardId
+    }, { requestId });
+  } catch (error) {
+    return createPortalBackendErrorResponse(error, requestId);
+  }
+}
+
+export async function POST(request: Request) {
+  const requestId = createRouteRequestId();
+  const session = readPortalSessionFromCookieHeader(
+    request.headers.get("cookie") ?? ""
+  );
+
+  if (!session) {
+    return jsonWithRequestId(
+      {
+        message: "Missing portal session"
+      },
+      {
+        status: 401,
+        requestId
+      }
+    );
+  }
+
+  const body = (await request.json().catch(() => ({}))) as {
+    name?: string;
+    workbookId?: string | null;
+  };
+
+  try {
+    const dashboard = await createPortalBackendClient(session).createDashboard({
+      name: body.name ?? "Untitled Dashboard",
+      workbookId: body.workbookId ?? null
+    });
+
+    return jsonWithRequestId(dashboard, { requestId });
+  } catch (error) {
+    return createPortalBackendErrorResponse(error, requestId);
+  }
 }

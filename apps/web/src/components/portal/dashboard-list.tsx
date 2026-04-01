@@ -24,21 +24,25 @@ export function DashboardList(props: {
     name: string;
   }>;
   selectedDashboardId: string | null;
+  actions?: React.ReactNode;
 }) {
   return (
     <section className="grid gap-6">
       <Card>
         <CardHeader className="border-b">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-border bg-muted/60 p-2 text-muted-foreground">
-              <LayoutDashboard className="h-4 w-4" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg border border-border bg-muted/60 p-2 text-muted-foreground">
+                <LayoutDashboard className="h-4 w-4" />
+              </div>
+              <div>
+                <CardTitle>Dashboard inventory</CardTitle>
+                <CardDescription>
+                  Review dashboard ownership, current embed choice, and sharing details.
+                </CardDescription>
+              </div>
             </div>
-            <div>
-              <CardTitle>Dashboard inventory</CardTitle>
-              <CardDescription>
-                Review dashboard ownership, current embed choice, and sharing details.
-              </CardDescription>
-            </div>
+            {props.actions}
           </div>
         </CardHeader>
         <CardContent className="p-0">

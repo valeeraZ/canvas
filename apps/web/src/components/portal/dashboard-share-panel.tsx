@@ -3,7 +3,12 @@
 import React, { startTransition, useState } from "react";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createPortalApiClient } from "../../lib/portal/api-client";
+import {
+  createPortalApiClient,
+  type PortalApiError,
+  toPortalApiError
+} from "../../lib/portal/api-client";
+import { PortalActionAlert } from "./portal-action-alert";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -29,6 +34,7 @@ export function DashboardSharePanel(props: {
   const [subjectType, setSubjectType] = useState<"user" | "group" | "role">("role");
   const [subjectId, setSubjectId] = useState("");
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<PortalApiError | null>(null);
 
   function addSubject() {
     if (!subjectId.trim()) {
@@ -51,6 +57,7 @@ export function DashboardSharePanel(props: {
 
   function saveSharing() {
     setPending(true);
+    setError(null);
 
     startTransition(async () => {
       try {
@@ -59,6 +66,8 @@ export function DashboardSharePanel(props: {
           subjects
         });
         router.refresh();
+      } catch (caught) {
+        setError(toPortalApiError(caught));
       } finally {
         setPending(false);
       }
@@ -67,6 +76,7 @@ export function DashboardSharePanel(props: {
 
   return (
     <div className="grid gap-4 p-6">
+      <PortalActionAlert error={error} title="Sharing update failed" />
       <div className="grid gap-1">
         <h3 className="text-sm font-medium">Visibility subjects</h3>
         <p className="text-sm text-muted-foreground">

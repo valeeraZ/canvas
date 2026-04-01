@@ -1,5 +1,9 @@
 import { readPortalSessionFromCookieHeader } from "../../../../../../lib/portal/session";
-import { createPortalBackendClient } from "../../../../../../lib/portal/backend-client";
+import {
+  createPortalBackendClient,
+  createPortalBackendErrorResponse
+} from "../../../../../../lib/portal/backend-client";
+import { createRouteRequestId, jsonWithRequestId } from "../../../response";
 
 export async function POST(
   request: Request,
@@ -9,6 +13,7 @@ export async function POST(
     }>;
   }
 ) {
+  const requestId = createRouteRequestId();
   const body = (await request.json().catch(() => ({}))) as {
     subjects?: Array<{
       type?: "user" | "group" | "role";
@@ -22,27 +27,32 @@ export async function POST(
   );
 
   if (!session) {
-    return Response.json(
+    return jsonWithRequestId(
       {
         message: "Missing portal session"
       },
       {
-        status: 401
+        status: 401,
+        requestId
       }
     );
   }
 
-  const result = await createPortalBackendClient(session).shareDashboard({
-    dashboardId,
-    subjects: (body.subjects ?? [])
-      .filter((subject): subject is { type: "user" | "group" | "role"; id: string } =>
-        Boolean(subject?.type && subject?.id)
-      )
-      .map((subject) => ({
-        type: subject.type,
-        id: subject.id
-      }))
-  });
+  try {
+    const result = await createPortalBackendClient(session).shareDashboard({
+      dashboardId,
+      subjects: (body.subjects ?? [])
+        .filter((subject): subject is { type: "user" | "group" | "role"; id: string } =>
+          Boolean(subject?.type && subject?.id)
+        )
+        .map((subject) => ({
+          type: subject.type,
+          id: subject.id
+        }))
+    });
 
-  return Response.json(result);
+    return jsonWithRequestId(result, { requestId });
+  } catch (error) {
+    return createPortalBackendErrorResponse(error, requestId);
+  }
 }

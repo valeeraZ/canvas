@@ -1,5 +1,6 @@
 import type { DatasetRecord } from "../../../packages/contracts/src/datasets.js";
 import type { PrismaClient } from "./generated/prisma/client.js";
+import { resolveTenantBySlug, tenantSlugInclude } from "./tenant-slug.js";
 
 type WarningRecord = {
   code: string;
@@ -12,6 +13,9 @@ type PersistedDataset = {
   name: string;
   status: string;
   warnings: unknown;
+  tenant?: {
+    slug: string;
+  } | null;
 };
 
 function normalizeWarnings(input: unknown): WarningRecord[] {
@@ -37,7 +41,7 @@ function normalizeWarnings(input: unknown): WarningRecord[] {
 export function toDatasetRecord(input: PersistedDataset): DatasetRecord {
   return {
     id: input.id,
-    tenantId: input.tenantId,
+    tenantId: input.tenant?.slug ?? input.tenantId,
     name: input.name,
     status: input.status as DatasetRecord["status"],
     warnings: normalizeWarnings(input.warnings)
@@ -47,20 +51,27 @@ export function toDatasetRecord(input: PersistedDataset): DatasetRecord {
 export function createDatasetStore(prisma: PrismaClient) {
   return {
     async create(input: { tenantId: string; name: string; status?: string }) {
+      const tenant = await resolveTenantBySlug(prisma, input.tenantId);
       const dataset = await prisma.dataset.create({
         data: {
-          tenantId: input.tenantId,
+          tenantId: tenant.id,
           name: input.name,
           status: input.status ?? "queued",
           warnings: []
-        }
+        },
+        include: tenantSlugInclude
       });
 
       return toDatasetRecord(dataset);
     },
     async listByTenant(tenantId: string) {
       const datasets = await prisma.dataset.findMany({
-        where: { tenantId },
+        where: {
+          tenant: {
+            slug: tenantId
+          }
+        },
+        include: tenantSlugInclude,
         orderBy: {
           name: "asc"
         }
@@ -72,8 +83,11 @@ export function createDatasetStore(prisma: PrismaClient) {
       const dataset = await prisma.dataset.findFirst({
         where: {
           id: datasetId,
-          tenantId
-        }
+          tenant: {
+            slug: tenantId
+          }
+        },
+        include: tenantSlugInclude
       });
 
       return dataset ? toDatasetRecord(dataset) : null;

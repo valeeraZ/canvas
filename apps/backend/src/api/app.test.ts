@@ -241,4 +241,56 @@ describe("createApiApp", () => {
     expect(docs.statusCode).toBe(200);
     expect(docs.headers["content-type"]).toContain("text/html");
   });
+
+  it("returns requestId in json error responses for unhandled route failures", async () => {
+    const app = createApiApp({
+      authBaseUrl: "http://auth.local",
+      mockContext: {
+        displayName: "Local Dev",
+        employeeId: "dev-1",
+        roles: ["ADMIN"]
+      },
+      workbooks: {
+        listWorkbooks: async () => [],
+        getWorkbook: async () => null,
+        createWorkbook: async () => {
+          throw new Error("Database write failed");
+        }
+      }
+    });
+
+    apps.push(app);
+
+    const session = await app.inject({
+      method: "POST",
+      url: "/session/exchange",
+      payload: {
+        token: "local-dev-token",
+        appName: "canvas"
+      }
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/workbooks",
+      headers: {
+        authorization: "Bearer local-dev-token",
+        cookie: Array.isArray(session.headers["set-cookie"])
+          ? session.headers["set-cookie"][0]
+          : session.headers["set-cookie"]
+      },
+      payload: {
+        name: "Broken Workbook"
+      }
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.headers["x-request-id"]).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    );
+    expect(response.json()).toEqual({
+      message: "Request failed",
+      requestId: response.headers["x-request-id"]
+    });
+  });
 });

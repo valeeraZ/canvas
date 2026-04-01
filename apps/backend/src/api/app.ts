@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import swagger from "@fastify/swagger";
@@ -36,6 +37,7 @@ import {
 
 export type CreateApiAppOptions = {
   authBaseUrl: string;
+  prettyLogs?: boolean;
   mockContext?: AuthorizationContext;
   mockAccessibleApps?: AccessibleApp[];
   db?: PrismaClient;
@@ -50,8 +52,44 @@ export type CreateApiAppOptions = {
   dashboards?: DashboardsService;
 };
 
+const PUBLIC_ERROR_MESSAGE = "Request failed";
+
+function createLoggerOptions(prettyLogs: boolean) {
+  return {
+    level: process.env.LOG_LEVEL ?? "info",
+    redact: {
+      paths: [
+        "req.headers.authorization",
+        "req.headers.cookie",
+        "request.headers.authorization",
+        "request.headers.cookie",
+        "headers.authorization",
+        "headers.cookie"
+      ],
+      censor: "[redacted]"
+    },
+    ...(prettyLogs
+      ? {
+          transport: {
+            target: "pino-pretty",
+            options: {
+              colorize: true,
+              translateTime: "SYS:standard",
+              ignore: "pid,hostname"
+            }
+          }
+        }
+      : {})
+  } as const;
+}
+
 export function createApiApp(options: CreateApiAppOptions) {
-  const app = Fastify();
+  const app = Fastify({
+    genReqId() {
+      return randomUUID();
+    },
+    logger: createLoggerOptions(options.prettyLogs ?? false)
+  });
   const authCacheStore = options.authCacheStore ?? createMemoryExpiringStore();
   const sessionBackingStore =
     options.sessionBackingStore ?? createMemoryExpiringStore();
@@ -168,6 +206,31 @@ export function createApiApp(options: CreateApiAppOptions) {
       }
     }
   }, async () => app.swagger());
+
+  app.setErrorHandler((error, request, reply) => {
+    request.log.error(
+      {
+        requestId: request.id,
+        method: request.method,
+        url: request.url,
+        tenantId: request.tenantContext?.tenantId,
+        externalUserId: request.tenantContext?.externalUserId,
+        err: error
+      },
+      "Canvas request failed"
+    );
+
+    reply.header("x-request-id", request.id);
+    reply.status(500).send({
+      message: PUBLIC_ERROR_MESSAGE,
+      requestId: request.id
+    });
+  });
+
+  app.addHook("onSend", async (request, reply, payload) => {
+    reply.header("x-request-id", request.id);
+    return payload;
+  });
 
   void attachAuthContext(app, {
     authBaseUrl: options.authBaseUrl,

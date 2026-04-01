@@ -1,6 +1,8 @@
 import type { PortalSession } from "./session";
 import type { DashboardExportPackage } from "../../../../../packages/contracts/src/dashboard-portability.js";
 
+const PUBLIC_PORTAL_ERROR_MESSAGE = "Request failed";
+
 function getBackendBaseUrl() {
   return (process.env.CANVAS_BACKEND_BASE_URL ?? "http://127.0.0.1:3001").replace(
     /\/$/,
@@ -16,13 +18,108 @@ function readSessionCookie(value: string | null) {
   return value.split(";")[0] ?? value;
 }
 
+export class PortalBackendError extends Error {
+  status: number;
+  requestId?: string;
+
+  constructor(input: { message: string; status: number; requestId?: string }) {
+    super(input.message);
+    this.name = "PortalBackendError";
+    this.status = input.status;
+    this.requestId = input.requestId;
+  }
+}
+
 async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Backend request failed: ${response.status}`);
+  const text = await response.text();
+  const responseRequestId = response.headers.get("x-request-id") ?? undefined;
+  let payload:
+    | {
+        message?: string;
+        requestId?: string;
+      }
+    | undefined;
+
+  if (text) {
+    try {
+      payload = JSON.parse(text) as {
+        message?: string;
+        requestId?: string;
+      };
+    } catch {
+      payload = undefined;
+    }
   }
 
-  return response.json() as Promise<T>;
+  if (!response.ok) {
+    throw new PortalBackendError({
+      message:
+        payload?.message ||
+        text ||
+        `Backend request failed: ${response.status}`,
+      status: response.status,
+      requestId: payload?.requestId || responseRequestId
+    });
+  }
+
+  if (!text) {
+    throw new PortalBackendError({
+      message: "Backend returned an empty response body",
+      status: 502,
+      requestId: responseRequestId
+    });
+  }
+
+  if (payload !== undefined) {
+    return payload as T;
+  }
+
+  throw new PortalBackendError({
+    message: "Backend returned invalid JSON",
+    status: 502,
+    requestId: responseRequestId
+  });
+}
+
+export function createPortalBackendErrorResponse(
+  error: unknown,
+  fallbackRequestId?: string
+) {
+  if (error instanceof PortalBackendError) {
+    const headers = new Headers();
+
+    const requestId = error.requestId ?? fallbackRequestId;
+
+    if (requestId) {
+      headers.set("x-request-id", requestId);
+    }
+
+    return Response.json(
+      {
+        message: PUBLIC_PORTAL_ERROR_MESSAGE,
+        ...(requestId ? { requestId } : {})
+      },
+      {
+        status: error.status,
+        headers
+      }
+    );
+  }
+
+  return Response.json(
+    {
+      message: PUBLIC_PORTAL_ERROR_MESSAGE,
+      ...(fallbackRequestId ? { requestId: fallbackRequestId } : {})
+    },
+    {
+      status: 500,
+      headers: fallbackRequestId
+        ? {
+            "x-request-id": fallbackRequestId
+          }
+        : undefined
+    }
+  );
 }
 
 export async function exchangePortalSession(input: {
@@ -116,6 +213,21 @@ export function createPortalBackendClient(session: PortalSession) {
     async listDashboards() {
       const response = await authorizedFetch("/dashboards");
       return readJson<Array<{ id: string; tenantId: string; name: string; workbookId: string | null }>>(response);
+    },
+    async createDashboard(input: { name: string; workbookId?: string | null }) {
+      const response = await authorizedFetch("/dashboards", {
+        method: "POST",
+        body: JSON.stringify({
+          name: input.name,
+          workbookId: input.workbookId ?? undefined
+        })
+      });
+      return readJson<{
+        id: string;
+        tenantId: string;
+        name: string;
+        workbookId: string | null;
+      }>(response);
     },
     async getDashboard(dashboardId: string) {
       const response = await authorizedFetch(`/dashboards/${dashboardId}`);
@@ -214,6 +326,25 @@ export function createPortalBackendClient(session: PortalSession) {
           name: string;
         }>
       >(response);
+    },
+    async getWorkbook(workbookId: string) {
+      const response = await authorizedFetch(`/workbooks/${workbookId}`);
+      return readJson<{
+        id: string;
+        tenantId: string;
+        name: string;
+      }>(response);
+    },
+    async createWorkbook(input: { name: string }) {
+      const response = await authorizedFetch("/workbooks", {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      return readJson<{
+        id: string;
+        tenantId: string;
+        name: string;
+      }>(response);
     },
     async selectApp(appName: string) {
       const response = await authorizedFetch("/auth/select-app", {

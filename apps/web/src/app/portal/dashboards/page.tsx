@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { CreateDashboardDialog } from "../../../components/portal/create-dashboard-dialog";
 import { DashboardList } from "../../../components/portal/dashboard-list";
 import { PortalShell } from "../../../components/portal/portal-shell";
 import { Button } from "../../../components/ui/button";
@@ -38,10 +39,11 @@ export default async function PortalDashboardsPage() {
   }
 
   const client = createPortalBackendClient(session);
-  const [accessibleApps, dashboards, selected] = await Promise.all([
+  const [accessibleApps, dashboards, selected, workbooks] = await Promise.all([
     client.listAccessibleApps(),
     client.listDashboards(),
-    client.getSelectedDashboard()
+    client.getSelectedDashboard(),
+    client.listWorkbooks()
   ]);
 
   return (
@@ -57,9 +59,17 @@ export default async function PortalDashboardsPage() {
         { label: "Dashboards" }
       ]}
       actions={
-        <Button asChild variant="outline">
-          <Link href="/portal">Back to portal</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <CreateDashboardDialog
+            workbooks={workbooks.map((workbook) => ({
+              id: workbook.id,
+              name: workbook.name
+            }))}
+          />
+          <Button asChild variant="outline">
+            <Link href="/portal">Back to portal</Link>
+          </Button>
+        </div>
       }
     >
       <DashboardList
@@ -68,6 +78,14 @@ export default async function PortalDashboardsPage() {
           name: dashboard.name
         }))}
         selectedDashboardId={selected.dashboardId}
+        actions={
+          <CreateDashboardDialog
+            workbooks={workbooks.map((workbook) => ({
+              id: workbook.id,
+              name: workbook.name
+            }))}
+          />
+        }
       />
     </PortalShell>
   );

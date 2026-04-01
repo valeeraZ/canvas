@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { CreateWorkbookDialog } from "../../../components/portal/create-workbook-dialog";
 import { PortalShell } from "../../../components/portal/portal-shell";
 import { WorkbookList } from "../../../components/portal/workbook-list";
 import { Button } from "../../../components/ui/button";
@@ -55,12 +56,16 @@ export default async function PortalWorkbooksPage() {
         { label: "Portal", href: "/portal" },
         { label: "Workbooks" }
       ]}
+      actions={
+        <CreateWorkbookDialog />
+      }
     >
       <WorkbookList
         workbooks={workbooks.map((workbook) => ({
           id: workbook.id,
           name: workbook.name
         }))}
+        actions={<CreateWorkbookDialog />}
       />
     </PortalShell>
   );
