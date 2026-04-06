@@ -28,7 +28,8 @@ export function IngestionDemoPanel() {
         },
         body: JSON.stringify({
           filename,
-          name: "Sales Upload"
+          name: "Sales Upload",
+          content: "Month,Revenue,Active\nJan,120,true\nFeb,150,false"
         })
       });
 

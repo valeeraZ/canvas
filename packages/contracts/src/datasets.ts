@@ -6,6 +6,16 @@ export type DatasetRecord = {
   name: string;
   status: DatasetStatus;
   warnings: Array<{ code: string; message?: string }>;
+  uploadedByExternalUserId?: string;
+  uploadedByDisplayName?: string;
+  uploadedAt?: string;
+  sourceFilename?: string;
+  contentType?: string;
+  sizeBytes?: number;
+  storageBucket?: string;
+  storageObjectKey?: string;
+  storageUploadId?: string;
+  importStatus?: DatasetStatus;
 };
 
 export type ImportJobRecord = {

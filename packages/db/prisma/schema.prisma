@@ -39,14 +39,25 @@ model Membership {
 }
 
 model Dataset {
-  id         String      @id @default(cuid())
-  tenantId   String
-  name       String
-  status     String
-  warnings   Json?
-  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  importJobs ImportJob[]
-  widgets    DashboardWidget[]
+  id                       String      @id @default(cuid())
+  tenantId                 String
+  name                     String
+  status                   String
+  warnings                 Json?
+  preview                  Json?
+  uploadedByExternalUserId String?
+  uploadedByDisplayName    String?
+  uploadedAt               DateTime?
+  sourceFilename           String?
+  contentType              String?
+  sizeBytes                Int?
+  storageBucket            String?
+  storageObjectKey         String?
+  storageUploadId          String?
+  importStatus             String?
+  tenant                   Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  importJobs               ImportJob[]
+  widgets                  DashboardWidget[]
 }
 
 model ImportJob {

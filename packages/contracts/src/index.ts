@@ -12,6 +12,13 @@ export type { WorkbookRecord } from "./workbooks";
 export type { DashboardRecord } from "./dashboards";
 export type { DashboardExportPackage } from "./dashboard-portability";
 export type { DashboardWidgetRecord, WidgetType } from "./widgets";
+export type {
+  ChartWidgetConfig,
+  DatasetPreview,
+  DatasetPreviewColumn,
+  NormalizedDatasetRecord,
+  SupportedChartType
+} from "./dashboard-editor";
 export type { RealtimeEvent, RealtimeTopic } from "./events";
 export type { AppContext } from "./app-context";
 export type { VisibleDashboard, SelectedDashboard } from "./embed-viewer";

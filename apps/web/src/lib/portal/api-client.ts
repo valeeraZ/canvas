@@ -65,6 +65,140 @@ export type PortalApiClient = {
     name: string;
     workbookId: string | null;
   }>;
+  listDashboardWidgets: (dashboardId: string) => Promise<Array<{
+    id: string;
+    tenantId: string;
+    dashboardId: string;
+    type: "chart" | "table" | "metric" | "text";
+    datasetId: string | null;
+    config: {
+      datasetId: string;
+      chartType: "bar" | "line" | "area" | "pie";
+      xField: string;
+      yField: string;
+      seriesField?: string;
+      title?: string;
+    } | null;
+  }>>;
+  createDashboardWidget: (input: {
+    dashboardId: string;
+    type: "chart" | "table" | "metric" | "text";
+    datasetId?: string | null;
+    config?: {
+      datasetId: string;
+      chartType: "bar" | "line" | "area" | "pie";
+      xField: string;
+      yField: string;
+      seriesField?: string;
+      title?: string;
+    } | null;
+  }) => Promise<{
+    id: string;
+    tenantId: string;
+    dashboardId: string;
+    type: "chart" | "table" | "metric" | "text";
+    datasetId: string | null;
+    config: {
+      datasetId: string;
+      chartType: "bar" | "line" | "area" | "pie";
+      xField: string;
+      yField: string;
+      seriesField?: string;
+      title?: string;
+    } | null;
+  }>;
+  updateDashboardWidget: (input: {
+    dashboardId: string;
+    widgetId: string;
+    config: {
+      datasetId: string;
+      chartType: "bar" | "line" | "area" | "pie";
+      xField: string;
+      yField: string;
+      seriesField?: string;
+      title?: string;
+    };
+  }) => Promise<{
+    id: string;
+    tenantId: string;
+    dashboardId: string;
+    type: "chart" | "table" | "metric" | "text";
+    datasetId: string | null;
+    config: {
+      datasetId: string;
+      chartType: "bar" | "line" | "area" | "pie";
+      xField: string;
+      yField: string;
+      seriesField?: string;
+      title?: string;
+    } | null;
+  }>;
+  getDatasetPreview: (datasetId: string) => Promise<{
+    datasetId: string;
+    columns: Array<{
+      name: string;
+      type: "string" | "number" | "boolean" | "date" | "unknown";
+    }>;
+    sampleRows: Array<Record<string, string | number | boolean | null>>;
+    records: Array<Record<string, string | number | boolean | null>>;
+  }>;
+  getDataset: (datasetId: string) => Promise<{
+    id: string;
+    name: string;
+    status: string;
+    warnings: Array<{ code: string; message?: string }>;
+    uploadedByExternalUserId?: string;
+    uploadedByDisplayName?: string;
+    uploadedAt?: string;
+    sourceFilename?: string;
+    contentType?: string;
+    sizeBytes?: number;
+    storageBucket?: string;
+    storageObjectKey?: string;
+    storageUploadId?: string;
+    importStatus?: string;
+    usageSummary: {
+      dashboards: Array<{ id: string; name: string }>;
+      widgets: Array<{
+        id: string;
+        dashboardId: string;
+        dashboardName: string;
+        type: string;
+      }>;
+      workbooks: Array<{ id: string; name: string }>;
+    };
+  }>;
+  createDatasetUpload: (input: {
+    filename: string;
+    name: string;
+    content?: string;
+    contentType?: string;
+    sizeBytes?: number;
+  }) => Promise<{
+    uploadId: string;
+    upload: {
+      bucket: string;
+      objectKey: string;
+      uploadUrl: string;
+    };
+    dataset: {
+      id: string;
+      name: string;
+      status: string;
+      warningCount: number;
+    };
+  }>;
+  uploadDatasetFile: (input: {
+    uploadId: string;
+    file: File;
+  }) => Promise<{
+    uploadId: string;
+    datasetId: string;
+    bucket: string;
+    objectKey: string;
+    sizeBytes: number;
+    importStatus: string;
+  }>;
   createWorkbook: (input: {
     name: string;
   }) => Promise<{
@@ -210,6 +344,44 @@ export function createPortalApiClient(): PortalApiClient {
 
       return readPortalApiJson(response);
     },
+    async listDashboardWidgets(dashboardId) {
+      const response = await fetch(
+        `/api/canvas/dashboards/${dashboardId}/widgets`
+      );
+      return readPortalApiJson(response);
+    },
+    async createDashboardWidget(input) {
+      const response = await fetch(
+        `/api/canvas/dashboards/${input.dashboardId}/widgets`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            type: input.type,
+            datasetId: input.datasetId ?? null,
+            config: input.config ?? null
+          })
+        }
+      );
+
+      return readPortalApiJson(response);
+    },
+    async updateDashboardWidget(input) {
+      const response = await fetch(
+        `/api/canvas/dashboards/${input.dashboardId}/widgets/${input.widgetId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify(input.config)
+        }
+      );
+
+      return readPortalApiJson(response);
+    },
     async shareDashboard(input) {
       const response = await fetch(
         `/api/canvas/dashboards/${input.dashboardId}/share`,
@@ -255,6 +427,39 @@ export function createPortalApiClient(): PortalApiClient {
         },
         body: JSON.stringify(input)
       });
+
+      return readPortalApiJson(response);
+    },
+    async getDatasetPreview(datasetId) {
+      const response = await fetch(`/api/canvas/datasets/${datasetId}/preview`);
+      return readPortalApiJson(response);
+    },
+    async getDataset(datasetId) {
+      const response = await fetch(`/api/canvas/datasets/${datasetId}`);
+      return readPortalApiJson(response);
+    },
+    async createDatasetUpload(input) {
+      const response = await fetch("/api/canvas/datasets", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify(input)
+      });
+
+      return readPortalApiJson(response);
+    },
+    async uploadDatasetFile(input) {
+      const response = await fetch(
+        `/api/canvas/datasets/uploads/${input.uploadId}/file`,
+        {
+          method: "PUT",
+          headers: {
+            "content-type": input.file.type || "application/octet-stream"
+          },
+          body: input.file
+        }
+      );
 
       return readPortalApiJson(response);
     },

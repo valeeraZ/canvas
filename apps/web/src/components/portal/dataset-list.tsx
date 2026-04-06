@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { Database } from "lucide-react";
 import {
   Card,
@@ -24,20 +25,24 @@ export function DatasetList(props: {
     status: string;
     warningCount: number;
   }>;
+  actions?: React.ReactNode;
 }) {
   return (
     <Card>
       <CardHeader className="border-b">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg border border-border bg-muted/60 p-2 text-muted-foreground">
-            <Database className="h-4 w-4" />
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg border border-border bg-muted/60 p-2 text-muted-foreground">
+              <Database className="h-4 w-4" />
+            </div>
+            <div>
+              <CardTitle>Dataset inventory</CardTitle>
+              <CardDescription>
+                Review ingestion state and warning counts for datasets in the active app.
+              </CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle>Dataset inventory</CardTitle>
-            <CardDescription>
-              Review ingestion state and warning counts for datasets in the active app.
-            </CardDescription>
-          </div>
+          {props.actions}
         </div>
       </CardHeader>
       <CardContent className="p-0">
@@ -53,7 +58,14 @@ export function DatasetList(props: {
           <TableBody>
             {props.datasets.map((dataset) => (
               <TableRow key={dataset.id}>
-                <TableCell className="font-medium">{dataset.name}</TableCell>
+                <TableCell className="font-medium">
+                  <Link
+                    className="text-foreground hover:text-primary"
+                    href={`/portal/datasets/${dataset.id}`}
+                  >
+                    {dataset.name}
+                  </Link>
+                </TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">
                   {dataset.id}
                 </TableCell>

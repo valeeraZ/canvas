@@ -18,6 +18,10 @@ export const tenantContextSchema = {
       description: "Active app identifier stored in the Canvas server session.",
       type: "string"
     },
+    displayName: {
+      description: "Display name returned by the upstream user profile service.",
+      type: "string"
+    },
     externalUserId: {
       description: "External user identifier returned by the upstream authorization service.",
       type: "string"
@@ -37,7 +41,7 @@ export const tenantContextSchema = {
       }
     }
   },
-  required: ["tenantId", "externalUserId", "roles", "groups"]
+  required: ["tenantId", "displayName", "externalUserId", "roles", "groups"]
 } as const;
 
 export const sessionExchangeResponseSchema = {
@@ -198,9 +202,91 @@ export const datasetDetailSchema = {
         },
         required: ["code"]
       }
+    },
+    uploadedByExternalUserId: {
+      description: "External user identifier of the uploader.",
+      type: "string"
+    },
+    uploadedByDisplayName: {
+      description: "Display name of the uploader.",
+      type: "string"
+    },
+    uploadedAt: {
+      description: "ISO timestamp when the upload session was created.",
+      type: "string"
+    },
+    sourceFilename: {
+      description: "Original uploaded filename.",
+      type: "string"
+    },
+    contentType: {
+      description: "Uploaded file content type.",
+      type: "string"
+    },
+    sizeBytes: {
+      description: "Uploaded file size in bytes.",
+      type: "number"
+    },
+    storageBucket: {
+      description: "Object storage bucket for the uploaded source file.",
+      type: "string"
+    },
+    storageObjectKey: {
+      description: "Object storage key for the uploaded source file.",
+      type: "string"
+    },
+    storageUploadId: {
+      description: "Underlying object storage multipart upload identifier.",
+      type: "string"
+    },
+    importStatus: {
+      description: "Current import processing state for the source file.",
+      type: "string"
+    },
+    usageSummary: {
+      description: "Derived usage summary for dashboards, widgets, and workbooks that reference this dataset.",
+      type: "object",
+      properties: {
+        dashboards: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              name: { type: "string" }
+            },
+            required: ["id", "name"]
+          }
+        },
+        widgets: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              dashboardId: { type: "string" },
+              dashboardName: { type: "string" },
+              type: { type: "string" }
+            },
+            required: ["id", "dashboardId", "dashboardName", "type"]
+          }
+        },
+        workbooks: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              name: { type: "string" }
+            },
+            required: ["id", "name"]
+          }
+        }
+      },
+      required: ["dashboards", "widgets", "workbooks"]
     }
   },
-  required: ["id", "name", "status", "warnings"]
+  required: ["id", "name", "status", "warnings", "usageSummary"]
 } as const;
 
 export const uploadSessionSchema = {
@@ -214,19 +300,27 @@ export const uploadSessionSchema = {
     objectKey: {
       description: "Target object key inside the bucket.",
       type: "string"
+    },
+    uploadUrl: {
+      description: "Backend endpoint that accepts the full file upload for this session.",
+      type: "string"
     }
   },
-  required: ["bucket", "objectKey"]
+  required: ["bucket", "objectKey", "uploadUrl"]
 } as const;
 
 export const createUploadResponseSchema = {
   type: "object",
   description: "Dataset upload session creation result.",
   properties: {
+    uploadId: {
+      description: "Canvas upload session identifier.",
+      type: "string"
+    },
     upload: uploadSessionSchema,
     dataset: datasetSummarySchema
   },
-  required: ["upload", "dataset"]
+  required: ["uploadId", "upload", "dataset"]
 } as const;
 
 export const workbookSchema = {
@@ -271,6 +365,111 @@ export const dashboardSchema = {
     }
   },
   required: ["id", "tenantId", "name", "workbookId"]
+} as const;
+
+export const chartWidgetConfigSchema = {
+  type: "object",
+  description: "Chart widget configuration used by the dashboard editor.",
+  properties: {
+    datasetId: {
+      type: "string",
+      description: "Dataset identifier bound to the widget."
+    },
+    chartType: {
+      type: "string",
+      description: "Chart renderer type."
+    },
+    xField: {
+      type: "string",
+      description: "Field used as the x axis or category axis."
+    },
+    yField: {
+      type: "string",
+      description: "Field used as the value axis."
+    },
+    seriesField: {
+      type: "string",
+      description: "Optional field used to split multiple series."
+    },
+    title: {
+      type: "string",
+      description: "Optional widget title."
+    }
+  },
+  required: ["datasetId", "chartType", "xField", "yField"]
+} as const;
+
+export const dashboardWidgetSchema = {
+  type: "object",
+  description: "Dashboard widget record scoped to the current app.",
+  properties: {
+    id: {
+      type: "string",
+      description: "Widget identifier."
+    },
+    tenantId: {
+      type: "string",
+      description: "App identifier owning the widget."
+    },
+    dashboardId: {
+      type: "string",
+      description: "Dashboard identifier owning the widget."
+    },
+    type: {
+      type: "string",
+      description: "Widget type."
+    },
+    datasetId: {
+      type: ["string", "null"],
+      description: "Dataset identifier bound to the widget."
+    },
+    config: {
+      ...chartWidgetConfigSchema,
+      type: ["object", "null"]
+    }
+  },
+  required: ["id", "tenantId", "dashboardId", "type", "datasetId", "config"]
+} as const;
+
+export const datasetPreviewSchema = {
+  type: "object",
+  description: "Normalized dataset preview used by the dashboard editor.",
+  properties: {
+    datasetId: {
+      type: "string",
+      description: "Dataset identifier."
+    },
+    columns: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string"
+          },
+          type: {
+            type: "string"
+          }
+        },
+        required: ["name", "type"]
+      }
+    },
+    sampleRows: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: true
+      }
+    },
+    records: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: true
+      }
+    }
+  },
+  required: ["datasetId", "columns", "sampleRows", "records"]
 } as const;
 
 export const selectedDashboardSchema = {

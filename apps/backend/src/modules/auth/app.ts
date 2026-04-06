@@ -21,6 +21,7 @@ declare module "fastify" {
   interface FastifyRequest {
     tenantContext?: {
       tenantId: string;
+      displayName: string;
       externalUserId: string;
       roles: string[];
       groups: string[];
@@ -85,6 +86,7 @@ export async function attachAuthContext(
 
     request.tenantContext = {
       tenantId: claims.appName,
+      displayName: claims.displayName,
       externalUserId: claims.employeeId,
       roles: claims.roles,
       groups: [

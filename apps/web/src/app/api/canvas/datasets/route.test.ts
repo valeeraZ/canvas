@@ -42,9 +42,11 @@ describe("canvas datasets route", () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
+            uploadId: "upload_123",
             upload: {
               bucket: "canvas-raw",
-              objectKey: "uploads/sales.csv"
+              objectKey: "uploads/sales.csv",
+              uploadUrl: "/datasets/uploads/upload_123/file"
             },
             dataset: {
               id: "ds_1",
@@ -65,20 +67,32 @@ describe("canvas datasets route", () => {
       },
       body: JSON.stringify({
         filename: "sales.csv",
-        name: "Sales Upload"
+        name: "Sales Upload",
+        content: "Month,Revenue\nJan,120"
       })
     });
 
     const postResponse = await POST(postRequest);
     const created = (await postResponse.json()) as {
-      upload: { bucket: string; objectKey: string };
+      uploadId: string;
+      upload: { bucket: string; objectKey: string; uploadUrl: string };
       dataset: { name: string; status: string };
     };
 
+    expect(created.uploadId).toBe("upload_123");
     expect(created.upload.bucket).toBe("canvas-raw");
     expect(created.upload.objectKey).toContain("uploads/sales.csv");
+    expect(created.upload.uploadUrl).toBe("/datasets/uploads/upload_123/file");
     expect(created.dataset.name).toBe("Sales Upload");
     expect(created.dataset.status).toBe("ready");
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
+      method: "POST"
+    });
+    expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))).toMatchObject({
+      filename: "sales.csv",
+      name: "Sales Upload",
+      content: "Month,Revenue\nJan,120"
+    });
 
     fetchMock.mockReset();
     fetchMock

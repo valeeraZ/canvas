@@ -1224,7 +1224,18 @@ export const DatasetScalarFieldEnum = {
   tenantId: 'tenantId',
   name: 'name',
   status: 'status',
-  warnings: 'warnings'
+  warnings: 'warnings',
+  preview: 'preview',
+  uploadedByExternalUserId: 'uploadedByExternalUserId',
+  uploadedByDisplayName: 'uploadedByDisplayName',
+  uploadedAt: 'uploadedAt',
+  sourceFilename: 'sourceFilename',
+  contentType: 'contentType',
+  sizeBytes: 'sizeBytes',
+  storageBucket: 'storageBucket',
+  storageObjectKey: 'storageObjectKey',
+  storageUploadId: 'storageUploadId',
+  importStatus: 'importStatus'
 } as const
 
 export type DatasetScalarFieldEnum = (typeof DatasetScalarFieldEnum)[keyof typeof DatasetScalarFieldEnum]
@@ -1369,6 +1380,20 @@ export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$Prisma
 
 
 /**
+ * Reference to a field of type 'DateTime'
+ */
+export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
+    
+
+
+/**
+ * Reference to a field of type 'DateTime[]'
+ */
+export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -1379,6 +1404,20 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 /**

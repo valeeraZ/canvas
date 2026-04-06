@@ -44,16 +44,45 @@ export default async function PortalDashboardDetailPage(props: {
 
   const { dashboardId } = await props.params;
   const client = createPortalBackendClient(session);
-  const [accessibleApps, dashboard, selected, share] = await Promise.all([
-    client.listAccessibleApps(),
-    client.getDashboard(dashboardId).catch(() => null),
-    client.getSelectedDashboard(),
-    client.getDashboardShare(dashboardId)
-  ]);
+  const [accessibleApps, dashboard, selected, share, widgets, datasets] =
+    await Promise.all([
+      client.listAccessibleApps().catch(() => ({
+        principal: {
+          displayName: session.principal.displayName,
+          employeeId: session.principal.employeeId
+        },
+        apps: [
+          {
+            appName: session.selectedApp,
+            roles: session.principal.roles
+          }
+        ]
+      })),
+      client.getDashboard(dashboardId).catch(() => null),
+      client.getSelectedDashboard().catch(() => ({
+        dashboardId: null
+      })),
+      client.getDashboardShare(dashboardId).catch(() => ({
+        dashboardId,
+        subjects: [],
+        rules: []
+      })),
+      client.listDashboardWidgets(dashboardId).catch(() => []),
+      client.listDatasets().catch(() => [])
+    ]);
 
   if (!dashboard) {
     notFound();
   }
+
+  const datasetPreviews = Object.fromEntries(
+    await Promise.all(
+      datasets.map(async (dataset) => [
+        dataset.id,
+        await client.getDatasetPreview(dataset.id).catch(() => null)
+      ])
+    )
+  ) as Record<string, Awaited<ReturnType<typeof client.getDatasetPreview>> | null>;
 
   return (
     <PortalShell
@@ -77,6 +106,9 @@ export default async function PortalDashboardDetailPage(props: {
       <DashboardEditor
         dashboard={dashboard}
         selectedDashboardId={selected.dashboardId}
+        widgets={widgets}
+        datasets={datasets}
+        datasetPreviews={datasetPreviews}
         shareSubjects={share.subjects}
       />
     </PortalShell>

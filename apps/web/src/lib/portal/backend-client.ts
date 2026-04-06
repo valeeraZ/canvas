@@ -1,5 +1,7 @@
 import type { PortalSession } from "./session";
 import type { DashboardExportPackage } from "../../../../../packages/contracts/src/dashboard-portability.js";
+import type { ChartWidgetConfig, DatasetPreview } from "../../../../../packages/contracts/src/dashboard-editor.js";
+import type { DashboardWidgetRecord } from "../../../../../packages/contracts/src/widgets.js";
 
 const PUBLIC_PORTAL_ERROR_MESSAGE = "Request failed";
 
@@ -233,6 +235,42 @@ export function createPortalBackendClient(session: PortalSession) {
       const response = await authorizedFetch(`/dashboards/${dashboardId}`);
       return readJson<{ id: string; tenantId: string; name: string; workbookId: string | null }>(response);
     },
+    async listDashboardWidgets(dashboardId: string) {
+      const response = await authorizedFetch(`/dashboards/${dashboardId}/widgets`);
+      return readJson<DashboardWidgetRecord[]>(response);
+    },
+    async createDashboardWidget(input: {
+      dashboardId: string;
+      type: DashboardWidgetRecord["type"];
+      datasetId?: string | null;
+      config?: ChartWidgetConfig | null;
+    }) {
+      const response = await authorizedFetch(`/dashboards/${input.dashboardId}/widgets`, {
+        method: "POST",
+        body: JSON.stringify({
+          type: input.type,
+          datasetId: input.datasetId ?? null,
+          config: input.config ?? null
+        })
+      });
+
+      return readJson<DashboardWidgetRecord>(response);
+    },
+    async updateDashboardWidget(input: {
+      dashboardId: string;
+      widgetId: string;
+      config: ChartWidgetConfig;
+    }) {
+      const response = await authorizedFetch(
+        `/dashboards/${input.dashboardId}/widgets/${input.widgetId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(input.config)
+        }
+      );
+
+      return readJson<DashboardWidgetRecord>(response);
+    },
     async getDashboardShare(dashboardId: string) {
       const response = await authorizedFetch(`/dashboards/${dashboardId}/share`);
       return readJson<{
@@ -302,13 +340,49 @@ export function createPortalBackendClient(session: PortalSession) {
         }>
       >(response);
     },
-    async createDatasetUpload(input: { filename: string; name: string }) {
+    async getDataset(datasetId: string) {
+      const response = await authorizedFetch(`/datasets/${datasetId}`);
+      return readJson<{
+        id: string;
+        name: string;
+        status: string;
+        warnings: Array<{ code: string; message?: string }>;
+        uploadedByExternalUserId?: string;
+        uploadedByDisplayName?: string;
+        uploadedAt?: string;
+        sourceFilename?: string;
+        contentType?: string;
+        sizeBytes?: number;
+        storageBucket?: string;
+        storageObjectKey?: string;
+        storageUploadId?: string;
+        importStatus?: string;
+        usageSummary: {
+          dashboards: Array<{ id: string; name: string }>;
+          widgets: Array<{
+            id: string;
+            dashboardId: string;
+            dashboardName: string;
+            type: string;
+          }>;
+          workbooks: Array<{ id: string; name: string }>;
+        };
+      }>(response);
+    },
+    async createDatasetUpload(input: {
+      filename: string;
+      name: string;
+      content?: string;
+      contentType?: string;
+      sizeBytes?: number;
+    }) {
       const response = await authorizedFetch("/datasets/uploads", {
         method: "POST",
         body: JSON.stringify(input)
       });
       return readJson<{
-        upload: { bucket: string; objectKey: string };
+        uploadId: string;
+        upload: { bucket: string; objectKey: string; uploadUrl: string };
         dataset: {
           id: string;
           name: string;
@@ -316,6 +390,44 @@ export function createPortalBackendClient(session: PortalSession) {
           warningCount: number;
         };
       }>(response);
+    },
+    async uploadDatasetFile(input: {
+      uploadId: string;
+      body: ReadableStream<Uint8Array>;
+      contentType?: string;
+    }) {
+      const backendSessionCookie = await getBackendSessionCookie();
+      const headers = new Headers({
+        authorization: `Bearer ${session.token}`,
+        cookie: backendSessionCookie
+      });
+
+      if (input.contentType) {
+        headers.set("content-type", input.contentType);
+      }
+
+      const response = await fetch(
+        `${baseUrl}/datasets/uploads/${input.uploadId}/file`,
+        {
+          method: "PUT",
+          headers,
+          body: input.body,
+          duplex: "half"
+        } as RequestInit & { duplex: "half" }
+      );
+
+      return readJson<{
+        uploadId: string;
+        datasetId: string;
+        bucket: string;
+        objectKey: string;
+        sizeBytes: number;
+        importStatus: string;
+      }>(response);
+    },
+    async getDatasetPreview(datasetId: string) {
+      const response = await authorizedFetch(`/datasets/${datasetId}/preview`);
+      return readJson<DatasetPreview>(response);
     },
     async listWorkbooks() {
       const response = await authorizedFetch("/workbooks");

@@ -23,6 +23,8 @@ describe("dataset routes", () => {
     let listRequest: unknown;
     let detailRequest: unknown;
     let createRequest: unknown;
+    let previewRequest: unknown;
+    let uploadFileRequest: unknown;
 
     const app = createApiApp({
       authBaseUrl: "http://auth.local",
@@ -54,15 +56,57 @@ describe("dataset routes", () => {
           tenantId: tenantId ?? "tenant_demo",
           name: "Sales Upload",
           status: "ready",
-          warnings: []
+          warnings: [],
+          uploadedByExternalUserId: "dev-1",
+          uploadedByDisplayName: "Local Dev",
+          uploadedAt: "2026-04-02T10:00:00.000Z",
+          sourceFilename: "sales.csv",
+          contentType: "text/csv",
+          sizeBytes: 256,
+          storageBucket: "canvas-raw",
+          storageObjectKey: "canvas/uploads/sales.csv",
+          storageUploadId: "s3-upload-1",
+          importStatus: "queued",
+          usageSummary: {
+            dashboards: [
+              {
+                id: "dash_1",
+                name: "Executive Overview"
+              }
+            ],
+            widgets: [
+              {
+                id: "widget_1",
+                dashboardId: "dash_1",
+                dashboardName: "Executive Overview",
+                type: "chart"
+              }
+            ],
+            workbooks: [
+              {
+                id: "wb_1",
+                name: "Revenue Planning"
+              }
+            ]
+          }
           };
         },
-        createUpload: async (input?: { filename: string; name: string; tenantId: string }) => {
+        createUpload: async (input?: {
+          filename: string;
+          name: string;
+          tenantId: string;
+          contentType?: string;
+          sizeBytes?: number;
+          uploadedByExternalUserId?: string;
+          uploadedByDisplayName?: string;
+        }) => {
           createRequest = input;
           return {
+          uploadId: "upload_123",
           upload: {
             bucket: "canvas-raw",
-            objectKey: `${input?.tenantId ?? "tenant_demo"}/uploads/sales.csv`
+            objectKey: `${input?.tenantId ?? "tenant_demo"}/uploads/sales.csv`,
+            uploadUrl: `/datasets/uploads/upload_123/file`
           },
           dataset: {
             id: "ds_1",
@@ -71,6 +115,37 @@ describe("dataset routes", () => {
             status: "queued",
             warnings: []
           }
+          };
+        },
+        getDatasetPreview: async (input?: { datasetId: string; tenantId: string }) => {
+          previewRequest = input;
+          return {
+            datasetId: input?.datasetId ?? "ds_1",
+            columns: [
+              { name: "month", type: "string" },
+              { name: "revenue", type: "number" }
+            ],
+            sampleRows: [{ month: "Jan", revenue: 120 }],
+            records: [
+              { month: "Jan", revenue: 120 },
+              { month: "Feb", revenue: 150 }
+            ]
+          };
+        },
+        uploadFile: async (input?: {
+          uploadId: string;
+          tenantId: string;
+          contentType?: string;
+          body: AsyncIterable<Buffer | string>;
+        }) => {
+          uploadFileRequest = input;
+          return {
+            uploadId: input?.uploadId ?? "upload_123",
+            datasetId: "ds_1",
+            bucket: "canvas-raw",
+            objectKey: "canvas-data/uploads/sales.csv",
+            sizeBytes: 11,
+            importStatus: "queued"
           };
         }
       }
@@ -111,7 +186,18 @@ describe("dataset routes", () => {
     });
     expect(detailResponse.statusCode).toBe(200);
     expect(detailResponse.json().id).toBe("ds_1");
+    expect(detailResponse.json().uploadedByDisplayName).toBe("Local Dev");
+    expect(detailResponse.json().usageSummary.dashboards[0]?.id).toBe("dash_1");
     expect((detailRequest as { tenantId?: string })?.tenantId).toBe("canvas-data");
+
+    const previewResponse = await app.inject({
+      method: "GET",
+      url: "/datasets/ds_1/preview",
+      headers: authHeaders
+    });
+    expect(previewResponse.statusCode).toBe(200);
+    expect(previewResponse.json().columns[1]?.type).toBe("number");
+    expect((previewRequest as { tenantId?: string })?.tenantId).toBe("canvas-data");
 
     const createResponse = await app.inject({
       method: "POST",
@@ -119,11 +205,41 @@ describe("dataset routes", () => {
       headers: authHeaders,
       payload: {
         filename: "sales.csv",
-        name: "Sales Upload"
+        name: "Sales Upload",
+        contentType: "text/csv",
+        sizeBytes: 256
       }
     });
     expect(createResponse.statusCode).toBe(200);
+    expect(createResponse.json().uploadId).toBe("upload_123");
     expect(createResponse.json().upload.objectKey).toContain("uploads/sales.csv");
+    expect(createResponse.json().upload.uploadUrl).toBe("/datasets/uploads/upload_123/file");
     expect((createRequest as { tenantId?: string })?.tenantId).toBe("canvas-data");
+    expect((createRequest as { contentType?: string })?.contentType).toBe("text/csv");
+    expect((createRequest as { sizeBytes?: number })?.sizeBytes).toBe(256);
+    expect((createRequest as { uploadedByExternalUserId?: string })?.uploadedByExternalUserId).toBe(
+      "dev-1"
+    );
+    expect((createRequest as { uploadedByDisplayName?: string })?.uploadedByDisplayName).toBe(
+      "Local Dev"
+    );
+
+    const uploadResponse = await app.inject({
+      method: "PUT",
+      url: "/datasets/uploads/upload_123/file",
+      headers: {
+        ...authHeaders,
+        "content-type": "text/csv"
+      },
+      payload: "Month,Revenue"
+    });
+    expect(uploadResponse.statusCode).toBe(200);
+    expect(uploadResponse.json().uploadId).toBe("upload_123");
+    expect((uploadFileRequest as { tenantId?: string })?.tenantId).toBe(
+      "canvas-data"
+    );
+    expect((uploadFileRequest as { contentType?: string })?.contentType).toBe(
+      "text/csv"
+    );
   });
 });

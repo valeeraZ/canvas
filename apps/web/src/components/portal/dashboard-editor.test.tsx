@@ -15,6 +15,40 @@ describe("DashboardEditor", () => {
       <DashboardEditor
         dashboard={{ id: "dash_1", name: "Executive Overview" }}
         selectedDashboardId="dash_1"
+        widgets={[
+          {
+            id: "widget_1",
+            tenantId: "canvas",
+            dashboardId: "dash_1",
+            type: "chart",
+            datasetId: "ds_1",
+            config: {
+              datasetId: "ds_1",
+              chartType: "bar",
+              xField: "month",
+              yField: "revenue",
+              title: "Revenue by month"
+            }
+          }
+        ]}
+        datasets={[
+          {
+            id: "ds_1",
+            name: "Sales Upload",
+            status: "ready"
+          }
+        ]}
+        datasetPreviews={{
+          ds_1: {
+            datasetId: "ds_1",
+            columns: [
+              { name: "month", type: "string" },
+              { name: "revenue", type: "number" }
+            ],
+            sampleRows: [{ month: "Jan", revenue: 120 }],
+            records: [{ month: "Jan", revenue: 120 }]
+          }
+        }}
         shareSubjects={[
           { type: "role", id: "ADMIN" },
           { type: "group", id: "finance" }
@@ -24,12 +58,31 @@ describe("DashboardEditor", () => {
 
     expect(html).not.toContain("Executive Overview");
     expect(html).not.toContain("Back to dashboards");
-    expect(html).toContain("Dashboard workspace");
-    expect(html).toContain("View dashboard");
-    expect(html).toContain("Edit tools");
+    expect(html).toContain("Widgets");
+    expect(html).toContain("Add chart");
+    expect(html).toContain("Dashboard canvas");
+    expect(html).toContain("Configure widget");
     expect(html).toContain("Dashboard ID:");
     expect(html).toContain("dash_1");
     expect(html).toContain("Selected for embed");
     expect(html).toContain("Export dashboard");
+    expect(html).toContain("Revenue by month");
+  });
+
+  it("disables add chart when no datasets are available", () => {
+    const html = renderToString(
+      <DashboardEditor
+        dashboard={{ id: "dash_1", name: "Executive Overview" }}
+        selectedDashboardId={null}
+        widgets={[]}
+        datasets={[]}
+        datasetPreviews={{}}
+        shareSubjects={[]}
+      />
+    );
+
+    expect(html).toContain("Add chart");
+    expect(html).toContain("Upload a dataset to start adding chart widgets.");
+    expect(html).toContain("disabled");
   });
 });

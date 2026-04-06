@@ -23,3 +23,5 @@ export type { PrincipalAppPreference } from "./principal-app-preference-store.js
 export { buildWorkbookRecord } from "./workbook-repository.js";
 export { buildDashboardRecord } from "./dashboard-repository.js";
 export { buildDashboardWidget } from "./dashboard-widget-repository.js";
+export { buildDatasetPreview } from "./dataset-preview.js";
+export { createDashboardWidgetStore, toDashboardWidgetRecord } from "./dashboard-widget-store.js";

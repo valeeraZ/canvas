@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { CreateDatasetUploadDialog } from "../../../components/portal/create-dataset-upload-dialog";
 import { DatasetList } from "../../../components/portal/dataset-list";
 import { PortalShell } from "../../../components/portal/portal-shell";
 import { Button } from "../../../components/ui/button";
@@ -56,7 +57,10 @@ export default async function PortalDatasetsPage() {
         { label: "Datasets" }
       ]}
     >
-      <DatasetList datasets={datasets} />
+      <DatasetList
+        datasets={datasets}
+        actions={<CreateDatasetUploadDialog />}
+      />
     </PortalShell>
   );
 }

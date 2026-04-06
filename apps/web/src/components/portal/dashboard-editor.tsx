@@ -5,13 +5,17 @@ import {
   CheckCircle2,
   LayoutTemplate,
   LoaderCircle,
+  PencilLine,
   Share2
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DashboardExportButton } from "./dashboard-export-button";
 import { DashboardImportDialog } from "./dashboard-import-dialog";
+import { DashboardChartRenderer } from "./dashboard-chart-renderer";
 import { PortalActionAlert } from "./portal-action-alert";
 import { DashboardSharePanel } from "./dashboard-share-panel";
+import { DashboardWidgetConfigPanel } from "./dashboard-widget-config-panel";
+import { DashboardWidgetList } from "./dashboard-widget-list";
 import {
   createPortalApiClient,
   type PortalApiError,
@@ -34,6 +38,39 @@ export function DashboardEditor(props: {
     name: string;
   };
   selectedDashboardId: string | null;
+  widgets: Array<{
+    id: string;
+    tenantId: string;
+    dashboardId: string;
+    type: "chart" | "table" | "metric" | "text";
+    datasetId: string | null;
+    config: {
+      datasetId: string;
+      chartType: "bar" | "line" | "area" | "pie";
+      xField: string;
+      yField: string;
+      seriesField?: string;
+      title?: string;
+    } | null;
+  }>;
+  datasets: Array<{
+    id: string;
+    name: string;
+    status: string;
+  }>;
+  datasetPreviews: Record<
+    string,
+    | {
+        datasetId: string;
+        columns: Array<{
+          name: string;
+          type: "string" | "number" | "boolean" | "date" | "unknown";
+        }>;
+        sampleRows: Array<Record<string, string | number | boolean | null>>;
+        records: Array<Record<string, string | number | boolean | null>>;
+      }
+    | null
+  >;
   shareSubjects: Array<{
     type: "user" | "group" | "role";
     id: string;
@@ -44,6 +81,16 @@ export function DashboardEditor(props: {
   const isSelected = props.selectedDashboardId === props.dashboard.id;
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<PortalApiError | null>(null);
+  const [activeWidgetId, setActiveWidgetId] = useState<string | null>(
+    props.widgets[0]?.id ?? null
+  );
+
+  const activeWidget =
+    props.widgets.find((widget) => widget.id === activeWidgetId) ?? null;
+  const canAddChart = props.datasets.some((dataset) => {
+    const preview = props.datasetPreviews[dataset.id];
+    return Boolean(preview && preview.columns.length > 0);
+  });
 
   function setSelectedDashboard() {
     setPending(true);
@@ -53,6 +100,76 @@ export function DashboardEditor(props: {
       try {
         await apiClient.setSelectedDashboard({
           dashboardId: props.dashboard.id
+        });
+        router.refresh();
+      } catch (caught) {
+        setError(toPortalApiError(caught));
+      } finally {
+        setPending(false);
+      }
+    });
+  }
+
+  function addChartWidget() {
+    if (!canAddChart) {
+      return;
+    }
+
+    setPending(true);
+    setError(null);
+
+    const firstDataset =
+      props.datasets.find((dataset) => {
+        const preview = props.datasetPreviews[dataset.id];
+        return Boolean(preview && preview.columns.length > 0);
+      }) ?? null;
+    const preview = firstDataset ? props.datasetPreviews[firstDataset.id] : null;
+    const columns = preview?.columns ?? [];
+
+    startTransition(async () => {
+      try {
+        await apiClient.createDashboardWidget({
+          dashboardId: props.dashboard.id,
+          type: "chart",
+          datasetId: firstDataset?.id ?? null,
+          config: firstDataset
+            ? {
+                datasetId: firstDataset.id,
+                chartType: "bar",
+                xField: columns[0]?.name ?? "",
+                yField:
+                  columns.find((column) => column.type === "number")?.name ??
+                  columns[1]?.name ??
+                  ""
+              }
+            : null
+        });
+        router.refresh();
+      } catch (caught) {
+        setError(toPortalApiError(caught));
+      } finally {
+        setPending(false);
+      }
+    });
+  }
+
+  function saveWidget(widgetId: string, config: {
+    datasetId: string;
+    chartType: "bar" | "line" | "area" | "pie";
+    xField: string;
+    yField: string;
+    seriesField?: string;
+    title?: string;
+  }) {
+    setPending(true);
+    setError(null);
+
+    startTransition(async () => {
+      try {
+        await apiClient.updateDashboardWidget({
+          dashboardId: props.dashboard.id,
+          widgetId,
+          config
         });
         router.refresh();
       } catch (caught) {
@@ -93,31 +210,71 @@ export function DashboardEditor(props: {
           <TabsTrigger value="io">Import / Export</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Dashboard workspace</CardTitle>
-              <CardDescription>
-                Dashboard ID: {props.dashboard.id}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <PortalActionAlert error={error} title="Embed selection failed" />
-              <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-8">
-                <div className="grid gap-2">
-                  <p className="text-base font-medium">View dashboard</p>
-                  <p className="text-sm text-muted-foreground">
-                    Charts, widgets, and dashboard preview will appear here.
-                  </p>
-                </div>
-                <div className="mt-6 grid gap-2">
-                  <p className="text-base font-medium">Edit tools</p>
-                  <p className="text-sm text-muted-foreground">
-                    Layout, widget configuration, and authoring controls will live in this workspace area.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 xl:grid-cols-[240px_minmax(0,1fr)_320px]">
+            <DashboardWidgetList
+              widgets={props.widgets}
+              activeWidgetId={activeWidgetId}
+              pending={pending}
+              canAddChart={canAddChart}
+              addChartHint={
+                canAddChart
+                  ? undefined
+                  : "Upload a dataset to start adding chart widgets."
+              }
+              onSelectWidget={setActiveWidgetId}
+              onAddChart={addChartWidget}
+            />
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Dashboard canvas</CardTitle>
+                <CardDescription>
+                  Dashboard ID: {props.dashboard.id}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <PortalActionAlert error={error} title="Dashboard editor action failed" />
+                {props.widgets.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-8">
+                    <div className="grid gap-2">
+                      <p className="text-base font-medium">View dashboard</p>
+                      <p className="text-sm text-muted-foreground">
+                        Add a chart widget to start rendering dashboard content.
+                      </p>
+                    </div>
+                    <div className="mt-6 grid gap-2">
+                      <p className="text-base font-medium">Edit tools</p>
+                      <p className="text-sm text-muted-foreground">
+                        Dataset binding, widget configuration, and chart controls will appear here.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 2xl:grid-cols-2">
+                    {props.widgets.map((widget) => (
+                      <DashboardChartRenderer
+                        key={widget.id}
+                        widget={widget}
+                        preview={
+                          widget.config?.datasetId
+                            ? props.datasetPreviews[widget.config.datasetId] ?? null
+                            : null
+                        }
+                        active={widget.id === activeWidgetId}
+                        onSelect={() => setActiveWidgetId(widget.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <DashboardWidgetConfigPanel
+              widget={activeWidget}
+              datasets={props.datasets}
+              previews={props.datasetPreviews}
+              pending={pending}
+              onSave={saveWidget}
+            />
+          </div>
         </TabsContent>
         <TabsContent value="sharing">
           <div className="grid gap-4">

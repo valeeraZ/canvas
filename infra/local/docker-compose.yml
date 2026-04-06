@@ -23,6 +23,34 @@ services:
     ports:
       - "6379:6379"
     command: ["redis-server", "--save", "", "--appendonly", "no"]
+  minio:
+    image: minio/minio:latest
+    container_name: canvas-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: ["server", "/data", "--console-address", ":9001"]
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - canvas-minio-data:/data
+  minio-init:
+    image: minio/mc:latest
+    container_name: canvas-minio-init
+    depends_on:
+      - minio
+    restart: "no"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 minioadmin minioadmin; do
+          sleep 1
+        done
+        mc mb --ignore-existing local/canvas-raw
 
 volumes:
   canvas-postgres-data:
+  canvas-minio-data:

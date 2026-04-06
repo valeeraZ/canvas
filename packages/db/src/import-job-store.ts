@@ -63,6 +63,34 @@ export function createImportJobStore(prisma: PrismaClient) {
       });
 
       return toImportJobRecord(job);
+    },
+    async findById(input: {
+      tenantId: string;
+      importJobId: string;
+    }) {
+      const job = await prisma.importJob.findFirst({
+        where: {
+          id: input.importJobId,
+          tenantId: input.tenantId
+        }
+      });
+
+      return job ? toImportJobRecord(job) : null;
+    },
+    async updateStatus(input: {
+      importJobId: string;
+      status: ImportJobRecord["status"];
+    }) {
+      const job = await prisma.importJob.update({
+        where: {
+          id: input.importJobId
+        },
+        data: {
+          status: input.status
+        }
+      });
+
+      return toImportJobRecord(job);
     }
   };
 }

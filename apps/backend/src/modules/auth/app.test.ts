@@ -74,6 +74,8 @@ describe("auth routes", () => {
 
     expect(auth.statusCode).toBe(200);
     expect(auth.json().tenantId).toBe("canvas");
+    expect(auth.json().displayName).toBe("Local Dev");
+    expect(auth.json().externalUserId).toBe("dev-1");
     expect(auth.json().roles).toContain("ADMIN");
   });
 

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createApiApp } from "../../api/app";
+import type { ChartWidgetConfig } from "../../../../../packages/contracts/src/dashboard-editor.js";
 
 const apps: Array<ReturnType<typeof createApiApp>> = [];
 
@@ -30,6 +31,9 @@ describe("dashboard routes", () => {
     let importRequest: unknown;
     let selectedReadRequest: unknown;
     let selectedWriteRequest: unknown;
+    let listWidgetsRequest: unknown;
+    let createWidgetRequest: unknown;
+    let updateWidgetRequest: unknown;
 
     const app = createApiApp({
       authBaseUrl: "http://auth.local",
@@ -146,6 +150,57 @@ describe("dashboard routes", () => {
           return {
             dashboardId: "dash_2"
           };
+        },
+        listDashboardWidgets: async (input: unknown) => {
+          listWidgetsRequest = input;
+          return [
+            {
+              id: "widget_1",
+              tenantId: "canvas",
+              dashboardId: "dash_1",
+              type: "chart",
+              datasetId: "ds_1",
+              config: {
+                datasetId: "ds_1",
+                chartType: "bar",
+                xField: "month",
+                yField: "revenue"
+              } satisfies ChartWidgetConfig
+            }
+          ];
+        },
+        createDashboardWidget: async (input: unknown) => {
+          createWidgetRequest = input;
+          return {
+            id: "widget_2",
+            tenantId: "canvas",
+            dashboardId: "dash_1",
+            type: "chart",
+            datasetId: "ds_1",
+            config: {
+              datasetId: "ds_1",
+              chartType: "line",
+              xField: "month",
+              yField: "revenue"
+            } satisfies ChartWidgetConfig
+          };
+        },
+        updateDashboardWidget: async (input: unknown) => {
+          updateWidgetRequest = input;
+          return {
+            id: "widget_1",
+            tenantId: "canvas",
+            dashboardId: "dash_1",
+            type: "chart",
+            datasetId: "ds_1",
+            config: {
+              datasetId: "ds_1",
+              chartType: "area",
+              xField: "month",
+              yField: "revenue",
+              seriesField: "region"
+            } satisfies ChartWidgetConfig
+          };
         }
       }
     });
@@ -227,6 +282,20 @@ describe("dashboard routes", () => {
     expect((shareReadRequest as { tenantId?: string })?.tenantId).toBe("canvas");
     expect(shareReadResponse.json().subjects[0]?.id).toBe("ADMIN");
 
+    const widgetsResponse = await app.inject({
+      method: "GET",
+      url: "/dashboards/dash_1/widgets",
+      headers: {
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
+      }
+    });
+    expect(widgetsResponse.statusCode).toBe(200);
+    expect((listWidgetsRequest as { dashboardId?: string })?.dashboardId).toBe(
+      "dash_1"
+    );
+    expect(widgetsResponse.json()[0]?.type).toBe("chart");
+
     const exportResponse = await app.inject({
       method: "GET",
       url: "/dashboards/dash_1/export",
@@ -256,6 +325,30 @@ describe("dashboard routes", () => {
       "canvas"
     );
     expect(authorizedCreate.json().workbookId).toBe("wb_1");
+
+    const createWidgetResponse = await app.inject({
+      method: "POST",
+      url: "/dashboards/dash_1/widgets",
+      headers: {
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
+      },
+      payload: {
+        type: "chart",
+        datasetId: "ds_1",
+        config: {
+          datasetId: "ds_1",
+          chartType: "line",
+          xField: "month",
+          yField: "revenue"
+        }
+      }
+    });
+    expect(createWidgetResponse.statusCode).toBe(200);
+    expect((createWidgetRequest as { dashboardId?: string })?.dashboardId).toBe(
+      "dash_1"
+    );
+    expect(createWidgetResponse.json().id).toBe("widget_2");
 
     const authorizedVisible = await app.inject({
       method: "GET",
@@ -288,6 +381,25 @@ describe("dashboard routes", () => {
     expect((shareRequest as { dashboardId?: string })?.dashboardId).toBe("dash_1");
     expect((shareRequest as { tenantId?: string })?.tenantId).toBe("canvas");
     expect(shareResponse.json().rules[0]?.subjectId).toBe("ADMIN");
+
+    const updateWidgetResponse = await app.inject({
+      method: "PATCH",
+      url: "/dashboards/dash_1/widgets/widget_1",
+      headers: {
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
+      },
+      payload: {
+        datasetId: "ds_1",
+        chartType: "area",
+        xField: "month",
+        yField: "revenue",
+        seriesField: "region"
+      }
+    });
+    expect(updateWidgetResponse.statusCode).toBe(200);
+    expect((updateWidgetRequest as { widgetId?: string })?.widgetId).toBe("widget_1");
+    expect(updateWidgetResponse.json().config.chartType).toBe("area");
 
     const importResponse = await app.inject({
       method: "POST",

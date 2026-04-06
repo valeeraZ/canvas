@@ -20,8 +20,18 @@ export type DatasetModel = runtime.Types.Result.DefaultSelection<Prisma.$Dataset
 
 export type AggregateDataset = {
   _count: DatasetCountAggregateOutputType | null
+  _avg: DatasetAvgAggregateOutputType | null
+  _sum: DatasetSumAggregateOutputType | null
   _min: DatasetMinAggregateOutputType | null
   _max: DatasetMaxAggregateOutputType | null
+}
+
+export type DatasetAvgAggregateOutputType = {
+  sizeBytes: number | null
+}
+
+export type DatasetSumAggregateOutputType = {
+  sizeBytes: number | null
 }
 
 export type DatasetMinAggregateOutputType = {
@@ -29,6 +39,16 @@ export type DatasetMinAggregateOutputType = {
   tenantId: string | null
   name: string | null
   status: string | null
+  uploadedByExternalUserId: string | null
+  uploadedByDisplayName: string | null
+  uploadedAt: Date | null
+  sourceFilename: string | null
+  contentType: string | null
+  sizeBytes: number | null
+  storageBucket: string | null
+  storageObjectKey: string | null
+  storageUploadId: string | null
+  importStatus: string | null
 }
 
 export type DatasetMaxAggregateOutputType = {
@@ -36,6 +56,16 @@ export type DatasetMaxAggregateOutputType = {
   tenantId: string | null
   name: string | null
   status: string | null
+  uploadedByExternalUserId: string | null
+  uploadedByDisplayName: string | null
+  uploadedAt: Date | null
+  sourceFilename: string | null
+  contentType: string | null
+  sizeBytes: number | null
+  storageBucket: string | null
+  storageObjectKey: string | null
+  storageUploadId: string | null
+  importStatus: string | null
 }
 
 export type DatasetCountAggregateOutputType = {
@@ -44,15 +74,44 @@ export type DatasetCountAggregateOutputType = {
   name: number
   status: number
   warnings: number
+  preview: number
+  uploadedByExternalUserId: number
+  uploadedByDisplayName: number
+  uploadedAt: number
+  sourceFilename: number
+  contentType: number
+  sizeBytes: number
+  storageBucket: number
+  storageObjectKey: number
+  storageUploadId: number
+  importStatus: number
   _all: number
 }
 
+
+export type DatasetAvgAggregateInputType = {
+  sizeBytes?: true
+}
+
+export type DatasetSumAggregateInputType = {
+  sizeBytes?: true
+}
 
 export type DatasetMinAggregateInputType = {
   id?: true
   tenantId?: true
   name?: true
   status?: true
+  uploadedByExternalUserId?: true
+  uploadedByDisplayName?: true
+  uploadedAt?: true
+  sourceFilename?: true
+  contentType?: true
+  sizeBytes?: true
+  storageBucket?: true
+  storageObjectKey?: true
+  storageUploadId?: true
+  importStatus?: true
 }
 
 export type DatasetMaxAggregateInputType = {
@@ -60,6 +119,16 @@ export type DatasetMaxAggregateInputType = {
   tenantId?: true
   name?: true
   status?: true
+  uploadedByExternalUserId?: true
+  uploadedByDisplayName?: true
+  uploadedAt?: true
+  sourceFilename?: true
+  contentType?: true
+  sizeBytes?: true
+  storageBucket?: true
+  storageObjectKey?: true
+  storageUploadId?: true
+  importStatus?: true
 }
 
 export type DatasetCountAggregateInputType = {
@@ -68,6 +137,17 @@ export type DatasetCountAggregateInputType = {
   name?: true
   status?: true
   warnings?: true
+  preview?: true
+  uploadedByExternalUserId?: true
+  uploadedByDisplayName?: true
+  uploadedAt?: true
+  sourceFilename?: true
+  contentType?: true
+  sizeBytes?: true
+  storageBucket?: true
+  storageObjectKey?: true
+  storageUploadId?: true
+  importStatus?: true
   _all?: true
 }
 
@@ -109,6 +189,18 @@ export type DatasetAggregateArgs<ExtArgs extends runtime.Types.Extensions.Intern
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: DatasetAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: DatasetSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: DatasetMinAggregateInputType
@@ -139,6 +231,8 @@ export type DatasetGroupByArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   _count?: DatasetCountAggregateInputType | true
+  _avg?: DatasetAvgAggregateInputType
+  _sum?: DatasetSumAggregateInputType
   _min?: DatasetMinAggregateInputType
   _max?: DatasetMaxAggregateInputType
 }
@@ -149,7 +243,20 @@ export type DatasetGroupByOutputType = {
   name: string
   status: string
   warnings: runtime.JsonValue | null
+  preview: runtime.JsonValue | null
+  uploadedByExternalUserId: string | null
+  uploadedByDisplayName: string | null
+  uploadedAt: Date | null
+  sourceFilename: string | null
+  contentType: string | null
+  sizeBytes: number | null
+  storageBucket: string | null
+  storageObjectKey: string | null
+  storageUploadId: string | null
+  importStatus: string | null
   _count: DatasetCountAggregateOutputType | null
+  _avg: DatasetAvgAggregateOutputType | null
+  _sum: DatasetSumAggregateOutputType | null
   _min: DatasetMinAggregateOutputType | null
   _max: DatasetMaxAggregateOutputType | null
 }
@@ -178,6 +285,17 @@ export type DatasetWhereInput = {
   name?: Prisma.StringFilter<"Dataset"> | string
   status?: Prisma.StringFilter<"Dataset"> | string
   warnings?: Prisma.JsonNullableFilter<"Dataset">
+  preview?: Prisma.JsonNullableFilter<"Dataset">
+  uploadedByExternalUserId?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  uploadedByDisplayName?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  uploadedAt?: Prisma.DateTimeNullableFilter<"Dataset"> | Date | string | null
+  sourceFilename?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  contentType?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  sizeBytes?: Prisma.IntNullableFilter<"Dataset"> | number | null
+  storageBucket?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  storageObjectKey?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  storageUploadId?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  importStatus?: Prisma.StringNullableFilter<"Dataset"> | string | null
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   importJobs?: Prisma.ImportJobListRelationFilter
   widgets?: Prisma.DashboardWidgetListRelationFilter
@@ -189,6 +307,17 @@ export type DatasetOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   status?: Prisma.SortOrder
   warnings?: Prisma.SortOrderInput | Prisma.SortOrder
+  preview?: Prisma.SortOrderInput | Prisma.SortOrder
+  uploadedByExternalUserId?: Prisma.SortOrderInput | Prisma.SortOrder
+  uploadedByDisplayName?: Prisma.SortOrderInput | Prisma.SortOrder
+  uploadedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceFilename?: Prisma.SortOrderInput | Prisma.SortOrder
+  contentType?: Prisma.SortOrderInput | Prisma.SortOrder
+  sizeBytes?: Prisma.SortOrderInput | Prisma.SortOrder
+  storageBucket?: Prisma.SortOrderInput | Prisma.SortOrder
+  storageObjectKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  storageUploadId?: Prisma.SortOrderInput | Prisma.SortOrder
+  importStatus?: Prisma.SortOrderInput | Prisma.SortOrder
   tenant?: Prisma.TenantOrderByWithRelationInput
   importJobs?: Prisma.ImportJobOrderByRelationAggregateInput
   widgets?: Prisma.DashboardWidgetOrderByRelationAggregateInput
@@ -203,6 +332,17 @@ export type DatasetWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"Dataset"> | string
   status?: Prisma.StringFilter<"Dataset"> | string
   warnings?: Prisma.JsonNullableFilter<"Dataset">
+  preview?: Prisma.JsonNullableFilter<"Dataset">
+  uploadedByExternalUserId?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  uploadedByDisplayName?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  uploadedAt?: Prisma.DateTimeNullableFilter<"Dataset"> | Date | string | null
+  sourceFilename?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  contentType?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  sizeBytes?: Prisma.IntNullableFilter<"Dataset"> | number | null
+  storageBucket?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  storageObjectKey?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  storageUploadId?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  importStatus?: Prisma.StringNullableFilter<"Dataset"> | string | null
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   importJobs?: Prisma.ImportJobListRelationFilter
   widgets?: Prisma.DashboardWidgetListRelationFilter
@@ -214,9 +354,22 @@ export type DatasetOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   status?: Prisma.SortOrder
   warnings?: Prisma.SortOrderInput | Prisma.SortOrder
+  preview?: Prisma.SortOrderInput | Prisma.SortOrder
+  uploadedByExternalUserId?: Prisma.SortOrderInput | Prisma.SortOrder
+  uploadedByDisplayName?: Prisma.SortOrderInput | Prisma.SortOrder
+  uploadedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceFilename?: Prisma.SortOrderInput | Prisma.SortOrder
+  contentType?: Prisma.SortOrderInput | Prisma.SortOrder
+  sizeBytes?: Prisma.SortOrderInput | Prisma.SortOrder
+  storageBucket?: Prisma.SortOrderInput | Prisma.SortOrder
+  storageObjectKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  storageUploadId?: Prisma.SortOrderInput | Prisma.SortOrder
+  importStatus?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.DatasetCountOrderByAggregateInput
+  _avg?: Prisma.DatasetAvgOrderByAggregateInput
   _max?: Prisma.DatasetMaxOrderByAggregateInput
   _min?: Prisma.DatasetMinOrderByAggregateInput
+  _sum?: Prisma.DatasetSumOrderByAggregateInput
 }
 
 export type DatasetScalarWhereWithAggregatesInput = {
@@ -228,6 +381,17 @@ export type DatasetScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"Dataset"> | string
   status?: Prisma.StringWithAggregatesFilter<"Dataset"> | string
   warnings?: Prisma.JsonNullableWithAggregatesFilter<"Dataset">
+  preview?: Prisma.JsonNullableWithAggregatesFilter<"Dataset">
+  uploadedByExternalUserId?: Prisma.StringNullableWithAggregatesFilter<"Dataset"> | string | null
+  uploadedByDisplayName?: Prisma.StringNullableWithAggregatesFilter<"Dataset"> | string | null
+  uploadedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Dataset"> | Date | string | null
+  sourceFilename?: Prisma.StringNullableWithAggregatesFilter<"Dataset"> | string | null
+  contentType?: Prisma.StringNullableWithAggregatesFilter<"Dataset"> | string | null
+  sizeBytes?: Prisma.IntNullableWithAggregatesFilter<"Dataset"> | number | null
+  storageBucket?: Prisma.StringNullableWithAggregatesFilter<"Dataset"> | string | null
+  storageObjectKey?: Prisma.StringNullableWithAggregatesFilter<"Dataset"> | string | null
+  storageUploadId?: Prisma.StringNullableWithAggregatesFilter<"Dataset"> | string | null
+  importStatus?: Prisma.StringNullableWithAggregatesFilter<"Dataset"> | string | null
 }
 
 export type DatasetCreateInput = {
@@ -235,6 +399,17 @@ export type DatasetCreateInput = {
   name: string
   status: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: string | null
+  uploadedByDisplayName?: string | null
+  uploadedAt?: Date | string | null
+  sourceFilename?: string | null
+  contentType?: string | null
+  sizeBytes?: number | null
+  storageBucket?: string | null
+  storageObjectKey?: string | null
+  storageUploadId?: string | null
+  importStatus?: string | null
   tenant: Prisma.TenantCreateNestedOneWithoutDatasetsInput
   importJobs?: Prisma.ImportJobCreateNestedManyWithoutDatasetInput
   widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDatasetInput
@@ -246,6 +421,17 @@ export type DatasetUncheckedCreateInput = {
   name: string
   status: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: string | null
+  uploadedByDisplayName?: string | null
+  uploadedAt?: Date | string | null
+  sourceFilename?: string | null
+  contentType?: string | null
+  sizeBytes?: number | null
+  storageBucket?: string | null
+  storageObjectKey?: string | null
+  storageUploadId?: string | null
+  importStatus?: string | null
   importJobs?: Prisma.ImportJobUncheckedCreateNestedManyWithoutDatasetInput
   widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDatasetInput
 }
@@ -255,6 +441,17 @@ export type DatasetUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sizeBytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  storageBucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutDatasetsNestedInput
   importJobs?: Prisma.ImportJobUpdateManyWithoutDatasetNestedInput
   widgets?: Prisma.DashboardWidgetUpdateManyWithoutDatasetNestedInput
@@ -266,6 +463,17 @@ export type DatasetUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sizeBytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  storageBucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importJobs?: Prisma.ImportJobUncheckedUpdateManyWithoutDatasetNestedInput
   widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDatasetNestedInput
 }
@@ -276,6 +484,17 @@ export type DatasetCreateManyInput = {
   name: string
   status: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: string | null
+  uploadedByDisplayName?: string | null
+  uploadedAt?: Date | string | null
+  sourceFilename?: string | null
+  contentType?: string | null
+  sizeBytes?: number | null
+  storageBucket?: string | null
+  storageObjectKey?: string | null
+  storageUploadId?: string | null
+  importStatus?: string | null
 }
 
 export type DatasetUpdateManyMutationInput = {
@@ -283,6 +502,17 @@ export type DatasetUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sizeBytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  storageBucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type DatasetUncheckedUpdateManyInput = {
@@ -291,6 +521,17 @@ export type DatasetUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sizeBytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  storageBucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type DatasetListRelationFilter = {
@@ -309,6 +550,21 @@ export type DatasetCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   status?: Prisma.SortOrder
   warnings?: Prisma.SortOrder
+  preview?: Prisma.SortOrder
+  uploadedByExternalUserId?: Prisma.SortOrder
+  uploadedByDisplayName?: Prisma.SortOrder
+  uploadedAt?: Prisma.SortOrder
+  sourceFilename?: Prisma.SortOrder
+  contentType?: Prisma.SortOrder
+  sizeBytes?: Prisma.SortOrder
+  storageBucket?: Prisma.SortOrder
+  storageObjectKey?: Prisma.SortOrder
+  storageUploadId?: Prisma.SortOrder
+  importStatus?: Prisma.SortOrder
+}
+
+export type DatasetAvgOrderByAggregateInput = {
+  sizeBytes?: Prisma.SortOrder
 }
 
 export type DatasetMaxOrderByAggregateInput = {
@@ -316,6 +572,16 @@ export type DatasetMaxOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  uploadedByExternalUserId?: Prisma.SortOrder
+  uploadedByDisplayName?: Prisma.SortOrder
+  uploadedAt?: Prisma.SortOrder
+  sourceFilename?: Prisma.SortOrder
+  contentType?: Prisma.SortOrder
+  sizeBytes?: Prisma.SortOrder
+  storageBucket?: Prisma.SortOrder
+  storageObjectKey?: Prisma.SortOrder
+  storageUploadId?: Prisma.SortOrder
+  importStatus?: Prisma.SortOrder
 }
 
 export type DatasetMinOrderByAggregateInput = {
@@ -323,6 +589,20 @@ export type DatasetMinOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  uploadedByExternalUserId?: Prisma.SortOrder
+  uploadedByDisplayName?: Prisma.SortOrder
+  uploadedAt?: Prisma.SortOrder
+  sourceFilename?: Prisma.SortOrder
+  contentType?: Prisma.SortOrder
+  sizeBytes?: Prisma.SortOrder
+  storageBucket?: Prisma.SortOrder
+  storageObjectKey?: Prisma.SortOrder
+  storageUploadId?: Prisma.SortOrder
+  importStatus?: Prisma.SortOrder
+}
+
+export type DatasetSumOrderByAggregateInput = {
+  sizeBytes?: Prisma.SortOrder
 }
 
 export type DatasetScalarRelationFilter = {
@@ -377,6 +657,22 @@ export type DatasetUncheckedUpdateManyWithoutTenantNestedInput = {
   deleteMany?: Prisma.DatasetScalarWhereInput | Prisma.DatasetScalarWhereInput[]
 }
 
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
+export type NullableDateTimeFieldUpdateOperationsInput = {
+  set?: Date | string | null
+}
+
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type DatasetCreateNestedOneWithoutImportJobsInput = {
   create?: Prisma.XOR<Prisma.DatasetCreateWithoutImportJobsInput, Prisma.DatasetUncheckedCreateWithoutImportJobsInput>
   connectOrCreate?: Prisma.DatasetCreateOrConnectWithoutImportJobsInput
@@ -412,6 +708,17 @@ export type DatasetCreateWithoutTenantInput = {
   name: string
   status: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: string | null
+  uploadedByDisplayName?: string | null
+  uploadedAt?: Date | string | null
+  sourceFilename?: string | null
+  contentType?: string | null
+  sizeBytes?: number | null
+  storageBucket?: string | null
+  storageObjectKey?: string | null
+  storageUploadId?: string | null
+  importStatus?: string | null
   importJobs?: Prisma.ImportJobCreateNestedManyWithoutDatasetInput
   widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDatasetInput
 }
@@ -421,6 +728,17 @@ export type DatasetUncheckedCreateWithoutTenantInput = {
   name: string
   status: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: string | null
+  uploadedByDisplayName?: string | null
+  uploadedAt?: Date | string | null
+  sourceFilename?: string | null
+  contentType?: string | null
+  sizeBytes?: number | null
+  storageBucket?: string | null
+  storageObjectKey?: string | null
+  storageUploadId?: string | null
+  importStatus?: string | null
   importJobs?: Prisma.ImportJobUncheckedCreateNestedManyWithoutDatasetInput
   widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDatasetInput
 }
@@ -460,6 +778,17 @@ export type DatasetScalarWhereInput = {
   name?: Prisma.StringFilter<"Dataset"> | string
   status?: Prisma.StringFilter<"Dataset"> | string
   warnings?: Prisma.JsonNullableFilter<"Dataset">
+  preview?: Prisma.JsonNullableFilter<"Dataset">
+  uploadedByExternalUserId?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  uploadedByDisplayName?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  uploadedAt?: Prisma.DateTimeNullableFilter<"Dataset"> | Date | string | null
+  sourceFilename?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  contentType?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  sizeBytes?: Prisma.IntNullableFilter<"Dataset"> | number | null
+  storageBucket?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  storageObjectKey?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  storageUploadId?: Prisma.StringNullableFilter<"Dataset"> | string | null
+  importStatus?: Prisma.StringNullableFilter<"Dataset"> | string | null
 }
 
 export type DatasetCreateWithoutImportJobsInput = {
@@ -467,6 +796,17 @@ export type DatasetCreateWithoutImportJobsInput = {
   name: string
   status: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: string | null
+  uploadedByDisplayName?: string | null
+  uploadedAt?: Date | string | null
+  sourceFilename?: string | null
+  contentType?: string | null
+  sizeBytes?: number | null
+  storageBucket?: string | null
+  storageObjectKey?: string | null
+  storageUploadId?: string | null
+  importStatus?: string | null
   tenant: Prisma.TenantCreateNestedOneWithoutDatasetsInput
   widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDatasetInput
 }
@@ -477,6 +817,17 @@ export type DatasetUncheckedCreateWithoutImportJobsInput = {
   name: string
   status: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: string | null
+  uploadedByDisplayName?: string | null
+  uploadedAt?: Date | string | null
+  sourceFilename?: string | null
+  contentType?: string | null
+  sizeBytes?: number | null
+  storageBucket?: string | null
+  storageObjectKey?: string | null
+  storageUploadId?: string | null
+  importStatus?: string | null
   widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDatasetInput
 }
 
@@ -501,6 +852,17 @@ export type DatasetUpdateWithoutImportJobsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sizeBytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  storageBucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutDatasetsNestedInput
   widgets?: Prisma.DashboardWidgetUpdateManyWithoutDatasetNestedInput
 }
@@ -511,6 +873,17 @@ export type DatasetUncheckedUpdateWithoutImportJobsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sizeBytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  storageBucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDatasetNestedInput
 }
 
@@ -519,6 +892,17 @@ export type DatasetCreateWithoutWidgetsInput = {
   name: string
   status: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: string | null
+  uploadedByDisplayName?: string | null
+  uploadedAt?: Date | string | null
+  sourceFilename?: string | null
+  contentType?: string | null
+  sizeBytes?: number | null
+  storageBucket?: string | null
+  storageObjectKey?: string | null
+  storageUploadId?: string | null
+  importStatus?: string | null
   tenant: Prisma.TenantCreateNestedOneWithoutDatasetsInput
   importJobs?: Prisma.ImportJobCreateNestedManyWithoutDatasetInput
 }
@@ -529,6 +913,17 @@ export type DatasetUncheckedCreateWithoutWidgetsInput = {
   name: string
   status: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: string | null
+  uploadedByDisplayName?: string | null
+  uploadedAt?: Date | string | null
+  sourceFilename?: string | null
+  contentType?: string | null
+  sizeBytes?: number | null
+  storageBucket?: string | null
+  storageObjectKey?: string | null
+  storageUploadId?: string | null
+  importStatus?: string | null
   importJobs?: Prisma.ImportJobUncheckedCreateNestedManyWithoutDatasetInput
 }
 
@@ -553,6 +948,17 @@ export type DatasetUpdateWithoutWidgetsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sizeBytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  storageBucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutDatasetsNestedInput
   importJobs?: Prisma.ImportJobUpdateManyWithoutDatasetNestedInput
 }
@@ -563,6 +969,17 @@ export type DatasetUncheckedUpdateWithoutWidgetsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sizeBytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  storageBucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importJobs?: Prisma.ImportJobUncheckedUpdateManyWithoutDatasetNestedInput
 }
 
@@ -571,6 +988,17 @@ export type DatasetCreateManyTenantInput = {
   name: string
   status: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: string | null
+  uploadedByDisplayName?: string | null
+  uploadedAt?: Date | string | null
+  sourceFilename?: string | null
+  contentType?: string | null
+  sizeBytes?: number | null
+  storageBucket?: string | null
+  storageObjectKey?: string | null
+  storageUploadId?: string | null
+  importStatus?: string | null
 }
 
 export type DatasetUpdateWithoutTenantInput = {
@@ -578,6 +1006,17 @@ export type DatasetUpdateWithoutTenantInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sizeBytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  storageBucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importJobs?: Prisma.ImportJobUpdateManyWithoutDatasetNestedInput
   widgets?: Prisma.DashboardWidgetUpdateManyWithoutDatasetNestedInput
 }
@@ -587,6 +1026,17 @@ export type DatasetUncheckedUpdateWithoutTenantInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sizeBytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  storageBucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importJobs?: Prisma.ImportJobUncheckedUpdateManyWithoutDatasetNestedInput
   widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDatasetNestedInput
 }
@@ -596,6 +1046,17 @@ export type DatasetUncheckedUpdateManyWithoutTenantInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sizeBytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  storageBucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -644,6 +1105,17 @@ export type DatasetSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   name?: boolean
   status?: boolean
   warnings?: boolean
+  preview?: boolean
+  uploadedByExternalUserId?: boolean
+  uploadedByDisplayName?: boolean
+  uploadedAt?: boolean
+  sourceFilename?: boolean
+  contentType?: boolean
+  sizeBytes?: boolean
+  storageBucket?: boolean
+  storageObjectKey?: boolean
+  storageUploadId?: boolean
+  importStatus?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   importJobs?: boolean | Prisma.Dataset$importJobsArgs<ExtArgs>
   widgets?: boolean | Prisma.Dataset$widgetsArgs<ExtArgs>
@@ -656,6 +1128,17 @@ export type DatasetSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   name?: boolean
   status?: boolean
   warnings?: boolean
+  preview?: boolean
+  uploadedByExternalUserId?: boolean
+  uploadedByDisplayName?: boolean
+  uploadedAt?: boolean
+  sourceFilename?: boolean
+  contentType?: boolean
+  sizeBytes?: boolean
+  storageBucket?: boolean
+  storageObjectKey?: boolean
+  storageUploadId?: boolean
+  importStatus?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["dataset"]>
 
@@ -665,6 +1148,17 @@ export type DatasetSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   name?: boolean
   status?: boolean
   warnings?: boolean
+  preview?: boolean
+  uploadedByExternalUserId?: boolean
+  uploadedByDisplayName?: boolean
+  uploadedAt?: boolean
+  sourceFilename?: boolean
+  contentType?: boolean
+  sizeBytes?: boolean
+  storageBucket?: boolean
+  storageObjectKey?: boolean
+  storageUploadId?: boolean
+  importStatus?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["dataset"]>
 
@@ -674,9 +1168,20 @@ export type DatasetSelectScalar = {
   name?: boolean
   status?: boolean
   warnings?: boolean
+  preview?: boolean
+  uploadedByExternalUserId?: boolean
+  uploadedByDisplayName?: boolean
+  uploadedAt?: boolean
+  sourceFilename?: boolean
+  contentType?: boolean
+  sizeBytes?: boolean
+  storageBucket?: boolean
+  storageObjectKey?: boolean
+  storageUploadId?: boolean
+  importStatus?: boolean
 }
 
-export type DatasetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "status" | "warnings", ExtArgs["result"]["dataset"]>
+export type DatasetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "status" | "warnings" | "preview" | "uploadedByExternalUserId" | "uploadedByDisplayName" | "uploadedAt" | "sourceFilename" | "contentType" | "sizeBytes" | "storageBucket" | "storageObjectKey" | "storageUploadId" | "importStatus", ExtArgs["result"]["dataset"]>
 export type DatasetInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   importJobs?: boolean | Prisma.Dataset$importJobsArgs<ExtArgs>
@@ -703,6 +1208,17 @@ export type $DatasetPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     name: string
     status: string
     warnings: runtime.JsonValue | null
+    preview: runtime.JsonValue | null
+    uploadedByExternalUserId: string | null
+    uploadedByDisplayName: string | null
+    uploadedAt: Date | null
+    sourceFilename: string | null
+    contentType: string | null
+    sizeBytes: number | null
+    storageBucket: string | null
+    storageObjectKey: string | null
+    storageUploadId: string | null
+    importStatus: string | null
   }, ExtArgs["result"]["dataset"]>
   composites: {}
 }
@@ -1134,6 +1650,17 @@ export interface DatasetFieldRefs {
   readonly name: Prisma.FieldRef<"Dataset", 'String'>
   readonly status: Prisma.FieldRef<"Dataset", 'String'>
   readonly warnings: Prisma.FieldRef<"Dataset", 'Json'>
+  readonly preview: Prisma.FieldRef<"Dataset", 'Json'>
+  readonly uploadedByExternalUserId: Prisma.FieldRef<"Dataset", 'String'>
+  readonly uploadedByDisplayName: Prisma.FieldRef<"Dataset", 'String'>
+  readonly uploadedAt: Prisma.FieldRef<"Dataset", 'DateTime'>
+  readonly sourceFilename: Prisma.FieldRef<"Dataset", 'String'>
+  readonly contentType: Prisma.FieldRef<"Dataset", 'String'>
+  readonly sizeBytes: Prisma.FieldRef<"Dataset", 'Int'>
+  readonly storageBucket: Prisma.FieldRef<"Dataset", 'String'>
+  readonly storageObjectKey: Prisma.FieldRef<"Dataset", 'String'>
+  readonly storageUploadId: Prisma.FieldRef<"Dataset", 'String'>
+  readonly importStatus: Prisma.FieldRef<"Dataset", 'String'>
 }
     
 

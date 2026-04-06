@@ -111,7 +111,18 @@ export const DatasetScalarFieldEnum = {
   tenantId: 'tenantId',
   name: 'name',
   status: 'status',
-  warnings: 'warnings'
+  warnings: 'warnings',
+  preview: 'preview',
+  uploadedByExternalUserId: 'uploadedByExternalUserId',
+  uploadedByDisplayName: 'uploadedByDisplayName',
+  uploadedAt: 'uploadedAt',
+  sourceFilename: 'sourceFilename',
+  contentType: 'contentType',
+  sizeBytes: 'sizeBytes',
+  storageBucket: 'storageBucket',
+  storageObjectKey: 'storageObjectKey',
+  storageUploadId: 'storageUploadId',
+  importStatus: 'importStatus'
 } as const
 
 export type DatasetScalarFieldEnum = (typeof DatasetScalarFieldEnum)[keyof typeof DatasetScalarFieldEnum]

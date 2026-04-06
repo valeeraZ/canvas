@@ -1,11 +1,16 @@
 import type { FastifyPluginAsync } from "fastify";
 import {
   createDashboardStore,
+  createDashboardWidgetStore,
   createDashboardVisibilityStore,
   createPrincipalAppPreferenceStore,
   createPrincipalStore
 } from "../../../../../packages/db/src/index.js";
 import type { DashboardRecord } from "../../../../../packages/contracts/src/dashboards.js";
+import type {
+  ChartWidgetConfig,
+  DashboardWidgetRecord
+} from "../../../../../packages/contracts/src/index.js";
 import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
 import { shareDashboard } from "./routes/share-dashboard";
 import {
@@ -14,7 +19,9 @@ import {
 } from "./routes/set-selected-dashboard";
 import type { DashboardVisibilitySubjectType } from "./routes/share-dashboard";
 import {
+  chartWidgetConfigSchema,
   dashboardSchema,
+  dashboardWidgetSchema,
   dashboardExportPackageSchema,
   messageResponseSchema,
   selectedDashboardSchema
@@ -94,6 +101,24 @@ export type DashboardsService = {
   }) => Promise<{
     dashboardId: string | null;
   }>;
+  listDashboardWidgets: (input: {
+    tenantId: string;
+    dashboardId: string;
+  }) => Promise<DashboardWidgetRecord[]>;
+  createDashboardWidget: (input: {
+    tenantId: string;
+    dashboardId: string;
+    type: DashboardWidgetRecord["type"];
+    datasetId?: string | null;
+    config?: ChartWidgetConfig | null;
+  }) => Promise<DashboardWidgetRecord>;
+  updateDashboardWidget: (input: {
+    tenantId: string;
+    dashboardId: string;
+    widgetId: string;
+    datasetId?: string | null;
+    config?: ChartWidgetConfig | null;
+  }) => Promise<DashboardWidgetRecord | null>;
 };
 
 export type DashboardsModuleOptions = {
@@ -107,6 +132,7 @@ export function createDashboardsService(input: {
   const visibility = createDashboardVisibilityStore(input.db);
   const principals = createPrincipalStore(input.db);
   const preferences = createPrincipalAppPreferenceStore(input.db);
+  const widgets = createDashboardWidgetStore(input.db);
 
   return {
     listDashboards(tenantId: string) {
@@ -243,6 +269,15 @@ export function createDashboardsService(input: {
         upsertPrincipal: principals.upsert,
         setPreference: preferences.set
       });
+    },
+    listDashboardWidgets(input) {
+      return widgets.listByDashboard(input);
+    },
+    createDashboardWidget(input) {
+      return widgets.create(input);
+    },
+    updateDashboardWidget(input) {
+      return widgets.update(input);
     }
   };
 }
@@ -526,6 +561,178 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
       tenantId: request.tenantContext.tenantId,
       dashboardId: request.params.dashboardId
     });
+  });
+
+  app.get<{
+    Params: {
+      dashboardId: string;
+    };
+  }>("/dashboards/:dashboardId/widgets", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "List widgets for one dashboard",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Returns widget records for the selected dashboard in the active app.",
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: "object",
+        required: ["dashboardId"],
+        properties: {
+          dashboardId: {
+            type: "string",
+            description: "Dashboard identifier inside the active app."
+          }
+        }
+      },
+      response: {
+        200: {
+          type: "array",
+          items: dashboardWidgetSchema
+        },
+        401: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return { message: "Missing bearer token" };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return { message: "Missing tenant context" };
+    }
+
+    return options.dashboards.listDashboardWidgets({
+      tenantId: request.tenantContext.tenantId,
+      dashboardId: request.params.dashboardId
+    });
+  });
+
+  app.post<{
+    Params: {
+      dashboardId: string;
+    };
+    Body: {
+      type?: DashboardWidgetRecord["type"];
+      datasetId?: string | null;
+      config?: ChartWidgetConfig | null;
+    };
+  }>("/dashboards/:dashboardId/widgets", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Create a widget in one dashboard",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Creates a new widget for the selected dashboard in the active app.",
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: "object",
+        required: ["dashboardId"],
+        properties: {
+          dashboardId: {
+            type: "string",
+            description: "Dashboard identifier inside the active app."
+          }
+        }
+      },
+      body: {
+        type: "object",
+        properties: {
+          type: {
+            type: "string"
+          },
+          datasetId: {
+            type: ["string", "null"]
+          },
+          config: chartWidgetConfigSchema
+        }
+      },
+      response: {
+        200: dashboardWidgetSchema,
+        401: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return { message: "Missing bearer token" };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return { message: "Missing tenant context" };
+    }
+
+    return options.dashboards.createDashboardWidget({
+      tenantId: request.tenantContext.tenantId,
+      dashboardId: request.params.dashboardId,
+      type: request.body?.type ?? "chart",
+      datasetId: request.body?.datasetId ?? null,
+      config: request.body?.config ?? null
+    });
+  });
+
+  app.patch<{
+    Params: {
+      dashboardId: string;
+      widgetId: string;
+    };
+    Body: ChartWidgetConfig;
+  }>("/dashboards/:dashboardId/widgets/:widgetId", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Update one dashboard widget",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Replaces the chart configuration for the selected widget in the active app.",
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: "object",
+        required: ["dashboardId", "widgetId"],
+        properties: {
+          dashboardId: {
+            type: "string",
+            description: "Dashboard identifier inside the active app."
+          },
+          widgetId: {
+            type: "string",
+            description: "Widget identifier inside the selected dashboard."
+          }
+        }
+      },
+      body: chartWidgetConfigSchema,
+      response: {
+        200: dashboardWidgetSchema,
+        401: messageResponseSchema,
+        404: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return { message: "Missing bearer token" };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return { message: "Missing tenant context" };
+    }
+
+    const widget = await options.dashboards.updateDashboardWidget({
+      tenantId: request.tenantContext.tenantId,
+      dashboardId: request.params.dashboardId,
+      widgetId: request.params.widgetId,
+      datasetId: request.body.datasetId,
+      config: request.body
+    });
+
+    if (!widget) {
+      reply.status(404);
+      return {
+        message: "Widget not found"
+      };
+    }
+
+    return widget;
   });
 
   app.get<{

@@ -10,6 +10,9 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     filename?: string;
     name?: string;
+    content?: string;
+    contentType?: string;
+    sizeBytes?: number;
   };
   const session = readPortalSessionFromCookieHeader(
     request.headers.get("cookie") ?? ""
@@ -30,7 +33,10 @@ export async function POST(request: Request) {
   try {
     const result = await createPortalBackendClient(session).createDatasetUpload({
       filename: body.filename ?? "dataset.csv",
-      name: body.name ?? "Dataset Upload"
+      name: body.name ?? "Dataset Upload",
+      content: body.content,
+      contentType: body.contentType,
+      sizeBytes: body.sizeBytes
     });
 
     return jsonWithRequestId(result, { requestId });

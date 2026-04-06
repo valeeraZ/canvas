@@ -5,7 +5,13 @@ import {
 } from "../../../packages/auth/src/index.js";
 import { createDbClient } from "../../../packages/db/src/client.js";
 import type { PrismaClient } from "../../../packages/db/src/generated/prisma/client.js";
+import {
+  createS3MultipartUploadService,
+  readStorageConfig,
+  type StorageClientConfig
+} from "../../../packages/storage/src/index.js";
 import { createApiApp } from "./api/app";
+import { createDatasetsService } from "./modules/datasets/app";
 
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 3001;
@@ -25,6 +31,7 @@ export type BackendRuntimeConfig = {
   appName: string;
   databaseUrl?: string;
   redisUrl?: string;
+  storage?: StorageClientConfig;
   prettyLogs: boolean;
   mockContext?: AuthorizationContext;
 };
@@ -70,6 +77,7 @@ export function createBackendRuntimeConfig(
   source: Record<string, string | undefined>
 ): BackendRuntimeConfig {
   const useMockAuth = parseBooleanFlag(source.CANVAS_USE_MOCK_AUTH, true);
+  const storage = source.S3_BUCKET ? readStorageConfig(source) : undefined;
 
   return {
     host: source.HOST ?? DEFAULT_HOST,
@@ -78,6 +86,7 @@ export function createBackendRuntimeConfig(
     appName: source.CANVAS_APP_NAME ?? DEFAULT_APP_NAME,
     databaseUrl: source.DATABASE_URL ?? DEFAULT_DATABASE_URL,
     redisUrl: source.REDIS_URL,
+    storage,
     prettyLogs: parseBooleanFlag(source.CANVAS_PRETTY_LOGS, false),
     mockContext: useMockAuth
       ? {
@@ -102,11 +111,21 @@ export function createBackendRuntime(
   const cache = config.redisUrl
     ? createRedisExpiringStore(config.redisUrl)
     : createMemoryExpiringStore();
+  const datasets =
+    db && config.storage
+      ? createDatasetsService({
+          db,
+          tenantId: config.appName,
+          multipartUploads: createS3MultipartUploadService(config.storage),
+          storageBucket: config.storage.bucket
+        })
+      : undefined;
 
   const app = createApiApp({
     authBaseUrl: config.authBaseUrl,
     mockContext: config.mockContext,
     db,
+    datasets,
     tenantId: config.appName,
     prettyLogs: config.prettyLogs,
     authCacheStore: cache,

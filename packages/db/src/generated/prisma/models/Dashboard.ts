@@ -368,10 +368,6 @@ export type DashboardUncheckedUpdateManyWithoutTenantNestedInput = {
   deleteMany?: Prisma.DashboardScalarWhereInput | Prisma.DashboardScalarWhereInput[]
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type DashboardCreateNestedOneWithoutWidgetsInput = {
   create?: Prisma.XOR<Prisma.DashboardCreateWithoutWidgetsInput, Prisma.DashboardUncheckedCreateWithoutWidgetsInput>
   connectOrCreate?: Prisma.DashboardCreateOrConnectWithoutWidgetsInput
