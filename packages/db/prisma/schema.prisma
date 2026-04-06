@@ -61,13 +61,15 @@ model Dataset {
 }
 
 model ImportJob {
-  id        String   @id @default(cuid())
-  datasetId String
-  tenantId  String
-  status    String
-  objectKey String
-  warnings  Json?
-  dataset   Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  datasetId   String
+  tenantId    String
+  status      String
+  objectKey   String
+  warnings    Json?
+  claimedAt   DateTime?
+  completedAt DateTime?
+  dataset     Dataset   @relation(fields: [datasetId], references: [id], onDelete: Cascade)
 }
 
 model Workbook {

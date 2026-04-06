@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "node --env-file-if-exists=.env --import tsx --watch src/main.ts",
-    "start": "node --env-file-if-exists=.env --import tsx src/main.ts"
+    "dev:worker": "CANVAS_RUNTIME_MODE=worker node --env-file-if-exists=.env --import tsx --watch src/main.ts",
+    "start": "node --env-file-if-exists=.env --import tsx src/main.ts",
+    "start:worker": "CANVAS_RUNTIME_MODE=worker node --env-file-if-exists=.env --import tsx src/main.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",

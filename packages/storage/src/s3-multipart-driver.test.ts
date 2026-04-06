@@ -2,10 +2,14 @@ import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
   CreateMultipartUploadCommand,
+  GetObjectCommand,
   UploadPartCommand
 } from "@aws-sdk/client-s3";
 import { describe, expect, it, vi } from "vitest";
-import { createS3MultipartUploadDriver } from "./s3-multipart-driver";
+import {
+  createS3MultipartUploadDriver,
+  createS3ObjectReaderDriver
+} from "./s3-multipart-driver";
 
 describe("createS3MultipartUploadDriver", () => {
   it("maps multipart operations to S3 commands", async () => {
@@ -76,5 +80,30 @@ describe("createS3MultipartUploadDriver", () => {
       Key: "canvas/uploads/sales.csv",
       UploadId: "upload_123"
     });
+  });
+
+  it("maps object reads to GetObjectCommand and returns a buffer body", async () => {
+    const send = vi.fn().mockResolvedValue({
+      Body: {
+        async transformToByteArray() {
+          return new Uint8Array(Buffer.from("Month,Revenue\nJan,120"));
+        }
+      }
+    });
+
+    const driver = createS3ObjectReaderDriver({
+      send
+    });
+    const result = await driver.getObject({
+      bucket: "canvas-raw",
+      key: "canvas/uploads/sales.csv"
+    });
+
+    expect(send.mock.calls[0]?.[0]).toBeInstanceOf(GetObjectCommand);
+    expect(send.mock.calls[0]?.[0].input).toEqual({
+      Bucket: "canvas-raw",
+      Key: "canvas/uploads/sales.csv"
+    });
+    expect(result.body.toString("utf8")).toContain("Month,Revenue");
   });
 });

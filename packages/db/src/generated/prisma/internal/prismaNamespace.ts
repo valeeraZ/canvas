@@ -1247,7 +1247,9 @@ export const ImportJobScalarFieldEnum = {
   tenantId: 'tenantId',
   status: 'status',
   objectKey: 'objectKey',
-  warnings: 'warnings'
+  warnings: 'warnings',
+  claimedAt: 'claimedAt',
+  completedAt: 'completedAt'
 } as const
 
 export type ImportJobScalarFieldEnum = (typeof ImportJobScalarFieldEnum)[keyof typeof ImportJobScalarFieldEnum]
