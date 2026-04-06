@@ -77,6 +77,18 @@ export function createImportJobStore(prisma: PrismaClient) {
 
       return job ? toImportJobRecord(job) : null;
     },
+    async listQueuedJobs() {
+      const jobs = await prisma.importJob.findMany({
+        where: {
+          status: "queued"
+        },
+        orderBy: {
+          id: "asc"
+        }
+      });
+
+      return jobs.map(toImportJobRecord);
+    },
     async updateStatus(input: {
       importJobId: string;
       status: ImportJobRecord["status"];
@@ -91,6 +103,103 @@ export function createImportJobStore(prisma: PrismaClient) {
       });
 
       return toImportJobRecord(job);
+    },
+    async claimNext(input: {
+      importJobId: string;
+      claimedAt: Date;
+    }) {
+      const result = await prisma.importJob.updateMany({
+        where: {
+          id: input.importJobId,
+          status: "queued"
+        },
+        data: {
+          status: "processing",
+          claimedAt: input.claimedAt
+        }
+      } as never);
+
+      if (result.count === 0) {
+        return null;
+      }
+
+      const job = await prisma.importJob.findUnique({
+        where: {
+          id: input.importJobId
+        }
+      } as never);
+
+      return job ? toImportJobRecord(job) : null;
+    },
+    async markReady(input: {
+      importJobId: string;
+      completedAt: Date;
+    }) {
+      const job = await prisma.importJob.update({
+        where: {
+          id: input.importJobId
+        },
+        data: {
+          status: "ready",
+          warnings: [],
+          completedAt: input.completedAt
+        }
+      } as never);
+
+      return toImportJobRecord(job);
+    },
+    async markFailed(input: {
+      importJobId: string;
+      completedAt: Date;
+      warnings: WarningRecord[];
+    }) {
+      const job = await prisma.importJob.update({
+        where: {
+          id: input.importJobId
+        },
+        data: {
+          status: "failed",
+          warnings: input.warnings,
+          completedAt: input.completedAt
+        }
+      } as never);
+
+      return toImportJobRecord(job);
+    },
+    async listStaleProcessingJobs(input: {
+      staleBefore: Date;
+    }) {
+      const jobs = await prisma.importJob.findMany({
+        where: {
+          status: "processing",
+          claimedAt: {
+            lt: input.staleBefore
+          }
+        },
+        orderBy: {
+          claimedAt: "asc"
+        }
+      } as never);
+
+      return jobs.map(toImportJobRecord);
+    },
+    async resetStaleProcessingJobs(input: {
+      staleBefore: Date;
+    }) {
+      const result = await prisma.importJob.updateMany({
+        where: {
+          status: "processing",
+          claimedAt: {
+            lt: input.staleBefore
+          }
+        },
+        data: {
+          status: "queued",
+          claimedAt: null
+        }
+      } as never);
+
+      return result.count;
     }
   };
 }

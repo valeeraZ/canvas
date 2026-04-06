@@ -116,28 +116,13 @@ describe("createDatasetsService", () => {
           status: "queued",
           objectKey: "canvas/uploads/sales.csv",
           warnings: []
-        }),
-        update: vi
-          .fn()
-          .mockResolvedValueOnce({
-            id: "job_123",
-            datasetId: "ds_1",
-            tenantId: "canvas",
-            status: "processing",
-            objectKey: "canvas/uploads/sales.csv",
-            warnings: []
-          })
-          .mockResolvedValueOnce({
-            id: "job_123",
-            datasetId: "ds_1",
-            tenantId: "canvas",
-            status: "queued",
-            objectKey: "canvas/uploads/sales.csv",
-            warnings: []
-          })
+        })
       }
     } as never;
 
+    const importQueue = {
+      enqueue: vi.fn(async () => undefined)
+    };
     const multipartUploads = {
       create: vi.fn(async () => ({
         bucket: "canvas-raw",
@@ -159,6 +144,7 @@ describe("createDatasetsService", () => {
       db: prisma,
       tenantId: "canvas",
       multipartUploads,
+      importQueue,
       storageBucket: "canvas-raw",
       uploadPartSizeBytes: 5
     });
@@ -170,14 +156,6 @@ describe("createDatasetsService", () => {
       body: makeBody()
     });
 
-    expect(prisma.importJob.update).toHaveBeenNthCalledWith(1, {
-      where: {
-        id: "job_123"
-      },
-      data: {
-        status: "processing"
-      }
-    });
     expect(prisma.dataset.update).toHaveBeenCalledWith({
       where: {
         id: "ds_1"
@@ -198,6 +176,7 @@ describe("createDatasetsService", () => {
         }
       }
     });
+    expect(importQueue.enqueue).toHaveBeenCalledWith("job_123");
     expect(result).toEqual({
       uploadId: "job_123",
       datasetId: "ds_1",
@@ -206,5 +185,63 @@ describe("createDatasetsService", () => {
       sizeBytes: 21,
       importStatus: "queued"
     });
+  });
+
+  it("does not enqueue the import job when file streaming fails", async () => {
+    async function* makeBody() {
+      yield "Month,Revenue\nJan,120";
+    }
+
+    const prisma = {
+      importJob: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "job_123",
+          datasetId: "ds_1",
+          tenantId: "canvas",
+          status: "queued",
+          objectKey: "canvas/uploads/sales.csv",
+          warnings: []
+        })
+      }
+    } as never;
+
+    const importQueue = {
+      enqueue: vi.fn(async () => undefined)
+    };
+    const multipartUploads = {
+      create: vi.fn(async () => ({
+        bucket: "canvas-raw",
+        key: "canvas/uploads/sales.csv",
+        uploadId: "s3-upload-1"
+      })),
+      uploadPart: vi.fn(async () => {
+        throw new Error("stream failed");
+      }),
+      complete: vi.fn(async () => ({
+        bucket: "canvas-raw",
+        key: "canvas/uploads/sales.csv"
+      })),
+      abort: vi.fn(async () => undefined)
+    };
+
+    const service = createDatasetsService({
+      db: prisma,
+      tenantId: "canvas",
+      multipartUploads,
+      importQueue,
+      storageBucket: "canvas-raw",
+      uploadPartSizeBytes: 5
+    });
+
+    await expect(
+      service.uploadFile({
+        uploadId: "job_123",
+        tenantId: "canvas",
+        contentType: "text/csv",
+        body: makeBody()
+      })
+    ).rejects.toThrow("stream failed");
+
+    expect(importQueue.enqueue).not.toHaveBeenCalled();
   });
 });

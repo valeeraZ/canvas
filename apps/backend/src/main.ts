@@ -20,6 +20,7 @@ async function run() {
   const shutdown = async () => {
     await runtime.app.close();
     await runtime.db?.$disconnect();
+    await runtime.queue?.disconnect();
     await runtime.cache?.disconnect();
   };
 

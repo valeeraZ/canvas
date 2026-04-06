@@ -5,6 +5,8 @@ export type {
   MultipartUploadDriver
 } from "./types";
 export { readStorageConfig } from "./config";
+export { createObjectReader } from "./get-object";
+export type { StorageObjectReaderDriver } from "./get-object";
 export { buildObjectKey, createPresignedUpload } from "./presign";
 export { createMultipartUploadService } from "./multipart-upload";
 export {

@@ -238,6 +238,173 @@ describe("toDatasetRecord", () => {
     expect(dataset?.storageUploadId).toBe("s3-upload-1");
   });
 
+  it("marks a dataset as processing when a worker claims its import job", async () => {
+    const prisma = {
+      dataset: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "ds_3"
+        }),
+        update: vi.fn().mockResolvedValue({
+          id: "ds_3",
+          tenantId: "tenant_row_1",
+          name: "Sales Upload",
+          status: "processing",
+          warnings: [],
+          preview: null,
+          importStatus: "processing",
+          tenant: {
+            slug: "canvas"
+          }
+        })
+      }
+    } as never;
+
+    const store = createDatasetStore(prisma);
+    const dataset = await store.markProcessing({
+      tenantId: "canvas",
+      datasetId: "ds_3"
+    });
+
+    expect(prisma.dataset.update).toHaveBeenCalledWith({
+      where: {
+        id: "ds_3"
+      },
+      data: {
+        status: "processing",
+        importStatus: "processing"
+      },
+      include: {
+        tenant: {
+          select: {
+            slug: true
+          }
+        }
+      }
+    });
+    expect(dataset?.status).toBe("processing");
+  });
+
+  it("marks a dataset ready and persists its preview", async () => {
+    const preview: DatasetPreview = {
+      datasetId: "ds_3",
+      columns: [
+        { name: "month", type: "string" },
+        { name: "revenue", type: "number" }
+      ],
+      sampleRows: [{ month: "Jan", revenue: 120 }],
+      records: [{ month: "Jan", revenue: 120 }]
+    };
+    const prisma = {
+      dataset: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "ds_3"
+        }),
+        update: vi.fn().mockResolvedValue({
+          id: "ds_3",
+          tenantId: "tenant_row_1",
+          name: "Sales Upload",
+          status: "ready",
+          warnings: [],
+          preview,
+          importStatus: "ready",
+          tenant: {
+            slug: "canvas"
+          }
+        })
+      }
+    } as never;
+
+    const store = createDatasetStore(prisma);
+    const dataset = await store.markReady({
+      tenantId: "canvas",
+      datasetId: "ds_3",
+      preview
+    });
+
+    expect(prisma.dataset.update).toHaveBeenCalledWith({
+      where: {
+        id: "ds_3"
+      },
+      data: {
+        status: "ready",
+        importStatus: "ready",
+        warnings: [],
+        preview
+      },
+      include: {
+        tenant: {
+          select: {
+            slug: true
+          }
+        }
+      }
+    });
+    expect(dataset?.importStatus).toBe("ready");
+  });
+
+  it("marks a dataset failed with warnings", async () => {
+    const prisma = {
+      dataset: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "ds_3"
+        }),
+        update: vi.fn().mockResolvedValue({
+          id: "ds_3",
+          tenantId: "tenant_row_1",
+          name: "Sales Upload",
+          status: "failed",
+          warnings: [
+            {
+              code: "import_failed",
+              message: "Malformed CSV row"
+            }
+          ],
+          preview: null,
+          importStatus: "failed",
+          tenant: {
+            slug: "canvas"
+          }
+        })
+      }
+    } as never;
+
+    const store = createDatasetStore(prisma);
+    const dataset = await store.markFailed({
+      tenantId: "canvas",
+      datasetId: "ds_3",
+      warnings: [
+        {
+          code: "import_failed",
+          message: "Malformed CSV row"
+        }
+      ]
+    });
+
+    expect(prisma.dataset.update).toHaveBeenCalledWith({
+      where: {
+        id: "ds_3"
+      },
+      data: {
+        status: "failed",
+        importStatus: "failed",
+        warnings: [
+          {
+            code: "import_failed",
+            message: "Malformed CSV row"
+          }
+        ]
+      },
+      include: {
+        tenant: {
+          select: {
+            slug: true
+          }
+        }
+      }
+    });
+    expect(dataset?.warnings[0]?.code).toBe("import_failed");
+  });
+
   it("derives usage metadata from widgets, dashboards, and workbooks", async () => {
     const prisma = {
       dataset: {
