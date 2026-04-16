@@ -1,11 +1,27 @@
 export function buildSql(input: {
-  tableName: string;
+  tenantId: string;
+  datasetId: string;
   dimensions: string[];
   measures: Array<{ field: string; op: string }>;
 }) {
-  const dimensions = input.dimensions.join(", ");
   const firstMeasure = input.measures[0];
-  const measureExpr = `${firstMeasure.op}(${firstMeasure.field})`;
+  const dimension = input.dimensions[0];
+  const dimensionExpr = dimension
+    ? `record->>'${dimension}'`
+    : null;
+  const measureExpr =
+    firstMeasure.op === "count"
+      ? `count(*)`
+      : `${firstMeasure.op}((record->>'${firstMeasure.field}')::numeric)`;
+  const measureAlias = `${firstMeasure.op}_${firstMeasure.field}`;
 
-  return `select ${dimensions}, ${measureExpr} from ${input.tableName} group by ${dimensions}`;
+  return {
+    text: dimensionExpr
+      ? `select ${dimensionExpr} as "${dimension}", ${measureExpr} as "${measureAlias}" ` +
+        `from "DatasetRow" where "tenantId" = $1 and "datasetId" = $2 ` +
+        `group by ${dimensionExpr}`
+      : `select ${measureExpr} as "${measureAlias}" ` +
+        `from "DatasetRow" where "tenantId" = $1 and "datasetId" = $2`,
+    values: [input.tenantId, input.datasetId]
+  };
 }

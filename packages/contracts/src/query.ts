@@ -4,7 +4,8 @@ export type QueryMeasure = {
 };
 
 export type QuerySpec = {
-  tableName: string;
+  tenantId: string;
+  datasetId: string;
   dimensions: string[];
   measures: QueryMeasure[];
 };
