@@ -35,7 +35,7 @@ export async function runImportJob(input: {
     tenantId: string;
     datasetId: string;
     headers: string[];
-    rows: Array<Array<string | null>>;
+    rows: Array<Array<string | number | boolean | null>>;
   }) => Promise<unknown>;
   markDatasetReady: (input: {
     tenantId: string;
@@ -90,9 +90,7 @@ export async function runImportJob(input: {
     const preview = buildDatasetPreview({
       datasetId: claimedJob.datasetId,
       headers: normalized.headers,
-      rows: normalized.rows.map((row) =>
-        row.map((value) => (value === null ? "" : String(value)))
-      )
+      rows: normalized.rows
     });
 
     await input.persistNormalizedTable({

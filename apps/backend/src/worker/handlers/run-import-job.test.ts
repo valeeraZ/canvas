@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { runImportJob } from "./run-import-job";
 
 describe("runImportJob", () => {
-  it("claims a queued job, imports CSV data, and marks dataset/job ready", async () => {
+  it("claims a queued job, persists typed rows, and marks dataset/job ready", async () => {
     const claimJob = vi.fn(async () => ({
       id: "job_123",
       datasetId: "ds_1",
@@ -13,10 +13,9 @@ describe("runImportJob", () => {
     const readObject = vi.fn(async () => ({
       bucket: "canvas-raw",
       key: "canvas/uploads/sales.csv",
-      body: Buffer.from("Month,Revenue\nJan,120")
+      body: Buffer.from("Month,Revenue,Active\n2026-04-01,120,true")
     }));
     const persistNormalizedTable = vi.fn(async () => ({
-      tableName: "tenant_canvas_dataset_ds_1",
       rowCount: 1
     }));
     const markDatasetReady = vi.fn(async () => undefined);
@@ -51,10 +50,35 @@ describe("runImportJob", () => {
     expect(persistNormalizedTable).toHaveBeenCalledWith({
       tenantId: "canvas",
       datasetId: "ds_1",
-      headers: ["month", "revenue"],
-      rows: [["Jan", "120"]]
+      headers: ["month", "revenue", "active"],
+      rows: [["2026-04-01", 120, true]]
     });
-    expect(markDatasetReady).toHaveBeenCalledOnce();
+    expect(markDatasetReady).toHaveBeenCalledWith({
+      tenantId: "canvas",
+      datasetId: "ds_1",
+      preview: {
+        datasetId: "ds_1",
+        columns: [
+          { name: "month", type: "date" },
+          { name: "revenue", type: "number" },
+          { name: "active", type: "boolean" }
+        ],
+        sampleRows: [
+          {
+            month: "2026-04-01",
+            revenue: 120,
+            active: true
+          }
+        ],
+        records: [
+          {
+            month: "2026-04-01",
+            revenue: 120,
+            active: true
+          }
+        ]
+      }
+    });
     expect(markJobReady).toHaveBeenCalledWith({
       jobId: "job_123",
       completedAt: new Date("2026-04-06T10:00:00.000Z")

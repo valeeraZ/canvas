@@ -9,7 +9,7 @@ export async function writeNormalizedTable(input: {
   tenantId: string;
   datasetId: string;
   headers: string[];
-  rows: Array<Array<string | null>>;
+  rows: Array<Array<string | number | boolean | null>>;
 }) {
   await input.datasetRows.replaceRows({
     tenantId: input.tenantId,
