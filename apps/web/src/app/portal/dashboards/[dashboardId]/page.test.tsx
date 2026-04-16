@@ -91,7 +91,8 @@ describe("PortalDashboardDetailPage", () => {
 
     expect(html).toContain("Executive Overview");
     expect(html).toContain("Review embed selection");
-    expect(html).toContain("Add a chart widget");
+    expect(html).toContain("Add the first chart widget");
+    expect(html).toContain("Active chart");
     expect(notFoundMock).not.toHaveBeenCalled();
   });
 });

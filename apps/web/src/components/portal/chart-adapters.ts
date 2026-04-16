@@ -1,52 +1,38 @@
-type ChartAdapterInput = {
-  chartType: "bar" | "line" | "area" | "pie";
-  xField: string;
-  yField: string;
-  seriesField?: string;
-  records: Array<Record<string, string | number | boolean | null>>;
-};
+import type { ChartPayload } from "../../../../../packages/contracts/src/charts.js";
+import type { ChartConfig } from "../ui/chart";
 
-export function buildChartRenderModel(input: ChartAdapterInput) {
-  if (input.chartType === "pie") {
-    return {
-      data: input.records.map((record) => ({
-        name: String(record[input.xField] ?? ""),
-        value: Number(record[input.yField] ?? 0)
-      })),
-      seriesKeys: []
-    };
-  }
+const SERIES_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)"
+] as const;
 
-  if (!input.seriesField) {
-    return {
-      data: input.records.map((record) => ({
-        [input.xField]: record[input.xField],
-        [input.yField]: Number(record[input.yField] ?? 0)
-      })),
-      seriesKeys: [input.yField]
-    };
-  }
-
-  const grouped = new Map<string, Record<string, string | number | null>>();
-
-  for (const record of input.records) {
-    const xValue = String(record[input.xField] ?? "");
-    const seriesValue = String(record[input.seriesField] ?? "");
-    const yValue = Number(record[input.yField] ?? 0);
-    const existing = grouped.get(xValue) ?? { [input.xField]: xValue };
-
-    existing[seriesValue] = yValue;
-    grouped.set(xValue, existing);
-  }
-
-  const seriesKeys = Array.from(
-    new Set(
-      input.records.map((record) => String(record[input.seriesField as string] ?? ""))
+export function buildChartRenderModel(input: ChartPayload) {
+  const seriesKeys = input.series.map((series) => series.name);
+  const data = input.labels.map((label, index) =>
+    Object.assign(
+      { label },
+      ...input.series.map((series) => ({
+        [series.name]: Number(series.data[index] ?? 0)
+      }))
     )
-  ).filter(Boolean);
+  );
+  const config = Object.fromEntries(
+    input.series.map((series, index) => [
+      series.name,
+      {
+        label: series.name,
+        color: SERIES_COLORS[index % SERIES_COLORS.length]
+      }
+    ])
+  ) as ChartConfig;
 
   return {
-    data: Array.from(grouped.values()),
+    config,
+    data,
+    labelKey: "label",
     seriesKeys
   };
 }
