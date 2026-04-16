@@ -2,13 +2,34 @@ import { describe, expect, it, vi } from "vitest";
 import { writeNormalizedTable } from "./write-normalized-table";
 
 describe("writeNormalizedTable", () => {
-  it("creates a canonical dataset table and inserts normalized rows", async () => {
-    const db = {
-      $executeRawUnsafe: vi.fn(async () => undefined)
+  it("replaces imported rows through the shared DatasetRow store", async () => {
+    const datasetRows = {
+      replaceRows: vi.fn(async () => [
+        {
+          id: "row_1",
+          tenantId: "canvas",
+          datasetId: "sales-q2",
+          rowIndex: 0,
+          record: {
+            order_date: "2026-04-01",
+            net_revenue: "42"
+          }
+        },
+        {
+          id: "row_2",
+          tenantId: "canvas",
+          datasetId: "sales-q2",
+          rowIndex: 1,
+          record: {
+            order_date: "2026-04-02",
+            net_revenue: null
+          }
+        }
+      ])
     };
 
     const result = await writeNormalizedTable({
-      db,
+      datasetRows,
       tenantId: "canvas",
       datasetId: "sales-q2",
       headers: ["order_date", "net_revenue"],
@@ -19,35 +40,31 @@ describe("writeNormalizedTable", () => {
     });
 
     expect(result).toEqual({
-      tableName: "tenant_canvas_dataset_sales_q2",
       rowCount: 2
     });
-    expect(db.$executeRawUnsafe).toHaveBeenCalledTimes(3);
-    expect(db.$executeRawUnsafe).toHaveBeenNthCalledWith(
-      1,
-      'DROP TABLE IF EXISTS "tenant_canvas_dataset_sales_q2"'
-    );
-    expect(db.$executeRawUnsafe).toHaveBeenNthCalledWith(
-      2,
-      'CREATE TABLE "tenant_canvas_dataset_sales_q2" ("order_date" TEXT, "net_revenue" TEXT)'
-    );
-    expect(db.$executeRawUnsafe).toHaveBeenNthCalledWith(
-      3,
-      'INSERT INTO "tenant_canvas_dataset_sales_q2" ("order_date", "net_revenue") VALUES ($1, $2), ($3, $4)',
-      "2026-04-01",
-      "42",
-      "2026-04-02",
-      null
-    );
+    expect(datasetRows.replaceRows).toHaveBeenCalledWith({
+      tenantId: "canvas",
+      datasetId: "sales-q2",
+      rows: [
+        {
+          order_date: "2026-04-01",
+          net_revenue: "42"
+        },
+        {
+          order_date: "2026-04-02",
+          net_revenue: null
+        }
+      ]
+    });
   });
 
-  it("skips inserts when the imported dataset is empty", async () => {
-    const db = {
-      $executeRawUnsafe: vi.fn(async () => undefined)
+  it("replaces dataset rows with an empty collection when the import is empty", async () => {
+    const datasetRows = {
+      replaceRows: vi.fn(async () => [])
     };
 
     const result = await writeNormalizedTable({
-      db,
+      datasetRows,
       tenantId: "canvas",
       datasetId: "empty",
       headers: ["month"],
@@ -55,9 +72,12 @@ describe("writeNormalizedTable", () => {
     });
 
     expect(result).toEqual({
-      tableName: "tenant_canvas_dataset_empty",
       rowCount: 0
     });
-    expect(db.$executeRawUnsafe).toHaveBeenCalledTimes(2);
+    expect(datasetRows.replaceRows).toHaveBeenCalledWith({
+      tenantId: "canvas",
+      datasetId: "empty",
+      rows: []
+    });
   });
 });

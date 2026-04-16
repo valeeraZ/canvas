@@ -7,11 +7,12 @@ export { createWorkerRuntime } from "./runtime";
 export { createImportQueueLoop } from "./queue-loop";
 
 export function createWorkerJobExecutor(input: {
-  db: {
-    $executeRawUnsafe(
-      query: string,
-      ...values: Array<string | null>
-    ): Promise<unknown>;
+  datasetRows: {
+    replaceRows(input: {
+      tenantId: string;
+      datasetId: string;
+      rows: Array<Record<string, string | number | boolean | null>>;
+    }): Promise<unknown>;
   };
   storageBucket: string;
   importJobs: {
@@ -80,7 +81,7 @@ export function createWorkerJobExecutor(input: {
       readObject: input.objectReader.read,
       persistNormalizedTable: (persistInput) =>
         persistNormalizedTable({
-          db: input.db,
+          datasetRows: input.datasetRows,
           ...persistInput
         }),
       markDatasetReady: input.datasets.markReady,

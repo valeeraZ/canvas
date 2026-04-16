@@ -8,8 +8,8 @@ describe("createWorkerJobExecutor", () => {
   it("adapts queue job ids into the import executor contract", async () => {
     const runImportJobImpl = vi.fn(async () => undefined);
     const execute = createWorkerJobExecutor({
-      db: {
-        $executeRawUnsafe: vi.fn(async () => undefined)
+      datasetRows: {
+        replaceRows: vi.fn(async () => [])
       },
       storageBucket: "canvas-raw",
       importJobs: {
@@ -44,8 +44,8 @@ describe("createWorkerJobExecutor", () => {
   });
 
   it("binds the database client into normalized table persistence", async () => {
-    const db = {
-      $executeRawUnsafe: vi.fn(async () => undefined)
+    const datasetRows = {
+      replaceRows: vi.fn(async () => [])
     };
     const persistNormalizedTable = vi.fn(async () => undefined);
     const runImportJobImpl = vi.fn(async ({ persistNormalizedTable, ...input }) => {
@@ -59,7 +59,7 @@ describe("createWorkerJobExecutor", () => {
       return input;
     });
     const execute = createWorkerJobExecutor({
-      db,
+      datasetRows,
       storageBucket: "canvas-raw",
       importJobs: {
         claimNext: vi.fn(async () => null),
@@ -85,7 +85,7 @@ describe("createWorkerJobExecutor", () => {
     await execute("job_123");
 
     expect(persistNormalizedTable).toHaveBeenCalledWith({
-      db,
+      datasetRows,
       tenantId: "canvas",
       datasetId: "ds_1",
       headers: ["month"],
