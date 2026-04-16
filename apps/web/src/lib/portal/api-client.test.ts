@@ -115,6 +115,46 @@ describe("createPortalApiClient", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/canvas/datasets/ds_1/preview");
   });
 
+  it("runs dataset chart queries through the portal api", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          chartType: "bar",
+          labels: ["Jan", "Feb"],
+          series: [
+            {
+              name: "revenue",
+              data: [120, 150]
+            }
+          ]
+        }),
+        { status: 200 }
+      )
+    );
+
+    const payload = await createPortalApiClient().runDatasetChartQuery({
+      datasetId: "ds_1",
+      chartType: "bar",
+      xField: "month",
+      yField: "revenue"
+    });
+
+    expect(payload.labels).toEqual(["Jan", "Feb"]);
+    expect(fetchMock).toHaveBeenCalledWith("/api/canvas/datasets/ds_1/chart-query", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        chartType: "bar",
+        xField: "month",
+        yField: "revenue"
+      })
+    });
+  });
+
   it("creates dataset uploads and uploads a file through the portal api", async () => {
     vi.stubGlobal("fetch", fetchMock);
 

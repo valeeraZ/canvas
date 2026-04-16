@@ -21,13 +21,27 @@ type DatasetOption = {
   status: string;
 };
 
+function getSupportedChartType(
+  chartType?: ChartWidgetConfig["chartType"]
+): "bar" | "line" | "area" {
+  if (chartType === "line" || chartType === "area") {
+    return chartType;
+  }
+
+  return "bar";
+}
+
 function buildInitialConfig(
   widget: DashboardWidgetRecord | null,
   previews: Record<string, DatasetPreview | null>,
   datasets: DatasetOption[]
 ): ChartWidgetConfig | null {
   if (widget?.config) {
-    return widget.config;
+    return {
+      ...widget.config,
+      chartType: getSupportedChartType(widget.config.chartType),
+      seriesField: undefined
+    };
   }
 
   const datasetId = widget?.datasetId ?? datasets[0]?.id;
@@ -41,7 +55,7 @@ function buildInitialConfig(
 
   return {
     datasetId,
-    chartType: "bar",
+    chartType: getSupportedChartType(widget?.config?.chartType),
     xField: columns[0]?.name ?? "",
     yField:
       columns.find(
@@ -155,9 +169,11 @@ export function DashboardWidgetConfigPanel(props: {
               <SelectItem value="bar">Bar</SelectItem>
               <SelectItem value="line">Line</SelectItem>
               <SelectItem value="area">Area</SelectItem>
-              <SelectItem value="pie">Pie</SelectItem>
             </SelectContent>
           </Select>
+          <p className="text-xs text-muted-foreground">
+            Supports bar, line, and area in this phase. Pie charts coming later.
+          </p>
         </div>
         <div className="grid gap-2">
           <Label>X axis</Label>
@@ -197,24 +213,9 @@ export function DashboardWidgetConfigPanel(props: {
         </div>
         <div className="grid gap-2">
           <Label>Series</Label>
-          <Select
-            value={draft?.seriesField ?? "__none__"}
-            onValueChange={(value) =>
-              updateDraft({ seriesField: value === "__none__" ? undefined : value })
-            }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="No split series" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">No split series</SelectItem>
-              {fields.map((field: DatasetPreview["columns"][number]) => (
-                <SelectItem key={field.name} value={field.name}>
-                  {field.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+            Series split coming later.
+          </div>
         </div>
         <Button
           type="button"

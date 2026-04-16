@@ -1,8 +1,11 @@
 import type { FastifyPluginAsync } from "fastify";
 import { createDatasetStore, createImportJobStore } from "../../../../../packages/db/src/index.js";
 import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
+import type { ChartPayload, ChartQueryRequest } from "../../../../../packages/contracts/src/charts.js";
 import { streamMultipartUpload } from "./routes/upload-file";
 import {
+  chartPayloadSchema,
+  chartQueryRequestSchema,
   createUploadResponseSchema,
   datasetPreviewSchema,
   datasetDetailSchema,
@@ -10,6 +13,7 @@ import {
   messageResponseSchema
 } from "../../api/schema";
 import type { DatasetPreview } from "../../../../../packages/contracts/src/index.js";
+import { runChartQuery as executeChartQuery } from "../charts/routes/run-chart-query";
 import { createUploadSession } from "./routes/create-upload";
 import { mapDatasetDetail } from "./routes/get-dataset";
 import { mapDatasetSummary } from "./routes/list-datasets";
@@ -75,6 +79,13 @@ export type DatasetsService = {
     datasetId: string;
     tenantId: string;
   }) => Promise<DatasetPreview | null>;
+  runChartQuery: (input: {
+    datasetId: string;
+    tenantId: string;
+    chartType: string;
+    xField: string;
+    yField: string;
+  }) => Promise<ChartPayload | null>;
   uploadFile: (input: {
     uploadId: string;
     tenantId: string;
@@ -264,6 +275,32 @@ export function createDatasetsService(
       }
 
       return preview;
+    },
+    async runChartQuery(queryInput: {
+      datasetId: string;
+      tenantId: string;
+      chartType: string;
+      xField: string;
+      yField: string;
+    }) {
+      const preview = await datasets.findPreviewByTenantAndId(
+        queryInput.tenantId,
+        queryInput.datasetId
+      );
+
+      if (!preview) {
+        return null;
+      }
+
+      return executeChartQuery({
+        db: input.db,
+        tenantId: queryInput.tenantId,
+        datasetId: queryInput.datasetId,
+        chartType: queryInput.chartType,
+        xField: queryInput.xField,
+        yField: queryInput.yField,
+        allowedFields: preview.columns.map((column) => column.name)
+      });
     },
     async uploadFile(uploadInput: {
       uploadId: string;
@@ -492,6 +529,76 @@ export const datasetsModule: FastifyPluginAsync<DatasetsModuleOptions> = async (
     }
 
     return preview;
+  });
+
+  app.post<{
+    Params: {
+      datasetId: string;
+    };
+    Body: Omit<ChartQueryRequest, "datasetId">;
+  }>("/datasets/:datasetId/chart-query", {
+    schema: {
+      tags: ["datasets"],
+      summary: "Run a real chart query for one dataset",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Returns aggregated chart payload built from imported dataset rows for the selected dataset.",
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: "object",
+        required: ["datasetId"],
+        properties: {
+          datasetId: {
+            description: "Dataset identifier inside the active app.",
+            type: "string"
+          }
+        }
+      },
+      body: chartQueryRequestSchema,
+      response: {
+        200: chartPayloadSchema,
+        400: messageResponseSchema,
+        401: messageResponseSchema,
+        404: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
+    try {
+      const payload = await options.datasets.runChartQuery({
+        datasetId: request.params.datasetId,
+        tenantId: request.tenantContext.tenantId,
+        chartType: request.body.chartType,
+        xField: request.body.xField,
+        yField: request.body.yField
+      });
+
+      if (!payload) {
+        reply.status(404);
+        return {
+          message: "Dataset not found"
+        };
+      }
+
+      return payload;
+    } catch (error) {
+      reply.status(400);
+      return {
+        message: error instanceof Error ? error.message : "Invalid chart query"
+      };
+    }
   });
 
   app.post<{

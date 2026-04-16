@@ -1,21 +1,16 @@
 "use client";
 
-import React, { startTransition, useState } from "react";
-import {
-  CheckCircle2,
-  LayoutTemplate,
-  LoaderCircle,
-  PencilLine,
-  Share2
-} from "lucide-react";
+import React, { startTransition, useEffect, useState } from "react";
+import { LayoutTemplate, LoaderCircle, Share2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import type { DashboardChartState } from "./dashboard-chart-renderer";
+import { DashboardChartRenderer } from "./dashboard-chart-renderer";
 import { DashboardExportButton } from "./dashboard-export-button";
 import { DashboardImportDialog } from "./dashboard-import-dialog";
-import { DashboardChartRenderer } from "./dashboard-chart-renderer";
-import { PortalActionAlert } from "./portal-action-alert";
 import { DashboardSharePanel } from "./dashboard-share-panel";
 import { DashboardWidgetConfigPanel } from "./dashboard-widget-config-panel";
 import { DashboardWidgetList } from "./dashboard-widget-list";
+import { PortalActionAlert } from "./portal-action-alert";
 import {
   createPortalApiClient,
   type PortalApiError,
@@ -32,45 +27,88 @@ import {
 } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
+type DashboardWidgetSummary = {
+  id: string;
+  tenantId: string;
+  dashboardId: string;
+  type: "chart" | "table" | "metric" | "text";
+  datasetId: string | null;
+  config: {
+    datasetId: string;
+    chartType: "bar" | "line" | "area" | "pie";
+    xField: string;
+    yField: string;
+    seriesField?: string;
+    title?: string;
+  } | null;
+};
+
+type DatasetSummary = {
+  id: string;
+  name: string;
+  status: string;
+};
+
+type DatasetPreviewSummary = {
+  datasetId: string;
+  columns: Array<{
+    name: string;
+    type: "string" | "number" | "boolean" | "date" | "unknown";
+  }>;
+  sampleRows: Array<Record<string, string | number | boolean | null>>;
+  records: Array<Record<string, string | number | boolean | null>>;
+};
+
+function deriveChartState(input: {
+  widget: DashboardWidgetSummary | null;
+  datasets: DatasetSummary[];
+  datasetPreviews: Record<string, DatasetPreviewSummary | null>;
+}): DashboardChartState {
+  const config = input.widget?.config;
+
+  if (!config?.datasetId || !config.xField || !config.yField) {
+    return {
+      status: "idle"
+    };
+  }
+
+  const dataset = input.datasets.find((item) => item.id === config.datasetId);
+
+  if (!dataset || dataset.status !== "ready") {
+    return {
+      status: "dataset-importing"
+    };
+  }
+
+  const preview = input.datasetPreviews[config.datasetId];
+  const allowedFields = new Set(preview?.columns.map((column) => column.name) ?? []);
+
+  if (!allowedFields.has(config.xField) || !allowedFields.has(config.yField)) {
+    return {
+      status: "field-invalid"
+    };
+  }
+
+  if (config.chartType === "pie") {
+    return {
+      status: "field-invalid"
+    };
+  }
+
+  return {
+    status: "loading"
+  };
+}
+
 export function DashboardEditor(props: {
   dashboard: {
     id: string;
     name: string;
   };
   selectedDashboardId: string | null;
-  widgets: Array<{
-    id: string;
-    tenantId: string;
-    dashboardId: string;
-    type: "chart" | "table" | "metric" | "text";
-    datasetId: string | null;
-    config: {
-      datasetId: string;
-      chartType: "bar" | "line" | "area" | "pie";
-      xField: string;
-      yField: string;
-      seriesField?: string;
-      title?: string;
-    } | null;
-  }>;
-  datasets: Array<{
-    id: string;
-    name: string;
-    status: string;
-  }>;
-  datasetPreviews: Record<
-    string,
-    | {
-        datasetId: string;
-        columns: Array<{
-          name: string;
-          type: "string" | "number" | "boolean" | "date" | "unknown";
-        }>;
-        sampleRows: Array<Record<string, string | number | boolean | null>>;
-        records: Array<Record<string, string | number | boolean | null>>;
-      }
-    | null
-  >;
+  widgets: DashboardWidgetSummary[];
+  datasets: DatasetSummary[];
+  datasetPreviews: Record<string, DatasetPreviewSummary | null>;
   shareSubjects: Array<{
     type: "user" | "group" | "role";
     id: string;
@@ -87,10 +125,82 @@ export function DashboardEditor(props: {
 
   const activeWidget =
     props.widgets.find((widget) => widget.id === activeWidgetId) ?? null;
+  const [chartState, setChartState] = useState<DashboardChartState>(() =>
+    deriveChartState({
+      widget: activeWidget,
+      datasets: props.datasets,
+      datasetPreviews: props.datasetPreviews
+    })
+  );
   const canAddChart = props.datasets.some((dataset) => {
     const preview = props.datasetPreviews[dataset.id];
     return Boolean(preview && preview.columns.length > 0);
   });
+
+  useEffect(() => {
+    const nextState = deriveChartState({
+      widget: activeWidget,
+      datasets: props.datasets,
+      datasetPreviews: props.datasetPreviews
+    });
+
+    setChartState(nextState);
+
+    if (nextState.status !== "loading" || !activeWidget?.config) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void apiClient
+      .runDatasetChartQuery({
+        datasetId: activeWidget.config.datasetId,
+        chartType:
+          activeWidget.config.chartType === "line" ||
+          activeWidget.config.chartType === "area"
+            ? activeWidget.config.chartType
+            : "bar",
+        xField: activeWidget.config.xField,
+        yField: activeWidget.config.yField
+      })
+      .then((payload) => {
+        if (cancelled) {
+          return;
+        }
+
+        const hasValues =
+          payload.labels.length > 0 &&
+          payload.series.some((series) => series.data.length > 0);
+
+        setChartState(
+          hasValues
+            ? {
+                status: "ready",
+                payload
+              }
+            : {
+                status: "empty"
+              }
+        );
+      })
+      .catch((caught) => {
+        if (cancelled) {
+          return;
+        }
+
+        const portalError = toPortalApiError(caught);
+        setChartState({
+          status: "error",
+          message: portalError.requestId
+            ? `${portalError.message} (Request ID: ${portalError.requestId})`
+            : portalError.message
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeWidget, apiClient, props.datasetPreviews, props.datasets]);
 
   function setSelectedDashboard() {
     setPending(true);
@@ -153,14 +263,17 @@ export function DashboardEditor(props: {
     });
   }
 
-  function saveWidget(widgetId: string, config: {
-    datasetId: string;
-    chartType: "bar" | "line" | "area" | "pie";
-    xField: string;
-    yField: string;
-    seriesField?: string;
-    title?: string;
-  }) {
+  function saveWidget(
+    widgetId: string,
+    config: {
+      datasetId: string;
+      chartType: "bar" | "line" | "area" | "pie";
+      xField: string;
+      yField: string;
+      seriesField?: string;
+      title?: string;
+    }
+  ) {
     setPending(true);
     setError(null);
 
@@ -194,7 +307,11 @@ export function DashboardEditor(props: {
             onClick={setSelectedDashboard}
             disabled={pending || isSelected}
           >
-            {pending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <LayoutTemplate className="h-4 w-4" />}
+            {pending ? (
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+            ) : (
+              <LayoutTemplate className="h-4 w-4" />
+            )}
             {isSelected ? "Selected" : "Select for embed"}
           </Button>
         </div>
@@ -226,44 +343,27 @@ export function DashboardEditor(props: {
             />
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Dashboard canvas</CardTitle>
+                <CardTitle className="text-base">Active chart</CardTitle>
                 <CardDescription>
-                  Dashboard ID: {props.dashboard.id}
+                  Real data chart preview for the selected widget.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
-                <PortalActionAlert error={error} title="Dashboard editor action failed" />
-                {props.widgets.length === 0 ? (
+                <PortalActionAlert
+                  error={error}
+                  title="Dashboard editor action failed"
+                />
+                {!activeWidget ? (
                   <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-8">
                     <div className="grid gap-2">
-                      <p className="text-base font-medium">View dashboard</p>
+                      <p className="text-base font-medium">Select a chart widget</p>
                       <p className="text-sm text-muted-foreground">
-                        Add a chart widget to start rendering dashboard content.
-                      </p>
-                    </div>
-                    <div className="mt-6 grid gap-2">
-                      <p className="text-base font-medium">Edit tools</p>
-                      <p className="text-sm text-muted-foreground">
-                        Dataset binding, widget configuration, and chart controls will appear here.
+                        Add or select a widget to render real imported data here.
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="grid gap-4 2xl:grid-cols-2">
-                    {props.widgets.map((widget) => (
-                      <DashboardChartRenderer
-                        key={widget.id}
-                        widget={widget}
-                        preview={
-                          widget.config?.datasetId
-                            ? props.datasetPreviews[widget.config.datasetId] ?? null
-                            : null
-                        }
-                        active={widget.id === activeWidgetId}
-                        onSelect={() => setActiveWidgetId(widget.id)}
-                      />
-                    ))}
-                  </div>
+                  <DashboardChartRenderer widget={activeWidget} state={chartState} />
                 )}
               </CardContent>
             </Card>

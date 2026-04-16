@@ -1,4 +1,8 @@
 import type { PortalSession } from "./session";
+import type {
+  ChartPayload,
+  ChartQueryRequest
+} from "../../../../../packages/contracts/src/charts.js";
 import type { DashboardExportPackage } from "../../../../../packages/contracts/src/dashboard-portability.js";
 import type { ChartWidgetConfig, DatasetPreview } from "../../../../../packages/contracts/src/dashboard-editor.js";
 import type { DashboardWidgetRecord } from "../../../../../packages/contracts/src/widgets.js";
@@ -428,6 +432,20 @@ export function createPortalBackendClient(session: PortalSession) {
     async getDatasetPreview(datasetId: string) {
       const response = await authorizedFetch(`/datasets/${datasetId}/preview`);
       return readJson<DatasetPreview>(response);
+    },
+    async runDatasetChartQuery(input: ChartQueryRequest) {
+      const response = await authorizedFetch(
+        `/datasets/${input.datasetId}/chart-query`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            chartType: input.chartType,
+            xField: input.xField,
+            yField: input.yField
+          })
+        }
+      );
+      return readJson<ChartPayload>(response);
     },
     async listWorkbooks() {
       const response = await authorizedFetch("/workbooks");

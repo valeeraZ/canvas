@@ -60,13 +60,13 @@ describe("DashboardEditor", () => {
     expect(html).not.toContain("Back to dashboards");
     expect(html).toContain("Widgets");
     expect(html).toContain("Add chart");
-    expect(html).toContain("Dashboard canvas");
+    expect(html).toContain("Active chart");
     expect(html).toContain("Configure widget");
-    expect(html).toContain("Dashboard ID:");
-    expect(html).toContain("dash_1");
+    expect(html).toContain("Real data chart preview for the selected widget.");
     expect(html).toContain("Selected for embed");
     expect(html).toContain("Export dashboard");
     expect(html).toContain("Revenue by month");
+    expect(html).toContain("Series split coming later");
   });
 
   it("disables add chart when no datasets are available", () => {

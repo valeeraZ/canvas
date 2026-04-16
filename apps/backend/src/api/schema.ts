@@ -472,6 +472,61 @@ export const datasetPreviewSchema = {
   required: ["datasetId", "columns", "sampleRows", "records"]
 } as const;
 
+export const chartQueryRequestSchema = {
+  type: "object",
+  description: "Dataset-scoped chart query input used by the dashboard editor.",
+  properties: {
+    chartType: {
+      type: "string",
+      description: "Supported chart renderer type."
+    },
+    xField: {
+      type: "string",
+      description: "Field used as the label axis."
+    },
+    yField: {
+      type: "string",
+      description: "Field used as the aggregated value axis."
+    }
+  },
+  required: ["chartType", "xField", "yField"]
+} as const;
+
+export const chartPayloadSchema = {
+  type: "object",
+  description: "Aggregated chart payload returned from real dataset rows.",
+  properties: {
+    chartType: {
+      type: "string"
+    },
+    labels: {
+      type: "array",
+      items: {
+        type: "string"
+      }
+    },
+    series: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string"
+          },
+          data: {
+            type: "array",
+            items: {
+              type: "number"
+            }
+          }
+        },
+        required: ["name", "data"]
+      }
+    }
+  },
+  required: ["chartType", "labels", "series"]
+} as const;
+
 export const selectedDashboardSchema = {
   type: "object",
   description: "Per-user selected dashboard for the active app.",

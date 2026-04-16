@@ -24,6 +24,7 @@ describe("dataset routes", () => {
     let detailRequest: unknown;
     let createRequest: unknown;
     let previewRequest: unknown;
+    let chartQueryRequest: unknown;
     let uploadFileRequest: unknown;
 
     const app = createApiApp({
@@ -132,6 +133,25 @@ describe("dataset routes", () => {
             ]
           };
         },
+        runChartQuery: async (input?: {
+          datasetId: string;
+          tenantId: string;
+          chartType: "bar" | "line" | "area";
+          xField: string;
+          yField: string;
+        }) => {
+          chartQueryRequest = input;
+          return {
+            chartType: input?.chartType ?? "bar",
+            labels: ["Jan", "Feb"],
+            series: [
+              {
+                name: input?.yField ?? "revenue",
+                data: [120, 150]
+              }
+            ]
+          };
+        },
         uploadFile: async (input?: {
           uploadId: string;
           tenantId: string;
@@ -198,6 +218,22 @@ describe("dataset routes", () => {
     expect(previewResponse.statusCode).toBe(200);
     expect(previewResponse.json().columns[1]?.type).toBe("number");
     expect((previewRequest as { tenantId?: string })?.tenantId).toBe("canvas-data");
+
+    const chartResponse = await app.inject({
+      method: "POST",
+      url: "/datasets/ds_1/chart-query",
+      headers: authHeaders,
+      payload: {
+        chartType: "bar",
+        xField: "month",
+        yField: "revenue"
+      }
+    });
+    expect(chartResponse.statusCode).toBe(200);
+    expect(chartResponse.json().labels).toEqual(["Jan", "Feb"]);
+    expect((chartQueryRequest as { tenantId?: string })?.tenantId).toBe(
+      "canvas-data"
+    );
 
     const createResponse = await app.inject({
       method: "POST",
