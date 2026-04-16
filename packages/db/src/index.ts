@@ -24,4 +24,6 @@ export { buildWorkbookRecord } from "./workbook-repository.js";
 export { buildDashboardRecord } from "./dashboard-repository.js";
 export { buildDashboardWidget } from "./dashboard-widget-repository.js";
 export { buildDatasetPreview } from "./dataset-preview.js";
+export { createDatasetRowStore } from "./dataset-row-store.js";
+export type { DatasetRowRecord } from "./dataset-row-store.js";
 export { createDashboardWidgetStore, toDashboardWidgetRecord } from "./dashboard-widget-store.js";
