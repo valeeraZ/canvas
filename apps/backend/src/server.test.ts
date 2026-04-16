@@ -56,4 +56,12 @@ describe("createBackendRuntimeConfig", () => {
       forcePathStyle: true
     });
   });
+
+  it("supports worker runtime mode selection", () => {
+    const config = createBackendRuntimeConfig({
+      CANVAS_RUNTIME_MODE: "worker"
+    });
+
+    expect(config.runtimeMode).toBe("worker");
+  });
 });

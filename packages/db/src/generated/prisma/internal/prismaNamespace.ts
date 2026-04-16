@@ -388,6 +388,7 @@ export const ModelName = {
   Principal: 'Principal',
   Membership: 'Membership',
   Dataset: 'Dataset',
+  DatasetRow: 'DatasetRow',
   ImportJob: 'ImportJob',
   Workbook: 'Workbook',
   Dashboard: 'Dashboard',
@@ -409,7 +410,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "principal" | "membership" | "dataset" | "importJob" | "workbook" | "dashboard" | "dashboardWidget" | "dashboardVisibilityRule" | "principalAppPreference"
+    modelProps: "tenant" | "principal" | "membership" | "dataset" | "datasetRow" | "importJob" | "workbook" | "dashboard" | "dashboardWidget" | "dashboardVisibilityRule" | "principalAppPreference"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -706,6 +707,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.DatasetCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.DatasetCountAggregateOutputType> | number
+        }
+      }
+    }
+    DatasetRow: {
+      payload: Prisma.$DatasetRowPayload<ExtArgs>
+      fields: Prisma.DatasetRowFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DatasetRowFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatasetRowPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DatasetRowFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatasetRowPayload>
+        }
+        findFirst: {
+          args: Prisma.DatasetRowFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatasetRowPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DatasetRowFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatasetRowPayload>
+        }
+        findMany: {
+          args: Prisma.DatasetRowFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatasetRowPayload>[]
+        }
+        create: {
+          args: Prisma.DatasetRowCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatasetRowPayload>
+        }
+        createMany: {
+          args: Prisma.DatasetRowCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DatasetRowCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatasetRowPayload>[]
+        }
+        delete: {
+          args: Prisma.DatasetRowDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatasetRowPayload>
+        }
+        update: {
+          args: Prisma.DatasetRowUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatasetRowPayload>
+        }
+        deleteMany: {
+          args: Prisma.DatasetRowDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DatasetRowUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DatasetRowUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatasetRowPayload>[]
+        }
+        upsert: {
+          args: Prisma.DatasetRowUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatasetRowPayload>
+        }
+        aggregate: {
+          args: Prisma.DatasetRowAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDatasetRow>
+        }
+        groupBy: {
+          args: Prisma.DatasetRowGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DatasetRowGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DatasetRowCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DatasetRowCountAggregateOutputType> | number
         }
       }
     }
@@ -1241,13 +1316,26 @@ export const DatasetScalarFieldEnum = {
 export type DatasetScalarFieldEnum = (typeof DatasetScalarFieldEnum)[keyof typeof DatasetScalarFieldEnum]
 
 
+export const DatasetRowScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  datasetId: 'datasetId',
+  rowIndex: 'rowIndex',
+  record: 'record'
+} as const
+
+export type DatasetRowScalarFieldEnum = (typeof DatasetRowScalarFieldEnum)[keyof typeof DatasetRowScalarFieldEnum]
+
+
 export const ImportJobScalarFieldEnum = {
   id: 'id',
   datasetId: 'datasetId',
   tenantId: 'tenantId',
   status: 'status',
   objectKey: 'objectKey',
-  warnings: 'warnings'
+  warnings: 'warnings',
+  claimedAt: 'claimedAt',
+  completedAt: 'completedAt'
 } as const
 
 export type ImportJobScalarFieldEnum = (typeof ImportJobScalarFieldEnum)[keyof typeof ImportJobScalarFieldEnum]
@@ -1318,6 +1406,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -1519,6 +1614,7 @@ export type GlobalOmitConfig = {
   principal?: Prisma.PrincipalOmit
   membership?: Prisma.MembershipOmit
   dataset?: Prisma.DatasetOmit
+  datasetRow?: Prisma.DatasetRowOmit
   importJob?: Prisma.ImportJobOmit
   workbook?: Prisma.WorkbookOmit
   dashboard?: Prisma.DashboardOmit

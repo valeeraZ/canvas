@@ -2,6 +2,7 @@ import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
   CreateMultipartUploadCommand,
+  GetObjectCommand,
   S3Client,
   UploadPartCommand
 } from "@aws-sdk/client-s3";
@@ -75,6 +76,27 @@ export function createS3MultipartUploadDriver(client: S3CommandClient): Multipar
   };
 }
 
+export function createS3ObjectReaderDriver(client: S3CommandClient) {
+  return {
+    async getObject(input: { bucket: string; key: string }) {
+      const response = await client.send(
+        new GetObjectCommand({
+          Bucket: input.bucket,
+          Key: input.key
+        })
+      );
+
+      const byteArray = await response.Body?.transformToByteArray?.();
+
+      return {
+        bucket: input.bucket,
+        key: input.key,
+        body: Buffer.from(byteArray ?? [])
+      };
+    }
+  };
+}
+
 export function createS3MultipartUploadService(config: StorageClientConfig) {
   const client = new S3Client({
     endpoint: config.endpoint,
@@ -90,4 +112,21 @@ export function createS3MultipartUploadService(config: StorageClientConfig) {
   });
 
   return createMultipartUploadService(createS3MultipartUploadDriver(client));
+}
+
+export function createS3ObjectReader(config: StorageClientConfig) {
+  const client = new S3Client({
+    endpoint: config.endpoint,
+    region: config.region,
+    credentials:
+      config.accessKeyId && config.secretAccessKey
+        ? {
+            accessKeyId: config.accessKeyId,
+            secretAccessKey: config.secretAccessKey
+          }
+        : undefined,
+    forcePathStyle: config.forcePathStyle
+  });
+
+  return createS3ObjectReaderDriver(client);
 }

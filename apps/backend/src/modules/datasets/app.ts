@@ -97,6 +97,9 @@ export type DatasetsModuleOptions = {
 type CreateDatasetsServiceInput = {
   db: PrismaClient;
   tenantId: string;
+  importQueue?: {
+    enqueue: (jobId: string) => Promise<void>;
+  };
   multipartUploads?: {
     create: (input: {
       bucket: string;
@@ -285,11 +288,6 @@ export function createDatasetsService(
         );
       }
 
-      await importJobs.updateStatus({
-        importJobId: importJob.id,
-        status: "processing"
-      });
-
       const upload = await streamMultipartUpload({
         multipartUploads: input.multipartUploads,
         bucket: input.storageBucket ?? "canvas-raw",
@@ -310,10 +308,7 @@ export function createDatasetsService(
         importStatus: "queued"
       });
 
-      await importJobs.updateStatus({
-        importJobId: importJob.id,
-        status: "queued"
-      });
+      await input.importQueue?.enqueue(importJob.id);
 
       return {
         uploadId: importJob.id,

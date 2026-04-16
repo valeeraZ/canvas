@@ -8,29 +8,25 @@ function normalizeHeader(value: string) {
   return value.trim().toLowerCase().replaceAll(" ", "_");
 }
 
-function parseCell(value: string | null): string | number | boolean | null {
-  if (value === null || value === "") {
+function isDateLikeString(value: string) {
+  return /^\d{4}-\d{2}-\d{2}(?:[tT ][\d:.+-Z]*)?$/.test(value);
+}
+
+function normalizeCellValue(
+  value: string | number | boolean | null
+): string | number | boolean | null {
+  if (value === null) {
     return null;
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return value;
   }
 
   const trimmed = value.trim();
 
   if (trimmed === "") {
     return null;
-  }
-
-  if (trimmed === "true") {
-    return true;
-  }
-
-  if (trimmed === "false") {
-    return false;
-  }
-
-  const numericValue = Number(trimmed);
-
-  if (!Number.isNaN(numericValue) && trimmed !== "") {
-    return numericValue;
   }
 
   return trimmed;
@@ -51,18 +47,26 @@ function inferColumnType(values: Array<string | number | boolean | null>): Datas
     return "number";
   }
 
+  if (
+    nonNullValues.every(
+      (value) => typeof value === "string" && isDateLikeString(value)
+    )
+  ) {
+    return "date";
+  }
+
   return "string";
 }
 
 export function buildDatasetPreview(input: {
   datasetId: string;
   headers: string[];
-  rows: string[][];
+  rows: Array<Array<string | number | boolean | null>>;
 }): DatasetPreview {
   const normalizedHeaders = input.headers.map(normalizeHeader);
   const records: NormalizedDatasetRecord[] = input.rows.map((row) => {
     return normalizedHeaders.reduce<NormalizedDatasetRecord>((record, header, index) => {
-      record[header] = parseCell(row[index] ?? null);
+      record[header] = normalizeCellValue(row[index] ?? null);
       return record;
     }, {});
   });

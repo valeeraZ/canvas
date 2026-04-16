@@ -6,6 +6,10 @@ import {
 import { createDbClient } from "../../../packages/db/src/client.js";
 import type { PrismaClient } from "../../../packages/db/src/generated/prisma/client.js";
 import {
+  createImportJobQueue,
+  createQueueClient
+} from "../../../packages/queue/src/index.js";
+import {
   createS3MultipartUploadService,
   readStorageConfig,
   type StorageClientConfig
@@ -25,6 +29,7 @@ const DEFAULT_MOCK_CONTEXT: AuthorizationContext = {
 };
 
 export type BackendRuntimeConfig = {
+  runtimeMode: "api" | "worker";
   host: string;
   port: number;
   authBaseUrl: string;
@@ -40,6 +45,10 @@ export type BackendRuntime = {
   app: ReturnType<typeof createApiApp>;
   db?: PrismaClient;
   cache?: {
+    disconnect(): Promise<void>;
+  };
+  queue?: {
+    connect(): Promise<void>;
     disconnect(): Promise<void>;
   };
   config: BackendRuntimeConfig;
@@ -80,6 +89,8 @@ export function createBackendRuntimeConfig(
   const storage = source.S3_BUCKET ? readStorageConfig(source) : undefined;
 
   return {
+    runtimeMode:
+      source.CANVAS_RUNTIME_MODE === "worker" ? "worker" : "api",
     host: source.HOST ?? DEFAULT_HOST,
     port: parsePort(source.PORT),
     authBaseUrl: source.AUTH_BASE_URL ?? DEFAULT_AUTH_BASE_URL,
@@ -111,11 +122,21 @@ export function createBackendRuntime(
   const cache = config.redisUrl
     ? createRedisExpiringStore(config.redisUrl)
     : createMemoryExpiringStore();
+  const queueClient = config.redisUrl
+    ? createQueueClient({
+        redisUrl: config.redisUrl
+      })
+    : undefined;
   const datasets =
     db && config.storage
       ? createDatasetsService({
           db,
           tenantId: config.appName,
+          importQueue: queueClient
+            ? createImportJobQueue({
+                redis: queueClient
+              })
+            : undefined,
           multipartUploads: createS3MultipartUploadService(config.storage),
           storageBucket: config.storage.bucket
         })
@@ -136,6 +157,7 @@ export function createBackendRuntime(
     app,
     db,
     cache: "disconnect" in cache ? cache : undefined,
+    queue: queueClient,
     config
   };
 }
@@ -146,6 +168,7 @@ export async function startBackendRuntime(
   const runtime = createBackendRuntime(config);
 
   await runtime.db?.$connect();
+  await runtime.queue?.connect();
   await runtime.app.listen({
     host: runtime.config.host,
     port: runtime.config.port

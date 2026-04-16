@@ -62,6 +62,11 @@ export type Membership = Prisma.MembershipModel
  */
 export type Dataset = Prisma.DatasetModel
 /**
+ * Model DatasetRow
+ * 
+ */
+export type DatasetRow = Prisma.DatasetRowModel
+/**
  * Model ImportJob
  * 
  */

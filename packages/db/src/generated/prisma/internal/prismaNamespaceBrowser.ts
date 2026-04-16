@@ -55,6 +55,7 @@ export const ModelName = {
   Principal: 'Principal',
   Membership: 'Membership',
   Dataset: 'Dataset',
+  DatasetRow: 'DatasetRow',
   ImportJob: 'ImportJob',
   Workbook: 'Workbook',
   Dashboard: 'Dashboard',
@@ -128,13 +129,26 @@ export const DatasetScalarFieldEnum = {
 export type DatasetScalarFieldEnum = (typeof DatasetScalarFieldEnum)[keyof typeof DatasetScalarFieldEnum]
 
 
+export const DatasetRowScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  datasetId: 'datasetId',
+  rowIndex: 'rowIndex',
+  record: 'record'
+} as const
+
+export type DatasetRowScalarFieldEnum = (typeof DatasetRowScalarFieldEnum)[keyof typeof DatasetRowScalarFieldEnum]
+
+
 export const ImportJobScalarFieldEnum = {
   id: 'id',
   datasetId: 'datasetId',
   tenantId: 'tenantId',
   status: 'status',
   objectKey: 'objectKey',
-  warnings: 'warnings'
+  warnings: 'warnings',
+  claimedAt: 'claimedAt',
+  completedAt: 'completedAt'
 } as const
 
 export type ImportJobScalarFieldEnum = (typeof ImportJobScalarFieldEnum)[keyof typeof ImportJobScalarFieldEnum]
@@ -205,6 +219,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
