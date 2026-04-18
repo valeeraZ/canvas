@@ -3,7 +3,7 @@ import type {
   DashboardWidgetRecord
 } from "../../../packages/contracts/src/index.js";
 import type { PrismaClient } from "./generated/prisma/client.js";
-import { resolveTenantBySlug, tenantSlugInclude } from "./tenant-slug.js";
+import { resolveTenantBySlug } from "./tenant-slug.js";
 
 type PersistedDashboardWidget = {
   id: string;
@@ -12,10 +12,24 @@ type PersistedDashboardWidget = {
   type: string;
   datasetId: string | null;
   config: unknown;
-  tenant?: {
-    slug: string;
+  dashboard?: {
+    tenant?: {
+      slug: string;
+    } | null;
   } | null;
 };
+
+const dashboardTenantInclude = {
+  dashboard: {
+    include: {
+      tenant: {
+        select: {
+          slug: true
+        }
+      }
+    }
+  }
+} as const;
 
 function normalizeChartWidgetConfig(input: unknown): ChartWidgetConfig | null {
   if (!input || typeof input !== "object") {
@@ -49,7 +63,7 @@ export function toDashboardWidgetRecord(
 ): DashboardWidgetRecord {
   return {
     id: input.id,
-    tenantId: input.tenant?.slug ?? input.tenantId,
+    tenantId: input.dashboard?.tenant?.slug ?? input.tenantId,
     dashboardId: input.dashboardId,
     type: input.type as DashboardWidgetRecord["type"],
     datasetId: input.datasetId,
@@ -69,7 +83,7 @@ export function createDashboardWidgetStore(prisma: PrismaClient) {
             }
           }
         },
-        include: tenantSlugInclude,
+        include: dashboardTenantInclude,
         orderBy: {
           id: "asc"
         }
@@ -93,7 +107,7 @@ export function createDashboardWidgetStore(prisma: PrismaClient) {
           datasetId: input.datasetId ?? null,
           config: input.config ?? null
         },
-        include: tenantSlugInclude
+        include: dashboardTenantInclude
       });
 
       return toDashboardWidgetRecord(widget);
@@ -132,7 +146,7 @@ export function createDashboardWidgetStore(prisma: PrismaClient) {
           datasetId: input.datasetId ?? null,
           config: input.config ?? null
         },
-        include: tenantSlugInclude
+        include: dashboardTenantInclude
       });
 
       return toDashboardWidgetRecord(widget);

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { LayoutTemplate, Plus } from "lucide-react";
+import type { DashboardChartState } from "./dashboard-chart-renderer";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { cn } from "../../lib/utils";
@@ -18,8 +19,10 @@ type WidgetSummary = {
 export function DashboardWidgetList(props: {
   widgets: WidgetSummary[];
   activeWidgetId: string | null;
-  pending: boolean;
+  editorPending: boolean;
   canAddChart: boolean;
+  savingWidgetIds: Record<string, boolean>;
+  chartStates: Record<string, DashboardChartState>;
   addChartHint?: string;
   onSelectWidget: (widgetId: string) => void;
   onAddChart: () => void;
@@ -32,7 +35,7 @@ export function DashboardWidgetList(props: {
           type="button"
           size="sm"
           onClick={props.onAddChart}
-          disabled={props.pending || !props.canAddChart}
+          disabled={props.editorPending || !props.canAddChart}
         >
           <Plus className="h-4 w-4" />
           Add chart
@@ -53,6 +56,7 @@ export function DashboardWidgetList(props: {
           <button
             key={widget.id}
             type="button"
+            data-active-widget={props.activeWidgetId === widget.id ? "true" : "false"}
             onClick={() => props.onSelectWidget(widget.id)}
             className={cn(
               "grid gap-1 rounded-xl border px-3 py-3 text-left transition-colors",
@@ -66,7 +70,11 @@ export function DashboardWidgetList(props: {
               {widget.config?.title || `Chart widget ${index + 1}`}
             </div>
             <p className="text-xs text-muted-foreground">
-              {widget.config?.chartType ?? widget.type}
+              {props.savingWidgetIds[widget.id]
+                ? "Saving..."
+                : props.chartStates[widget.id]?.status === "loading"
+                  ? "Refreshing chart..."
+                  : widget.config?.chartType ?? widget.type}
             </p>
           </button>
         ))}

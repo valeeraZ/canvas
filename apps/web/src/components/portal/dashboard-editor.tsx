@@ -1,21 +1,17 @@
 "use client";
 
-import React, { startTransition, useState } from "react";
-import {
-  CheckCircle2,
-  LayoutTemplate,
-  LoaderCircle,
-  PencilLine,
-  Share2
-} from "lucide-react";
+import React, { startTransition, useEffect, useState } from "react";
+import Link from "next/link";
+import { LayoutTemplate, LoaderCircle, Share2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { DashboardCanvas } from "./dashboard-canvas";
+import type { DashboardChartState } from "./dashboard-chart-renderer";
 import { DashboardExportButton } from "./dashboard-export-button";
 import { DashboardImportDialog } from "./dashboard-import-dialog";
-import { DashboardChartRenderer } from "./dashboard-chart-renderer";
-import { PortalActionAlert } from "./portal-action-alert";
 import { DashboardSharePanel } from "./dashboard-share-panel";
 import { DashboardWidgetConfigPanel } from "./dashboard-widget-config-panel";
 import { DashboardWidgetList } from "./dashboard-widget-list";
+import { PortalActionAlert } from "./portal-action-alert";
 import {
   createPortalApiClient,
   type PortalApiError,
@@ -32,80 +28,453 @@ import {
 } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
+type DashboardWidgetSummary = {
+  id: string;
+  tenantId: string;
+  dashboardId: string;
+  type: "chart" | "table" | "metric" | "text";
+  datasetId: string | null;
+  config: {
+    datasetId: string;
+    chartType: "bar" | "line" | "area" | "pie";
+    xField: string;
+    yField: string;
+    seriesField?: string;
+    title?: string;
+  } | null;
+};
+
+type WidgetConfig = DashboardWidgetSummary["config"];
+type WidgetDraftMap = Record<string, NonNullable<WidgetConfig>>;
+
+type DatasetSummary = {
+  id: string;
+  name: string;
+  status: string;
+};
+
+type DatasetPreviewSummary = {
+  datasetId: string;
+  columns: Array<{
+    name: string;
+    type: "string" | "number" | "boolean" | "date" | "unknown";
+  }>;
+  sampleRows: Array<Record<string, string | number | boolean | null>>;
+  records: Array<Record<string, string | number | boolean | null>>;
+};
+
+export type DashboardWidgetChartEntry = {
+  queryKey: string | null;
+  state: DashboardChartState;
+};
+
+const portalApiClient = createPortalApiClient();
+
+function normalizeChartType(
+  chartType: NonNullable<NonNullable<WidgetConfig>["chartType"]>
+) {
+  return chartType === "line" || chartType === "area" ? chartType : "bar";
+}
+
+function areWidgetConfigsEqual(
+  left: WidgetConfig,
+  right: WidgetConfig
+) {
+  if (left === right) {
+    return true;
+  }
+
+  if (!left || !right) {
+    return left === right;
+  }
+
+  return (
+    left.datasetId === right.datasetId &&
+    left.chartType === right.chartType &&
+    left.xField === right.xField &&
+    left.yField === right.yField &&
+    left.seriesField === right.seriesField &&
+    (left.title ?? "") === (right.title ?? "")
+  );
+}
+
+function buildChartQueryKey(widget: DashboardWidgetSummary): string | null {
+  const config = widget.config;
+
+  if (!config?.datasetId || !config.xField || !config.yField) {
+    return null;
+  }
+
+  if (config.chartType === "pie") {
+    return null;
+  }
+
+  return [
+    config.datasetId,
+    normalizeChartType(config.chartType),
+    config.xField,
+    config.yField
+  ].join("|");
+}
+
+export function applyWidgetConfigDrafts(
+  widgets: DashboardWidgetSummary[],
+  drafts: WidgetDraftMap
+): DashboardWidgetSummary[] {
+  return widgets.map((widget) => {
+    const draft = drafts[widget.id];
+
+    if (!draft || areWidgetConfigsEqual(draft, widget.config)) {
+      return widget;
+    }
+
+    return {
+      ...widget,
+      datasetId: draft.datasetId,
+      config: draft
+    };
+  });
+}
+
+function deriveChartState(input: {
+  widget: DashboardWidgetSummary | null;
+  datasets: DatasetSummary[];
+  datasetPreviews: Record<string, DatasetPreviewSummary | null>;
+}): DashboardChartState {
+  const config = input.widget?.config;
+
+  if (!config?.datasetId || !config.xField || !config.yField) {
+    return {
+      status: "idle"
+    };
+  }
+
+  const dataset = input.datasets.find((item) => item.id === config.datasetId);
+
+  if (!dataset || dataset.status !== "ready") {
+    return {
+      status: "dataset-importing"
+    };
+  }
+
+  const preview = input.datasetPreviews[config.datasetId];
+  const allowedFields = new Set(preview?.columns.map((column) => column.name) ?? []);
+
+  if (!allowedFields.has(config.xField) || !allowedFields.has(config.yField)) {
+    return {
+      status: "field-invalid"
+    };
+  }
+
+  if (config.chartType === "pie") {
+    return {
+      status: "field-invalid"
+    };
+  }
+
+  return {
+    status: "loading"
+  };
+}
+
+export function reuseChartState(
+  current: DashboardChartState,
+  next: DashboardChartState
+) {
+  if (current.status !== next.status) {
+    return next;
+  }
+
+  if (current.status === "ready" && next.status === "ready") {
+    const sameChartType = current.payload.chartType === next.payload.chartType;
+    const sameLabels =
+      current.payload.labels.length === next.payload.labels.length &&
+      current.payload.labels.every((label, index) => label === next.payload.labels[index]);
+    const sameSeries =
+      current.payload.series.length === next.payload.series.length &&
+      current.payload.series.every((series, index) => {
+        const nextSeries = next.payload.series[index];
+
+        return (
+          nextSeries &&
+          series.name === nextSeries.name &&
+          series.data.length === nextSeries.data.length &&
+          series.data.every((value, valueIndex) => value === nextSeries.data[valueIndex])
+        );
+      });
+
+    return sameChartType && sameLabels && sameSeries ? current : next;
+  }
+
+  if (current.status === "error" && next.status === "error") {
+    return current.message === next.message ? current : next;
+  }
+
+  return current;
+}
+
+export function buildWidgetChartStateEntries(input: {
+  widgets: DashboardWidgetSummary[];
+  datasets: DatasetSummary[];
+  datasetPreviews: Record<string, DatasetPreviewSummary | null>;
+  currentEntries: Record<string, DashboardWidgetChartEntry>;
+}): Record<string, DashboardWidgetChartEntry> {
+  return Object.fromEntries(
+    input.widgets.map((widget) => {
+      const nextState = deriveChartState({
+        widget,
+        datasets: input.datasets,
+        datasetPreviews: input.datasetPreviews
+      });
+      const nextQueryKey = buildChartQueryKey(widget);
+      const currentEntry = input.currentEntries[widget.id];
+
+      if (nextState.status === "loading" && nextQueryKey) {
+        if (currentEntry?.queryKey === nextQueryKey) {
+          return [widget.id, currentEntry] as const;
+        }
+
+        return [
+          widget.id,
+          {
+            queryKey: nextQueryKey,
+            state: { status: "loading" as const }
+          }
+        ] as const;
+      }
+
+      const reusedState = currentEntry
+        ? reuseChartState(currentEntry.state, nextState)
+        : nextState;
+
+      if (currentEntry?.queryKey === null && reusedState === currentEntry.state) {
+        return [widget.id, currentEntry] as const;
+      }
+
+      return [
+        widget.id,
+        {
+          queryKey: null,
+          state: reusedState
+        }
+      ] as const;
+    })
+  );
+}
+
 export function DashboardEditor(props: {
   dashboard: {
     id: string;
     name: string;
   };
+  previewHref?: string;
   selectedDashboardId: string | null;
-  widgets: Array<{
-    id: string;
-    tenantId: string;
-    dashboardId: string;
-    type: "chart" | "table" | "metric" | "text";
-    datasetId: string | null;
-    config: {
-      datasetId: string;
-      chartType: "bar" | "line" | "area" | "pie";
-      xField: string;
-      yField: string;
-      seriesField?: string;
-      title?: string;
-    } | null;
-  }>;
-  datasets: Array<{
-    id: string;
-    name: string;
-    status: string;
-  }>;
-  datasetPreviews: Record<
-    string,
-    | {
-        datasetId: string;
-        columns: Array<{
-          name: string;
-          type: "string" | "number" | "boolean" | "date" | "unknown";
-        }>;
-        sampleRows: Array<Record<string, string | number | boolean | null>>;
-        records: Array<Record<string, string | number | boolean | null>>;
-      }
-    | null
-  >;
+  widgets: DashboardWidgetSummary[];
+  datasets: DatasetSummary[];
+  datasetPreviews: Record<string, DatasetPreviewSummary | null>;
   shareSubjects: Array<{
     type: "user" | "group" | "role";
     id: string;
   }>;
 }) {
   const router = useRouter();
-  const apiClient = createPortalApiClient();
   const isSelected = props.selectedDashboardId === props.dashboard.id;
-  const [pending, setPending] = useState(false);
+  const [editorPending, setEditorPending] = useState(false);
   const [error, setError] = useState<PortalApiError | null>(null);
   const [activeWidgetId, setActiveWidgetId] = useState<string | null>(
     props.widgets[0]?.id ?? null
   );
+  const [widgetDrafts, setWidgetDrafts] = useState<WidgetDraftMap>({});
+  const [savingWidgetIds, setSavingWidgetIds] = useState<Record<string, boolean>>({});
+  const [chartEntries, setChartEntries] = useState<
+    Record<string, DashboardWidgetChartEntry>
+  >(() =>
+    buildWidgetChartStateEntries({
+      widgets: props.widgets,
+      datasets: props.datasets,
+      datasetPreviews: props.datasetPreviews,
+      currentEntries: {}
+    })
+  );
 
+  const effectiveWidgets = applyWidgetConfigDrafts(props.widgets, widgetDrafts);
   const activeWidget =
-    props.widgets.find((widget) => widget.id === activeWidgetId) ?? null;
+    effectiveWidgets.find((widget) => widget.id === activeWidgetId) ?? null;
+  const activeWidgetPending = activeWidgetId ? Boolean(savingWidgetIds[activeWidgetId]) : false;
+  const chartStates = Object.fromEntries(
+    Object.entries(chartEntries).map(([widgetId, entry]) => [widgetId, entry.state])
+  ) as Record<string, DashboardChartState>;
   const canAddChart = props.datasets.some((dataset) => {
     const preview = props.datasetPreviews[dataset.id];
     return Boolean(preview && preview.columns.length > 0);
   });
 
+  useEffect(() => {
+    if (!effectiveWidgets.some((widget) => widget.id === activeWidgetId)) {
+      setActiveWidgetId(effectiveWidgets[0]?.id ?? null);
+    }
+  }, [activeWidgetId, effectiveWidgets]);
+
+  useEffect(() => {
+    setWidgetDrafts((current) => {
+      const next: WidgetDraftMap = {};
+      let changed = false;
+
+      for (const widget of props.widgets) {
+        const draft = current[widget.id];
+
+        if (draft && !areWidgetConfigsEqual(draft, widget.config)) {
+          next[widget.id] = draft;
+        } else if (draft) {
+          changed = true;
+        }
+      }
+
+      for (const widgetId of Object.keys(current)) {
+        if (!props.widgets.some((widget) => widget.id === widgetId)) {
+          changed = true;
+        }
+      }
+
+      if (!changed && Object.keys(next).length === Object.keys(current).length) {
+        return current;
+      }
+
+      return next;
+    });
+  }, [props.widgets]);
+
+  useEffect(() => {
+    setChartEntries((current) =>
+      buildWidgetChartStateEntries({
+        widgets: effectiveWidgets,
+        datasets: props.datasets,
+        datasetPreviews: props.datasetPreviews,
+        currentEntries: current
+      })
+    );
+  }, [props.widgets, widgetDrafts, props.datasets, props.datasetPreviews]);
+
+  useEffect(() => {
+    const loadingEntries = Object.entries(chartEntries).filter(([, entry]) => {
+      return entry.state.status === "loading" && entry.queryKey;
+    });
+
+    if (loadingEntries.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    for (const [widgetId, entry] of loadingEntries) {
+      const widget = effectiveWidgets.find((item) => item.id === widgetId);
+
+      if (!widget?.config) {
+        continue;
+      }
+
+      void portalApiClient
+        .runDatasetChartQuery({
+          datasetId: widget.config.datasetId,
+          chartType: normalizeChartType(widget.config.chartType),
+          xField: widget.config.xField,
+          yField: widget.config.yField
+        })
+        .then((payload) => {
+          if (cancelled) {
+            return;
+          }
+
+          const hasValues =
+            payload.labels.length > 0 &&
+            payload.series.some((series) => series.data.length > 0);
+
+          setChartEntries((current) => {
+            const currentEntry = current[widgetId];
+
+            if (!currentEntry || currentEntry.queryKey !== entry.queryKey) {
+              return current;
+            }
+
+            const nextState: DashboardChartState = hasValues
+              ? {
+                  status: "ready",
+                  payload
+                }
+              : {
+                  status: "empty"
+                };
+            const reusedState = reuseChartState(currentEntry.state, nextState);
+
+            if (reusedState === currentEntry.state) {
+              return current;
+            }
+
+            return {
+              ...current,
+              [widgetId]: {
+                queryKey: entry.queryKey,
+                state: reusedState
+              }
+            };
+          });
+        })
+        .catch((caught) => {
+          if (cancelled) {
+            return;
+          }
+
+          const portalError = toPortalApiError(caught);
+
+          setChartEntries((current) => {
+            const currentEntry = current[widgetId];
+
+            if (!currentEntry || currentEntry.queryKey !== entry.queryKey) {
+              return current;
+            }
+
+            const nextState: DashboardChartState = {
+              status: "error",
+              message: portalError.requestId
+                ? `${portalError.message} (Request ID: ${portalError.requestId})`
+                : portalError.message
+            };
+            const reusedState = reuseChartState(currentEntry.state, nextState);
+
+            if (reusedState === currentEntry.state) {
+              return current;
+            }
+
+            return {
+              ...current,
+              [widgetId]: {
+                queryKey: entry.queryKey,
+                state: reusedState
+              }
+            };
+          });
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chartEntries, props.widgets, widgetDrafts]);
+
   function setSelectedDashboard() {
-    setPending(true);
+    setEditorPending(true);
     setError(null);
 
     startTransition(async () => {
       try {
-        await apiClient.setSelectedDashboard({
+        await portalApiClient.setSelectedDashboard({
           dashboardId: props.dashboard.id
         });
         router.refresh();
       } catch (caught) {
         setError(toPortalApiError(caught));
       } finally {
-        setPending(false);
+        setEditorPending(false);
       }
     });
   }
@@ -115,7 +484,7 @@ export function DashboardEditor(props: {
       return;
     }
 
-    setPending(true);
+    setEditorPending(true);
     setError(null);
 
     const firstDataset =
@@ -128,7 +497,7 @@ export function DashboardEditor(props: {
 
     startTransition(async () => {
       try {
-        await apiClient.createDashboardWidget({
+        await portalApiClient.createDashboardWidget({
           dashboardId: props.dashboard.id,
           type: "chart",
           datasetId: firstDataset?.id ?? null,
@@ -148,25 +517,35 @@ export function DashboardEditor(props: {
       } catch (caught) {
         setError(toPortalApiError(caught));
       } finally {
-        setPending(false);
+        setEditorPending(false);
       }
     });
   }
 
-  function saveWidget(widgetId: string, config: {
-    datasetId: string;
-    chartType: "bar" | "line" | "area" | "pie";
-    xField: string;
-    yField: string;
-    seriesField?: string;
-    title?: string;
-  }) {
-    setPending(true);
+  function saveWidget(
+    widgetId: string,
+    config: {
+      datasetId: string;
+      chartType: "bar" | "line" | "area" | "pie";
+      xField: string;
+      yField: string;
+      seriesField?: string;
+      title?: string;
+    }
+  ) {
+    setWidgetDrafts((current) => ({
+      ...current,
+      [widgetId]: config
+    }));
+    setSavingWidgetIds((current) => ({
+      ...current,
+      [widgetId]: true
+    }));
     setError(null);
 
     startTransition(async () => {
       try {
-        await apiClient.updateDashboardWidget({
+        await portalApiClient.updateDashboardWidget({
           dashboardId: props.dashboard.id,
           widgetId,
           config
@@ -175,7 +554,15 @@ export function DashboardEditor(props: {
       } catch (caught) {
         setError(toPortalApiError(caught));
       } finally {
-        setPending(false);
+        setSavingWidgetIds((current) => {
+          if (!current[widgetId]) {
+            return current;
+          }
+
+          const next = { ...current };
+          delete next[widgetId];
+          return next;
+        });
       }
     });
   }
@@ -192,13 +579,22 @@ export function DashboardEditor(props: {
             variant={isSelected ? "secondary" : "outline"}
             size="sm"
             onClick={setSelectedDashboard}
-            disabled={pending || isSelected}
+            disabled={editorPending || isSelected}
           >
-            {pending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <LayoutTemplate className="h-4 w-4" />}
+            {editorPending ? (
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+            ) : (
+              <LayoutTemplate className="h-4 w-4" />
+            )}
             {isSelected ? "Selected" : "Select for embed"}
           </Button>
         </div>
         <div className="flex gap-2">
+          {props.previewHref ? (
+            <Button asChild variant="outline">
+              <Link href={props.previewHref}>Back to preview</Link>
+            </Button>
+          ) : null}
           <DashboardExportButton dashboardId={props.dashboard.id} />
           <DashboardImportDialog />
         </div>
@@ -212,10 +608,12 @@ export function DashboardEditor(props: {
         <TabsContent value="overview">
           <div className="grid gap-4 xl:grid-cols-[240px_minmax(0,1fr)_320px]">
             <DashboardWidgetList
-              widgets={props.widgets}
+              widgets={effectiveWidgets}
               activeWidgetId={activeWidgetId}
-              pending={pending}
+              editorPending={editorPending}
               canAddChart={canAddChart}
+              savingWidgetIds={savingWidgetIds}
+              chartStates={chartStates}
               addChartHint={
                 canAddChart
                   ? undefined
@@ -224,54 +622,24 @@ export function DashboardEditor(props: {
               onSelectWidget={setActiveWidgetId}
               onAddChart={addChartWidget}
             />
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Dashboard canvas</CardTitle>
-                <CardDescription>
-                  Dashboard ID: {props.dashboard.id}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <PortalActionAlert error={error} title="Dashboard editor action failed" />
-                {props.widgets.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-8">
-                    <div className="grid gap-2">
-                      <p className="text-base font-medium">View dashboard</p>
-                      <p className="text-sm text-muted-foreground">
-                        Add a chart widget to start rendering dashboard content.
-                      </p>
-                    </div>
-                    <div className="mt-6 grid gap-2">
-                      <p className="text-base font-medium">Edit tools</p>
-                      <p className="text-sm text-muted-foreground">
-                        Dataset binding, widget configuration, and chart controls will appear here.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid gap-4 2xl:grid-cols-2">
-                    {props.widgets.map((widget) => (
-                      <DashboardChartRenderer
-                        key={widget.id}
-                        widget={widget}
-                        preview={
-                          widget.config?.datasetId
-                            ? props.datasetPreviews[widget.config.datasetId] ?? null
-                            : null
-                        }
-                        active={widget.id === activeWidgetId}
-                        onSelect={() => setActiveWidgetId(widget.id)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <div className="grid gap-4">
+              <PortalActionAlert
+                error={error}
+                title="Dashboard editor action failed"
+              />
+              <DashboardCanvas
+                widgets={effectiveWidgets}
+                activeWidgetId={activeWidgetId}
+                savingWidgetIds={savingWidgetIds}
+                chartStates={chartStates}
+                onSelectWidget={setActiveWidgetId}
+              />
+            </div>
             <DashboardWidgetConfigPanel
               widget={activeWidget}
               datasets={props.datasets}
               previews={props.datasetPreviews}
-              pending={pending}
+              pending={activeWidgetPending}
               onSave={saveWidget}
             />
           </div>

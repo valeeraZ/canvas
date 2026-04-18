@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { DashboardEditor } from "../../../../components/portal/dashboard-editor";
+import { DashboardPreview } from "../../../../components/portal/dashboard-preview";
 import { PortalShell } from "../../../../components/portal/portal-shell";
 import { Button } from "../../../../components/ui/button";
 import {
@@ -18,6 +19,9 @@ import { readPortalSession } from "../../../../lib/portal/session";
 export default async function PortalDashboardDetailPage(props: {
   params: Promise<{
     dashboardId: string;
+  }>;
+  searchParams?: Promise<{
+    mode?: string;
   }>;
 }) {
   const session = readPortalSession(await cookies());
@@ -43,6 +47,8 @@ export default async function PortalDashboardDetailPage(props: {
   }
 
   const { dashboardId } = await props.params;
+  const searchParams = await props.searchParams;
+  const isEditMode = searchParams?.mode === "edit";
   const client = createPortalBackendClient(session);
   const [accessibleApps, dashboard, selected, share, widgets, datasets] =
     await Promise.all([
@@ -84,6 +90,40 @@ export default async function PortalDashboardDetailPage(props: {
     )
   ) as Record<string, Awaited<ReturnType<typeof client.getDatasetPreview>> | null>;
 
+  const linkedDatasetIds = Array.from(
+    new Set(
+      widgets
+        .map((widget) => widget.datasetId)
+        .filter((datasetId): datasetId is string => Boolean(datasetId))
+    )
+  );
+  const datasetDetails = Object.fromEntries(
+    await Promise.all(
+      linkedDatasetIds.map(async (datasetId) => {
+        const detail = await client.getDataset(datasetId).catch(() => null);
+
+        return [
+          datasetId,
+          detail
+            ? {
+                id: detail.id,
+                name: detail.name,
+                sourceFilename: detail.sourceFilename
+              }
+            : null
+        ];
+      })
+    )
+  ) as Record<
+    string,
+    | {
+        id: string;
+        name: string;
+        sourceFilename?: string;
+      }
+    | null
+  >;
+
   return (
     <PortalShell
       apps={accessibleApps.apps.map((app) => app.appName)}
@@ -98,19 +138,38 @@ export default async function PortalDashboardDetailPage(props: {
         { label: dashboard.name }
       ]}
       actions={
-        <Button asChild variant="outline">
-          <Link href="/portal/dashboards">Back</Link>
-        </Button>
+        <>
+          <Button asChild variant="outline">
+            <Link href="/portal/dashboards">Back</Link>
+          </Button>
+          {!isEditMode ? (
+            <Button asChild>
+              <Link href={`/portal/dashboards/${dashboard.id}?mode=edit`}>
+                Edit dashboard
+              </Link>
+            </Button>
+          ) : null}
+        </>
       }
     >
-      <DashboardEditor
-        dashboard={dashboard}
-        selectedDashboardId={selected.dashboardId}
-        widgets={widgets}
-        datasets={datasets}
-        datasetPreviews={datasetPreviews}
-        shareSubjects={share.subjects}
-      />
+      {isEditMode ? (
+        <DashboardEditor
+          dashboard={dashboard}
+          previewHref={`/portal/dashboards/${dashboard.id}`}
+          selectedDashboardId={selected.dashboardId}
+          widgets={widgets}
+          datasets={datasets}
+          datasetPreviews={datasetPreviews}
+          shareSubjects={share.subjects}
+        />
+      ) : (
+        <DashboardPreview
+          widgets={widgets}
+          datasets={datasets}
+          datasetPreviews={datasetPreviews}
+          datasetDetails={datasetDetails}
+        />
+      )}
     </PortalShell>
   );
 }
