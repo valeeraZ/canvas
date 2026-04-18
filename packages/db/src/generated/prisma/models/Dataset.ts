@@ -298,6 +298,7 @@ export type DatasetWhereInput = {
   importStatus?: Prisma.StringNullableFilter<"Dataset"> | string | null
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   importJobs?: Prisma.ImportJobListRelationFilter
+  rows?: Prisma.DatasetRowListRelationFilter
   widgets?: Prisma.DashboardWidgetListRelationFilter
 }
 
@@ -320,6 +321,7 @@ export type DatasetOrderByWithRelationInput = {
   importStatus?: Prisma.SortOrderInput | Prisma.SortOrder
   tenant?: Prisma.TenantOrderByWithRelationInput
   importJobs?: Prisma.ImportJobOrderByRelationAggregateInput
+  rows?: Prisma.DatasetRowOrderByRelationAggregateInput
   widgets?: Prisma.DashboardWidgetOrderByRelationAggregateInput
 }
 
@@ -345,6 +347,7 @@ export type DatasetWhereUniqueInput = Prisma.AtLeast<{
   importStatus?: Prisma.StringNullableFilter<"Dataset"> | string | null
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   importJobs?: Prisma.ImportJobListRelationFilter
+  rows?: Prisma.DatasetRowListRelationFilter
   widgets?: Prisma.DashboardWidgetListRelationFilter
 }, "id">
 
@@ -412,6 +415,7 @@ export type DatasetCreateInput = {
   importStatus?: string | null
   tenant: Prisma.TenantCreateNestedOneWithoutDatasetsInput
   importJobs?: Prisma.ImportJobCreateNestedManyWithoutDatasetInput
+  rows?: Prisma.DatasetRowCreateNestedManyWithoutDatasetInput
   widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDatasetInput
 }
 
@@ -433,6 +437,7 @@ export type DatasetUncheckedCreateInput = {
   storageUploadId?: string | null
   importStatus?: string | null
   importJobs?: Prisma.ImportJobUncheckedCreateNestedManyWithoutDatasetInput
+  rows?: Prisma.DatasetRowUncheckedCreateNestedManyWithoutDatasetInput
   widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDatasetInput
 }
 
@@ -454,6 +459,7 @@ export type DatasetUpdateInput = {
   importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutDatasetsNestedInput
   importJobs?: Prisma.ImportJobUpdateManyWithoutDatasetNestedInput
+  rows?: Prisma.DatasetRowUpdateManyWithoutDatasetNestedInput
   widgets?: Prisma.DashboardWidgetUpdateManyWithoutDatasetNestedInput
 }
 
@@ -475,6 +481,7 @@ export type DatasetUncheckedUpdateInput = {
   storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importJobs?: Prisma.ImportJobUncheckedUpdateManyWithoutDatasetNestedInput
+  rows?: Prisma.DatasetRowUncheckedUpdateManyWithoutDatasetNestedInput
   widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDatasetNestedInput
 }
 
@@ -673,6 +680,20 @@ export type NullableIntFieldUpdateOperationsInput = {
   divide?: number
 }
 
+export type DatasetCreateNestedOneWithoutRowsInput = {
+  create?: Prisma.XOR<Prisma.DatasetCreateWithoutRowsInput, Prisma.DatasetUncheckedCreateWithoutRowsInput>
+  connectOrCreate?: Prisma.DatasetCreateOrConnectWithoutRowsInput
+  connect?: Prisma.DatasetWhereUniqueInput
+}
+
+export type DatasetUpdateOneRequiredWithoutRowsNestedInput = {
+  create?: Prisma.XOR<Prisma.DatasetCreateWithoutRowsInput, Prisma.DatasetUncheckedCreateWithoutRowsInput>
+  connectOrCreate?: Prisma.DatasetCreateOrConnectWithoutRowsInput
+  upsert?: Prisma.DatasetUpsertWithoutRowsInput
+  connect?: Prisma.DatasetWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DatasetUpdateToOneWithWhereWithoutRowsInput, Prisma.DatasetUpdateWithoutRowsInput>, Prisma.DatasetUncheckedUpdateWithoutRowsInput>
+}
+
 export type DatasetCreateNestedOneWithoutImportJobsInput = {
   create?: Prisma.XOR<Prisma.DatasetCreateWithoutImportJobsInput, Prisma.DatasetUncheckedCreateWithoutImportJobsInput>
   connectOrCreate?: Prisma.DatasetCreateOrConnectWithoutImportJobsInput
@@ -720,6 +741,7 @@ export type DatasetCreateWithoutTenantInput = {
   storageUploadId?: string | null
   importStatus?: string | null
   importJobs?: Prisma.ImportJobCreateNestedManyWithoutDatasetInput
+  rows?: Prisma.DatasetRowCreateNestedManyWithoutDatasetInput
   widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDatasetInput
 }
 
@@ -740,6 +762,7 @@ export type DatasetUncheckedCreateWithoutTenantInput = {
   storageUploadId?: string | null
   importStatus?: string | null
   importJobs?: Prisma.ImportJobUncheckedCreateNestedManyWithoutDatasetInput
+  rows?: Prisma.DatasetRowUncheckedCreateNestedManyWithoutDatasetInput
   widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDatasetInput
 }
 
@@ -791,6 +814,106 @@ export type DatasetScalarWhereInput = {
   importStatus?: Prisma.StringNullableFilter<"Dataset"> | string | null
 }
 
+export type DatasetCreateWithoutRowsInput = {
+  id?: string
+  name: string
+  status: string
+  warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: string | null
+  uploadedByDisplayName?: string | null
+  uploadedAt?: Date | string | null
+  sourceFilename?: string | null
+  contentType?: string | null
+  sizeBytes?: number | null
+  storageBucket?: string | null
+  storageObjectKey?: string | null
+  storageUploadId?: string | null
+  importStatus?: string | null
+  tenant: Prisma.TenantCreateNestedOneWithoutDatasetsInput
+  importJobs?: Prisma.ImportJobCreateNestedManyWithoutDatasetInput
+  widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDatasetInput
+}
+
+export type DatasetUncheckedCreateWithoutRowsInput = {
+  id?: string
+  tenantId: string
+  name: string
+  status: string
+  warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: string | null
+  uploadedByDisplayName?: string | null
+  uploadedAt?: Date | string | null
+  sourceFilename?: string | null
+  contentType?: string | null
+  sizeBytes?: number | null
+  storageBucket?: string | null
+  storageObjectKey?: string | null
+  storageUploadId?: string | null
+  importStatus?: string | null
+  importJobs?: Prisma.ImportJobUncheckedCreateNestedManyWithoutDatasetInput
+  widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDatasetInput
+}
+
+export type DatasetCreateOrConnectWithoutRowsInput = {
+  where: Prisma.DatasetWhereUniqueInput
+  create: Prisma.XOR<Prisma.DatasetCreateWithoutRowsInput, Prisma.DatasetUncheckedCreateWithoutRowsInput>
+}
+
+export type DatasetUpsertWithoutRowsInput = {
+  update: Prisma.XOR<Prisma.DatasetUpdateWithoutRowsInput, Prisma.DatasetUncheckedUpdateWithoutRowsInput>
+  create: Prisma.XOR<Prisma.DatasetCreateWithoutRowsInput, Prisma.DatasetUncheckedCreateWithoutRowsInput>
+  where?: Prisma.DatasetWhereInput
+}
+
+export type DatasetUpdateToOneWithWhereWithoutRowsInput = {
+  where?: Prisma.DatasetWhereInput
+  data: Prisma.XOR<Prisma.DatasetUpdateWithoutRowsInput, Prisma.DatasetUncheckedUpdateWithoutRowsInput>
+}
+
+export type DatasetUpdateWithoutRowsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sizeBytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  storageBucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutDatasetsNestedInput
+  importJobs?: Prisma.ImportJobUpdateManyWithoutDatasetNestedInput
+  widgets?: Prisma.DashboardWidgetUpdateManyWithoutDatasetNestedInput
+}
+
+export type DatasetUncheckedUpdateWithoutRowsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  preview?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  uploadedByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sizeBytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  storageBucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  importJobs?: Prisma.ImportJobUncheckedUpdateManyWithoutDatasetNestedInput
+  widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDatasetNestedInput
+}
+
 export type DatasetCreateWithoutImportJobsInput = {
   id?: string
   name: string
@@ -808,6 +931,7 @@ export type DatasetCreateWithoutImportJobsInput = {
   storageUploadId?: string | null
   importStatus?: string | null
   tenant: Prisma.TenantCreateNestedOneWithoutDatasetsInput
+  rows?: Prisma.DatasetRowCreateNestedManyWithoutDatasetInput
   widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDatasetInput
 }
 
@@ -828,6 +952,7 @@ export type DatasetUncheckedCreateWithoutImportJobsInput = {
   storageObjectKey?: string | null
   storageUploadId?: string | null
   importStatus?: string | null
+  rows?: Prisma.DatasetRowUncheckedCreateNestedManyWithoutDatasetInput
   widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDatasetInput
 }
 
@@ -864,6 +989,7 @@ export type DatasetUpdateWithoutImportJobsInput = {
   storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutDatasetsNestedInput
+  rows?: Prisma.DatasetRowUpdateManyWithoutDatasetNestedInput
   widgets?: Prisma.DashboardWidgetUpdateManyWithoutDatasetNestedInput
 }
 
@@ -884,6 +1010,7 @@ export type DatasetUncheckedUpdateWithoutImportJobsInput = {
   storageObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rows?: Prisma.DatasetRowUncheckedUpdateManyWithoutDatasetNestedInput
   widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDatasetNestedInput
 }
 
@@ -905,6 +1032,7 @@ export type DatasetCreateWithoutWidgetsInput = {
   importStatus?: string | null
   tenant: Prisma.TenantCreateNestedOneWithoutDatasetsInput
   importJobs?: Prisma.ImportJobCreateNestedManyWithoutDatasetInput
+  rows?: Prisma.DatasetRowCreateNestedManyWithoutDatasetInput
 }
 
 export type DatasetUncheckedCreateWithoutWidgetsInput = {
@@ -925,6 +1053,7 @@ export type DatasetUncheckedCreateWithoutWidgetsInput = {
   storageUploadId?: string | null
   importStatus?: string | null
   importJobs?: Prisma.ImportJobUncheckedCreateNestedManyWithoutDatasetInput
+  rows?: Prisma.DatasetRowUncheckedCreateNestedManyWithoutDatasetInput
 }
 
 export type DatasetCreateOrConnectWithoutWidgetsInput = {
@@ -961,6 +1090,7 @@ export type DatasetUpdateWithoutWidgetsInput = {
   importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutDatasetsNestedInput
   importJobs?: Prisma.ImportJobUpdateManyWithoutDatasetNestedInput
+  rows?: Prisma.DatasetRowUpdateManyWithoutDatasetNestedInput
 }
 
 export type DatasetUncheckedUpdateWithoutWidgetsInput = {
@@ -981,6 +1111,7 @@ export type DatasetUncheckedUpdateWithoutWidgetsInput = {
   storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importJobs?: Prisma.ImportJobUncheckedUpdateManyWithoutDatasetNestedInput
+  rows?: Prisma.DatasetRowUncheckedUpdateManyWithoutDatasetNestedInput
 }
 
 export type DatasetCreateManyTenantInput = {
@@ -1018,6 +1149,7 @@ export type DatasetUpdateWithoutTenantInput = {
   storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importJobs?: Prisma.ImportJobUpdateManyWithoutDatasetNestedInput
+  rows?: Prisma.DatasetRowUpdateManyWithoutDatasetNestedInput
   widgets?: Prisma.DashboardWidgetUpdateManyWithoutDatasetNestedInput
 }
 
@@ -1038,6 +1170,7 @@ export type DatasetUncheckedUpdateWithoutTenantInput = {
   storageUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   importJobs?: Prisma.ImportJobUncheckedUpdateManyWithoutDatasetNestedInput
+  rows?: Prisma.DatasetRowUncheckedUpdateManyWithoutDatasetNestedInput
   widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDatasetNestedInput
 }
 
@@ -1066,11 +1199,13 @@ export type DatasetUncheckedUpdateManyWithoutTenantInput = {
 
 export type DatasetCountOutputType = {
   importJobs: number
+  rows: number
   widgets: number
 }
 
 export type DatasetCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   importJobs?: boolean | DatasetCountOutputTypeCountImportJobsArgs
+  rows?: boolean | DatasetCountOutputTypeCountRowsArgs
   widgets?: boolean | DatasetCountOutputTypeCountWidgetsArgs
 }
 
@@ -1089,6 +1224,13 @@ export type DatasetCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Exte
  */
 export type DatasetCountOutputTypeCountImportJobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ImportJobWhereInput
+}
+
+/**
+ * DatasetCountOutputType without action
+ */
+export type DatasetCountOutputTypeCountRowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DatasetRowWhereInput
 }
 
 /**
@@ -1118,6 +1260,7 @@ export type DatasetSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   importStatus?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   importJobs?: boolean | Prisma.Dataset$importJobsArgs<ExtArgs>
+  rows?: boolean | Prisma.Dataset$rowsArgs<ExtArgs>
   widgets?: boolean | Prisma.Dataset$widgetsArgs<ExtArgs>
   _count?: boolean | Prisma.DatasetCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["dataset"]>
@@ -1185,6 +1328,7 @@ export type DatasetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
 export type DatasetInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   importJobs?: boolean | Prisma.Dataset$importJobsArgs<ExtArgs>
+  rows?: boolean | Prisma.Dataset$rowsArgs<ExtArgs>
   widgets?: boolean | Prisma.Dataset$widgetsArgs<ExtArgs>
   _count?: boolean | Prisma.DatasetCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -1200,6 +1344,7 @@ export type $DatasetPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   objects: {
     tenant: Prisma.$TenantPayload<ExtArgs>
     importJobs: Prisma.$ImportJobPayload<ExtArgs>[]
+    rows: Prisma.$DatasetRowPayload<ExtArgs>[]
     widgets: Prisma.$DashboardWidgetPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1615,6 +1760,7 @@ export interface Prisma__DatasetClient<T, Null = never, ExtArgs extends runtime.
   readonly [Symbol.toStringTag]: "PrismaPromise"
   tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   importJobs<T extends Prisma.Dataset$importJobsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Dataset$importJobsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ImportJobPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  rows<T extends Prisma.Dataset$rowsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Dataset$rowsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DatasetRowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   widgets<T extends Prisma.Dataset$widgetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Dataset$widgetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DashboardWidgetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2083,6 +2229,30 @@ export type Dataset$importJobsArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.ImportJobScalarFieldEnum | Prisma.ImportJobScalarFieldEnum[]
+}
+
+/**
+ * Dataset.rows
+ */
+export type Dataset$rowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DatasetRow
+   */
+  select?: Prisma.DatasetRowSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DatasetRow
+   */
+  omit?: Prisma.DatasetRowOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DatasetRowInclude<ExtArgs> | null
+  where?: Prisma.DatasetRowWhereInput
+  orderBy?: Prisma.DatasetRowOrderByWithRelationInput | Prisma.DatasetRowOrderByWithRelationInput[]
+  cursor?: Prisma.DatasetRowWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DatasetRowScalarFieldEnum | Prisma.DatasetRowScalarFieldEnum[]
 }
 
 /**

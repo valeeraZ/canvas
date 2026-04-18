@@ -250,6 +250,110 @@ export function createDatasetStore(prisma: PrismaClient) {
 
       return toDatasetRecord(updated);
     },
+    async markProcessing(input: {
+      tenantId: string;
+      datasetId: string;
+    }) {
+      const dataset = await prisma.dataset.findFirst({
+        where: {
+          id: input.datasetId,
+          tenant: {
+            slug: input.tenantId
+          }
+        },
+        select: {
+          id: true
+        }
+      });
+
+      if (!dataset) {
+        return null;
+      }
+
+      const updated = await prisma.dataset.update({
+        where: {
+          id: input.datasetId
+        },
+        data: {
+          status: "processing",
+          importStatus: "processing"
+        },
+        include: tenantSlugInclude
+      });
+
+      return toDatasetRecord(updated);
+    },
+    async markReady(input: {
+      tenantId: string;
+      datasetId: string;
+      preview: DatasetPreview | null;
+    }) {
+      const dataset = await prisma.dataset.findFirst({
+        where: {
+          id: input.datasetId,
+          tenant: {
+            slug: input.tenantId
+          }
+        },
+        select: {
+          id: true
+        }
+      });
+
+      if (!dataset) {
+        return null;
+      }
+
+      const updated = await prisma.dataset.update({
+        where: {
+          id: input.datasetId
+        },
+        data: {
+          status: "ready",
+          importStatus: "ready",
+          warnings: [],
+          preview: input.preview
+        },
+        include: tenantSlugInclude
+      });
+
+      return toDatasetRecord(updated);
+    },
+    async markFailed(input: {
+      tenantId: string;
+      datasetId: string;
+      warnings: WarningRecord[];
+    }) {
+      const dataset = await prisma.dataset.findFirst({
+        where: {
+          id: input.datasetId,
+          tenant: {
+            slug: input.tenantId
+          }
+        },
+        select: {
+          id: true
+        }
+      });
+
+      if (!dataset) {
+        return null;
+      }
+
+      const updated = await prisma.dataset.update({
+        where: {
+          id: input.datasetId
+        },
+        data: {
+          status: "failed",
+          importStatus: "failed",
+          warnings: input.warnings
+        },
+        include: tenantSlugInclude
+      });
+
+      return toDatasetRecord(updated);
+    },
     async findUsageByTenantAndId(tenantId: string, datasetId: string) {
       const dataset = await prisma.dataset.findFirst({
         where: {

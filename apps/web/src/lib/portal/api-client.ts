@@ -142,6 +142,16 @@ export type PortalApiClient = {
     sampleRows: Array<Record<string, string | number | boolean | null>>;
     records: Array<Record<string, string | number | boolean | null>>;
   }>;
+  runDatasetChartQuery: (input: {
+    datasetId: string;
+    chartType: "bar" | "line" | "area";
+    xField: string;
+    yField: string;
+  }) => Promise<{
+    chartType: "bar" | "line" | "area";
+    labels: string[];
+    series: Array<{ name: string; data: number[] }>;
+  }>;
   getDataset: (datasetId: string) => Promise<{
     id: string;
     name: string;
@@ -432,6 +442,24 @@ export function createPortalApiClient(): PortalApiClient {
     },
     async getDatasetPreview(datasetId) {
       const response = await fetch(`/api/canvas/datasets/${datasetId}/preview`);
+      return readPortalApiJson(response);
+    },
+    async runDatasetChartQuery(input) {
+      const response = await fetch(
+        `/api/canvas/datasets/${input.datasetId}/chart-query`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            chartType: input.chartType,
+            xField: input.xField,
+            yField: input.yField
+          })
+        }
+      );
+
       return readPortalApiJson(response);
     },
     async getDataset(datasetId) {

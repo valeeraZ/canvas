@@ -30,6 +30,8 @@ export type ImportJobMinAggregateOutputType = {
   tenantId: string | null
   status: string | null
   objectKey: string | null
+  claimedAt: Date | null
+  completedAt: Date | null
 }
 
 export type ImportJobMaxAggregateOutputType = {
@@ -38,6 +40,8 @@ export type ImportJobMaxAggregateOutputType = {
   tenantId: string | null
   status: string | null
   objectKey: string | null
+  claimedAt: Date | null
+  completedAt: Date | null
 }
 
 export type ImportJobCountAggregateOutputType = {
@@ -47,6 +51,8 @@ export type ImportJobCountAggregateOutputType = {
   status: number
   objectKey: number
   warnings: number
+  claimedAt: number
+  completedAt: number
   _all: number
 }
 
@@ -57,6 +63,8 @@ export type ImportJobMinAggregateInputType = {
   tenantId?: true
   status?: true
   objectKey?: true
+  claimedAt?: true
+  completedAt?: true
 }
 
 export type ImportJobMaxAggregateInputType = {
@@ -65,6 +73,8 @@ export type ImportJobMaxAggregateInputType = {
   tenantId?: true
   status?: true
   objectKey?: true
+  claimedAt?: true
+  completedAt?: true
 }
 
 export type ImportJobCountAggregateInputType = {
@@ -74,6 +84,8 @@ export type ImportJobCountAggregateInputType = {
   status?: true
   objectKey?: true
   warnings?: true
+  claimedAt?: true
+  completedAt?: true
   _all?: true
 }
 
@@ -156,6 +168,8 @@ export type ImportJobGroupByOutputType = {
   status: string
   objectKey: string
   warnings: runtime.JsonValue | null
+  claimedAt: Date | null
+  completedAt: Date | null
   _count: ImportJobCountAggregateOutputType | null
   _min: ImportJobMinAggregateOutputType | null
   _max: ImportJobMaxAggregateOutputType | null
@@ -186,6 +200,8 @@ export type ImportJobWhereInput = {
   status?: Prisma.StringFilter<"ImportJob"> | string
   objectKey?: Prisma.StringFilter<"ImportJob"> | string
   warnings?: Prisma.JsonNullableFilter<"ImportJob">
+  claimedAt?: Prisma.DateTimeNullableFilter<"ImportJob"> | Date | string | null
+  completedAt?: Prisma.DateTimeNullableFilter<"ImportJob"> | Date | string | null
   dataset?: Prisma.XOR<Prisma.DatasetScalarRelationFilter, Prisma.DatasetWhereInput>
 }
 
@@ -196,6 +212,8 @@ export type ImportJobOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   objectKey?: Prisma.SortOrder
   warnings?: Prisma.SortOrderInput | Prisma.SortOrder
+  claimedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   dataset?: Prisma.DatasetOrderByWithRelationInput
 }
 
@@ -209,6 +227,8 @@ export type ImportJobWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.StringFilter<"ImportJob"> | string
   objectKey?: Prisma.StringFilter<"ImportJob"> | string
   warnings?: Prisma.JsonNullableFilter<"ImportJob">
+  claimedAt?: Prisma.DateTimeNullableFilter<"ImportJob"> | Date | string | null
+  completedAt?: Prisma.DateTimeNullableFilter<"ImportJob"> | Date | string | null
   dataset?: Prisma.XOR<Prisma.DatasetScalarRelationFilter, Prisma.DatasetWhereInput>
 }, "id">
 
@@ -219,6 +239,8 @@ export type ImportJobOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   objectKey?: Prisma.SortOrder
   warnings?: Prisma.SortOrderInput | Prisma.SortOrder
+  claimedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.ImportJobCountOrderByAggregateInput
   _max?: Prisma.ImportJobMaxOrderByAggregateInput
   _min?: Prisma.ImportJobMinOrderByAggregateInput
@@ -234,6 +256,8 @@ export type ImportJobScalarWhereWithAggregatesInput = {
   status?: Prisma.StringWithAggregatesFilter<"ImportJob"> | string
   objectKey?: Prisma.StringWithAggregatesFilter<"ImportJob"> | string
   warnings?: Prisma.JsonNullableWithAggregatesFilter<"ImportJob">
+  claimedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ImportJob"> | Date | string | null
+  completedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ImportJob"> | Date | string | null
 }
 
 export type ImportJobCreateInput = {
@@ -242,6 +266,8 @@ export type ImportJobCreateInput = {
   status: string
   objectKey: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  claimedAt?: Date | string | null
+  completedAt?: Date | string | null
   dataset: Prisma.DatasetCreateNestedOneWithoutImportJobsInput
 }
 
@@ -252,6 +278,8 @@ export type ImportJobUncheckedCreateInput = {
   status: string
   objectKey: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  claimedAt?: Date | string | null
+  completedAt?: Date | string | null
 }
 
 export type ImportJobUpdateInput = {
@@ -260,6 +288,8 @@ export type ImportJobUpdateInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   objectKey?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dataset?: Prisma.DatasetUpdateOneRequiredWithoutImportJobsNestedInput
 }
 
@@ -270,6 +300,8 @@ export type ImportJobUncheckedUpdateInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   objectKey?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type ImportJobCreateManyInput = {
@@ -279,6 +311,8 @@ export type ImportJobCreateManyInput = {
   status: string
   objectKey: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  claimedAt?: Date | string | null
+  completedAt?: Date | string | null
 }
 
 export type ImportJobUpdateManyMutationInput = {
@@ -287,6 +321,8 @@ export type ImportJobUpdateManyMutationInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   objectKey?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type ImportJobUncheckedUpdateManyInput = {
@@ -296,6 +332,8 @@ export type ImportJobUncheckedUpdateManyInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   objectKey?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type ImportJobListRelationFilter = {
@@ -315,6 +353,8 @@ export type ImportJobCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   objectKey?: Prisma.SortOrder
   warnings?: Prisma.SortOrder
+  claimedAt?: Prisma.SortOrder
+  completedAt?: Prisma.SortOrder
 }
 
 export type ImportJobMaxOrderByAggregateInput = {
@@ -323,6 +363,8 @@ export type ImportJobMaxOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   objectKey?: Prisma.SortOrder
+  claimedAt?: Prisma.SortOrder
+  completedAt?: Prisma.SortOrder
 }
 
 export type ImportJobMinOrderByAggregateInput = {
@@ -331,6 +373,8 @@ export type ImportJobMinOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   objectKey?: Prisma.SortOrder
+  claimedAt?: Prisma.SortOrder
+  completedAt?: Prisma.SortOrder
 }
 
 export type ImportJobCreateNestedManyWithoutDatasetInput = {
@@ -381,6 +425,8 @@ export type ImportJobCreateWithoutDatasetInput = {
   status: string
   objectKey: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  claimedAt?: Date | string | null
+  completedAt?: Date | string | null
 }
 
 export type ImportJobUncheckedCreateWithoutDatasetInput = {
@@ -389,6 +435,8 @@ export type ImportJobUncheckedCreateWithoutDatasetInput = {
   status: string
   objectKey: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  claimedAt?: Date | string | null
+  completedAt?: Date | string | null
 }
 
 export type ImportJobCreateOrConnectWithoutDatasetInput = {
@@ -427,6 +475,8 @@ export type ImportJobScalarWhereInput = {
   status?: Prisma.StringFilter<"ImportJob"> | string
   objectKey?: Prisma.StringFilter<"ImportJob"> | string
   warnings?: Prisma.JsonNullableFilter<"ImportJob">
+  claimedAt?: Prisma.DateTimeNullableFilter<"ImportJob"> | Date | string | null
+  completedAt?: Prisma.DateTimeNullableFilter<"ImportJob"> | Date | string | null
 }
 
 export type ImportJobCreateManyDatasetInput = {
@@ -435,6 +485,8 @@ export type ImportJobCreateManyDatasetInput = {
   status: string
   objectKey: string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  claimedAt?: Date | string | null
+  completedAt?: Date | string | null
 }
 
 export type ImportJobUpdateWithoutDatasetInput = {
@@ -443,6 +495,8 @@ export type ImportJobUpdateWithoutDatasetInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   objectKey?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type ImportJobUncheckedUpdateWithoutDatasetInput = {
@@ -451,6 +505,8 @@ export type ImportJobUncheckedUpdateWithoutDatasetInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   objectKey?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type ImportJobUncheckedUpdateManyWithoutDatasetInput = {
@@ -459,6 +515,8 @@ export type ImportJobUncheckedUpdateManyWithoutDatasetInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   objectKey?: Prisma.StringFieldUpdateOperationsInput | string
   warnings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 
@@ -470,6 +528,8 @@ export type ImportJobSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   status?: boolean
   objectKey?: boolean
   warnings?: boolean
+  claimedAt?: boolean
+  completedAt?: boolean
   dataset?: boolean | Prisma.DatasetDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["importJob"]>
 
@@ -480,6 +540,8 @@ export type ImportJobSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   status?: boolean
   objectKey?: boolean
   warnings?: boolean
+  claimedAt?: boolean
+  completedAt?: boolean
   dataset?: boolean | Prisma.DatasetDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["importJob"]>
 
@@ -490,6 +552,8 @@ export type ImportJobSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   status?: boolean
   objectKey?: boolean
   warnings?: boolean
+  claimedAt?: boolean
+  completedAt?: boolean
   dataset?: boolean | Prisma.DatasetDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["importJob"]>
 
@@ -500,9 +564,11 @@ export type ImportJobSelectScalar = {
   status?: boolean
   objectKey?: boolean
   warnings?: boolean
+  claimedAt?: boolean
+  completedAt?: boolean
 }
 
-export type ImportJobOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "datasetId" | "tenantId" | "status" | "objectKey" | "warnings", ExtArgs["result"]["importJob"]>
+export type ImportJobOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "datasetId" | "tenantId" | "status" | "objectKey" | "warnings" | "claimedAt" | "completedAt", ExtArgs["result"]["importJob"]>
 export type ImportJobInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   dataset?: boolean | Prisma.DatasetDefaultArgs<ExtArgs>
 }
@@ -525,6 +591,8 @@ export type $ImportJobPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     status: string
     objectKey: string
     warnings: runtime.JsonValue | null
+    claimedAt: Date | null
+    completedAt: Date | null
   }, ExtArgs["result"]["importJob"]>
   composites: {}
 }
@@ -955,6 +1023,8 @@ export interface ImportJobFieldRefs {
   readonly status: Prisma.FieldRef<"ImportJob", 'String'>
   readonly objectKey: Prisma.FieldRef<"ImportJob", 'String'>
   readonly warnings: Prisma.FieldRef<"ImportJob", 'Json'>
+  readonly claimedAt: Prisma.FieldRef<"ImportJob", 'DateTime'>
+  readonly completedAt: Prisma.FieldRef<"ImportJob", 'DateTime'>
 }
     
 

@@ -57,17 +57,32 @@ model Dataset {
   importStatus             String?
   tenant                   Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   importJobs               ImportJob[]
+  rows                     DatasetRow[]
   widgets                  DashboardWidget[]
 }
 
-model ImportJob {
+model DatasetRow {
   id        String   @id @default(cuid())
-  datasetId String
   tenantId  String
-  status    String
-  objectKey String
-  warnings  Json?
+  datasetId String
+  rowIndex  Int
+  record    Json
   dataset   Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@unique([datasetId, rowIndex])
+  @@index([tenantId, datasetId, rowIndex])
+}
+
+model ImportJob {
+  id          String    @id @default(cuid())
+  datasetId   String
+  tenantId    String
+  status      String
+  objectKey   String
+  warnings    Json?
+  claimedAt   DateTime?
+  completedAt DateTime?
+  dataset     Dataset   @relation(fields: [datasetId], references: [id], onDelete: Cascade)
 }
 
 model Workbook {
