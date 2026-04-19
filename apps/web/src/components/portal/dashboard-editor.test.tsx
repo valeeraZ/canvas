@@ -3,8 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 import { renderToString } from "react-dom/server";
 import {
   applyWidgetConfigDrafts,
+  applyWidgetLayoutSwap,
   buildWidgetChartStateEntries,
   DashboardEditor,
+  resolveDeletedWidgetFocus,
   reuseChartState
 } from "./dashboard-editor";
 
@@ -44,6 +46,12 @@ describe("DashboardEditor", () => {
         dashboardId: "dash_1",
         type: "chart" as const,
         datasetId: "ds_1",
+        layout: {
+          x: 0,
+          y: 0,
+          w: 1,
+          h: 1
+        },
         config: {
           datasetId: "ds_1",
           chartType: "bar" as const,
@@ -58,6 +66,12 @@ describe("DashboardEditor", () => {
         dashboardId: "dash_1",
         type: "chart" as const,
         datasetId: "ds_1",
+        layout: {
+          x: 1,
+          y: 0,
+          w: 1,
+          h: 1
+        },
         config: {
           datasetId: "ds_1",
           chartType: "line" as const,
@@ -137,6 +151,27 @@ describe("DashboardEditor", () => {
     expect(next[1].config?.title).toBe("Margin delta");
   });
 
+  it("preserves widget array identity when no config drafts apply", () => {
+    const widgets = createWidgets();
+
+    const next = applyWidgetConfigDrafts(widgets, {});
+
+    expect(next).toBe(widgets);
+  });
+
+  it("swaps widget layouts for optimistic drag ordering", () => {
+    const widgets = createWidgets();
+    const next = applyWidgetLayoutSwap(widgets, "widget_1", "widget_2");
+
+    expect(next[0].layout).toEqual({ x: 1, y: 0, w: 1, h: 1 });
+    expect(next[1].layout).toEqual({ x: 0, y: 0, w: 1, h: 1 });
+  });
+
+  it("moves active focus to a nearby widget after deletion", () => {
+    expect(resolveDeletedWidgetFocus(createWidgets(), "widget_1")).toBe("widget_2");
+    expect(resolveDeletedWidgetFocus(createWidgets(), "widget_2")).toBe("widget_1");
+  });
+
   it("refreshes chart state only for the widget whose query changed", () => {
     const widgets = createWidgets();
 
@@ -182,6 +217,34 @@ describe("DashboardEditor", () => {
     expect(next.widget_1.state.status).toBe("loading");
     expect(next.widget_1.queryKey).not.toBe(current.widget_1.queryKey);
     expect(next.widget_2).toBe(current.widget_2);
+  });
+
+  it("reuses chart entry map identity when derived loading entries are unchanged", () => {
+    const widgets = applyWidgetConfigDrafts(createWidgets(), {
+      widget_1: {
+        datasetId: "ds_1",
+        chartType: "line",
+        xField: "month",
+        yField: "revenue",
+        title: "Revenue by month"
+      }
+    });
+
+    const current = buildWidgetChartStateEntries({
+      widgets,
+      datasets: [...datasets],
+      datasetPreviews,
+      currentEntries: {}
+    });
+
+    const next = buildWidgetChartStateEntries({
+      widgets,
+      datasets: [...datasets],
+      datasetPreviews,
+      currentEntries: current
+    });
+
+    expect(next).toBe(current);
   });
 
   it("disables add chart when no datasets are available", () => {

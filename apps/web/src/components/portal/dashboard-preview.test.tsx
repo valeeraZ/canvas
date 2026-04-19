@@ -20,6 +20,12 @@ describe("DashboardPreview", () => {
             dashboardId: "dash_1",
             type: "chart",
             datasetId: "ds_1",
+            layout: {
+              x: 0,
+              y: 0,
+              w: 1,
+              h: 1
+            },
             config: {
               datasetId: "ds_1",
               chartType: "bar",
@@ -46,6 +52,8 @@ describe("DashboardPreview", () => {
     expect(html).toContain("/portal/datasets/ds_1");
     expect(html).not.toContain("Configure widget");
     expect(html).not.toContain("Editing");
+    expect(html).not.toContain("Drag widget");
+    expect(html).not.toContain("Delete widget");
   });
 
   it("shows a fallback when a widget has no linked dataset metadata", async () => {
@@ -63,6 +71,12 @@ describe("DashboardPreview", () => {
             dashboardId: "dash_1",
             type: "chart",
             datasetId: null,
+            layout: {
+              x: 0,
+              y: 0,
+              w: 1,
+              h: 1
+            },
             config: null
           }
         ]}

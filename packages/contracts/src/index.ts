@@ -15,7 +15,11 @@ export type { QueryMeasure, QuerySpec } from "./query";
 export type { WorkbookRecord } from "./workbooks";
 export type { DashboardRecord } from "./dashboards";
 export type { DashboardExportPackage } from "./dashboard-portability";
-export type { DashboardWidgetRecord, WidgetType } from "./widgets";
+export type {
+  DashboardWidgetLayout,
+  DashboardWidgetRecord,
+  WidgetType
+} from "./widgets";
 export type {
   ChartWidgetConfig,
   DatasetPreview,

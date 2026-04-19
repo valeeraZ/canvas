@@ -46,3 +46,29 @@ export async function PATCH(request: Request, context: RouteContext) {
     return createPortalBackendErrorResponse(error, requestId);
   }
 }
+
+export async function DELETE(request: Request, context: RouteContext) {
+  const requestId = createRouteRequestId();
+  const session = readPortalSessionFromCookieHeader(
+    request.headers.get("cookie") ?? ""
+  );
+
+  if (!session) {
+    return jsonWithRequestId(
+      { message: "Missing portal session" },
+      { status: 401, requestId }
+    );
+  }
+
+  const { dashboardId, widgetId } = await context.params;
+
+  try {
+    const result = await createPortalBackendClient(session).deleteDashboardWidget({
+      dashboardId,
+      widgetId
+    });
+    return jsonWithRequestId(result, { requestId });
+  } catch (error) {
+    return createPortalBackendErrorResponse(error, requestId);
+  }
+}

@@ -24,6 +24,12 @@ type WidgetSummary = {
     seriesField?: string;
     title?: string;
   } | null;
+  layout?: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null;
 };
 
 type DatasetDetailSummary = {

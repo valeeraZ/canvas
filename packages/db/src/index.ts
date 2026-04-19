@@ -23,6 +23,15 @@ export type { PrincipalAppPreference } from "./principal-app-preference-store.js
 export { buildWorkbookRecord } from "./workbook-repository.js";
 export { buildDashboardRecord } from "./dashboard-repository.js";
 export { buildDashboardWidget } from "./dashboard-widget-repository.js";
+export {
+  compactDashboardWidgetLayouts,
+  DASHBOARD_WIDGET_COLUMN_COUNT,
+  getDefaultDashboardWidgetLayout,
+  isValidDashboardWidgetLayout,
+  normalizeDashboardWidgetLayout,
+  sortDashboardWidgetRecords,
+  swapDashboardWidgetLayouts
+} from "./dashboard-widget-layout.js";
 export { buildDatasetPreview } from "./dataset-preview.js";
 export { createDatasetRowStore } from "./dataset-row-store.js";
 export type { DatasetRowRecord } from "./dataset-row-store.js";

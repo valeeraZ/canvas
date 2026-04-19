@@ -9,6 +9,7 @@ import {
 import type { DashboardRecord } from "../../../../../packages/contracts/src/dashboards.js";
 import type {
   ChartWidgetConfig,
+  DashboardWidgetLayout,
   DashboardWidgetRecord
 } from "../../../../../packages/contracts/src/index.js";
 import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
@@ -22,6 +23,7 @@ import {
   chartWidgetConfigSchema,
   dashboardSchema,
   dashboardWidgetSchema,
+  dashboardWidgetDeleteSchema,
   dashboardExportPackageSchema,
   messageResponseSchema,
   selectedDashboardSchema
@@ -119,6 +121,20 @@ export type DashboardsService = {
     datasetId?: string | null;
     config?: ChartWidgetConfig | null;
   }) => Promise<DashboardWidgetRecord | null>;
+  updateDashboardWidgetLayout: (input: {
+    tenantId: string;
+    dashboardId: string;
+    widgetId: string;
+    layout: DashboardWidgetLayout;
+  }) => Promise<DashboardWidgetRecord | null>;
+  deleteDashboardWidget: (input: {
+    tenantId: string;
+    dashboardId: string;
+    widgetId: string;
+  }) => Promise<{
+    deletedWidgetId: string;
+    widgets: DashboardWidgetRecord[];
+  } | null>;
 };
 
 export type DashboardsModuleOptions = {
@@ -278,6 +294,12 @@ export function createDashboardsService(input: {
     },
     updateDashboardWidget(input) {
       return widgets.update(input);
+    },
+    updateDashboardWidgetLayout(input) {
+      return widgets.updateLayout(input);
+    },
+    deleteDashboardWidget(input) {
+      return widgets.delete(input);
     }
   };
 }
@@ -733,6 +755,133 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     }
 
     return widget;
+  });
+
+  app.patch<{
+    Params: {
+      dashboardId: string;
+      widgetId: string;
+    };
+    Body: DashboardWidgetLayout;
+  }>("/dashboards/:dashboardId/widgets/:widgetId/layout", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Update one dashboard widget layout",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Replaces the phase 1 grid layout for the selected widget in the active app.",
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: "object",
+        required: ["dashboardId", "widgetId"],
+        properties: {
+          dashboardId: {
+            type: "string"
+          },
+          widgetId: {
+            type: "string"
+          }
+        }
+      },
+      body: {
+        type: "object",
+        properties: {
+          x: { type: "integer", minimum: 0, maximum: 1 },
+          y: { type: "integer", minimum: 0 },
+          w: { type: "integer", minimum: 1 },
+          h: { type: "integer", minimum: 1 }
+        },
+        required: ["x", "y", "w", "h"]
+      },
+      response: {
+        200: dashboardWidgetSchema,
+        400: messageResponseSchema,
+        401: messageResponseSchema,
+        404: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return { message: "Missing bearer token" };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return { message: "Missing tenant context" };
+    }
+
+    const widget = await options.dashboards.updateDashboardWidgetLayout({
+      tenantId: request.tenantContext.tenantId,
+      dashboardId: request.params.dashboardId,
+      widgetId: request.params.widgetId,
+      layout: request.body
+    });
+
+    if (!widget) {
+      reply.status(404);
+      return {
+        message: "Widget not found"
+      };
+    }
+
+    return widget;
+  });
+
+  app.delete<{
+    Params: {
+      dashboardId: string;
+      widgetId: string;
+    };
+  }>("/dashboards/:dashboardId/widgets/:widgetId", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Delete one dashboard widget",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Deletes the selected widget and returns the compacted widget list.",
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: "object",
+        required: ["dashboardId", "widgetId"],
+        properties: {
+          dashboardId: {
+            type: "string"
+          },
+          widgetId: {
+            type: "string"
+          }
+        }
+      },
+      response: {
+        200: dashboardWidgetDeleteSchema,
+        401: messageResponseSchema,
+        404: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return { message: "Missing bearer token" };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return { message: "Missing tenant context" };
+    }
+
+    const result = await options.dashboards.deleteDashboardWidget({
+      tenantId: request.tenantContext.tenantId,
+      dashboardId: request.params.dashboardId,
+      widgetId: request.params.widgetId
+    });
+
+    if (!result) {
+      reply.status(404);
+      return {
+        message: "Widget not found"
+      };
+    }
+
+    return result;
   });
 
   app.get<{

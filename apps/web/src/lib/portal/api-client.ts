@@ -1,3 +1,5 @@
+import type { DashboardWidgetRecord } from "../../../../../packages/contracts/src/widgets.js";
+
 export type PortalApiClient = {
   createSession: (input: {
     token: string;
@@ -65,21 +67,7 @@ export type PortalApiClient = {
     name: string;
     workbookId: string | null;
   }>;
-  listDashboardWidgets: (dashboardId: string) => Promise<Array<{
-    id: string;
-    tenantId: string;
-    dashboardId: string;
-    type: "chart" | "table" | "metric" | "text";
-    datasetId: string | null;
-    config: {
-      datasetId: string;
-      chartType: "bar" | "line" | "area" | "pie";
-      xField: string;
-      yField: string;
-      seriesField?: string;
-      title?: string;
-    } | null;
-  }>>;
+  listDashboardWidgets: (dashboardId: string) => Promise<DashboardWidgetRecord[]>;
   createDashboardWidget: (input: {
     dashboardId: string;
     type: "chart" | "table" | "metric" | "text";
@@ -92,21 +80,7 @@ export type PortalApiClient = {
       seriesField?: string;
       title?: string;
     } | null;
-  }) => Promise<{
-    id: string;
-    tenantId: string;
-    dashboardId: string;
-    type: "chart" | "table" | "metric" | "text";
-    datasetId: string | null;
-    config: {
-      datasetId: string;
-      chartType: "bar" | "line" | "area" | "pie";
-      xField: string;
-      yField: string;
-      seriesField?: string;
-      title?: string;
-    } | null;
-  }>;
+  }) => Promise<DashboardWidgetRecord>;
   updateDashboardWidget: (input: {
     dashboardId: string;
     widgetId: string;
@@ -118,20 +92,18 @@ export type PortalApiClient = {
       seriesField?: string;
       title?: string;
     };
-  }) => Promise<{
-    id: string;
-    tenantId: string;
+  }) => Promise<DashboardWidgetRecord>;
+  updateDashboardWidgetLayout: (input: {
     dashboardId: string;
-    type: "chart" | "table" | "metric" | "text";
-    datasetId: string | null;
-    config: {
-      datasetId: string;
-      chartType: "bar" | "line" | "area" | "pie";
-      xField: string;
-      yField: string;
-      seriesField?: string;
-      title?: string;
-    } | null;
+    widgetId: string;
+    layout: DashboardWidgetRecord["layout"];
+  }) => Promise<DashboardWidgetRecord>;
+  deleteDashboardWidget: (input: {
+    dashboardId: string;
+    widgetId: string;
+  }) => Promise<{
+    deletedWidgetId: string;
+    widgets: DashboardWidgetRecord[];
   }>;
   getDatasetPreview: (datasetId: string) => Promise<{
     datasetId: string;
@@ -387,6 +359,30 @@ export function createPortalApiClient(): PortalApiClient {
             "content-type": "application/json"
           },
           body: JSON.stringify(input.config)
+        }
+      );
+
+      return readPortalApiJson(response);
+    },
+    async updateDashboardWidgetLayout(input) {
+      const response = await fetch(
+        `/api/canvas/dashboards/${input.dashboardId}/widgets/${input.widgetId}/layout`,
+        {
+          method: "PATCH",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify(input.layout)
+        }
+      );
+
+      return readPortalApiJson(response);
+    },
+    async deleteDashboardWidget(input) {
+      const response = await fetch(
+        `/api/canvas/dashboards/${input.dashboardId}/widgets/${input.widgetId}`,
+        {
+          method: "DELETE"
         }
       );
 

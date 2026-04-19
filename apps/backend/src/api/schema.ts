@@ -423,12 +423,45 @@ export const dashboardWidgetSchema = {
       type: ["string", "null"],
       description: "Dataset identifier bound to the widget."
     },
+    layout: {
+      type: "object",
+      description: "Phase 1 dashboard widget layout.",
+      properties: {
+        x: {
+          type: "integer"
+        },
+        y: {
+          type: "integer"
+        },
+        w: {
+          type: "integer"
+        },
+        h: {
+          type: "integer"
+        }
+      },
+      required: ["x", "y", "w", "h"]
+    },
     config: {
       ...chartWidgetConfigSchema,
       type: ["object", "null"]
     }
   },
-  required: ["id", "tenantId", "dashboardId", "type", "datasetId", "config"]
+  required: ["id", "tenantId", "dashboardId", "type", "datasetId", "layout", "config"]
+} as const;
+
+export const dashboardWidgetDeleteSchema = {
+  type: "object",
+  properties: {
+    deletedWidgetId: {
+      type: "string"
+    },
+    widgets: {
+      type: "array",
+      items: dashboardWidgetSchema
+    }
+  },
+  required: ["deletedWidgetId", "widgets"]
 } as const;
 
 export const datasetPreviewSchema = {

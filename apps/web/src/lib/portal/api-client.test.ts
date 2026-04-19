@@ -71,6 +71,12 @@ describe("createPortalApiClient", () => {
             dashboardId: "dash_1",
             type: "chart",
             datasetId: "ds_1",
+            layout: {
+              x: 0,
+              y: 0,
+              w: 1,
+              h: 1
+            },
             config: {
               datasetId: "ds_1",
               chartType: "bar",
@@ -88,6 +94,85 @@ describe("createPortalApiClient", () => {
     expect(widgets[0]?.id).toBe("widget_1");
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/canvas/dashboards/dash_1/widgets"
+    );
+  });
+
+  it("sends a dashboard widget layout patch through the portal api", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: "widget_1",
+          tenantId: "canvas",
+          dashboardId: "dash_1",
+          type: "chart",
+          datasetId: "ds_1",
+          layout: {
+            x: 1,
+            y: 0,
+            w: 1,
+            h: 1
+          },
+          config: null
+        }),
+        { status: 200 }
+      )
+    );
+
+    const widget = await createPortalApiClient().updateDashboardWidgetLayout({
+      dashboardId: "dash_1",
+      widgetId: "widget_1",
+      layout: {
+        x: 1,
+        y: 0,
+        w: 1,
+        h: 1
+      }
+    });
+
+    expect(widget.layout.x).toBe(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/canvas/dashboards/dash_1/widgets/widget_1/layout",
+      {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          x: 1,
+          y: 0,
+          w: 1,
+          h: 1
+        })
+      }
+    );
+  });
+
+  it("sends a dashboard widget delete through the portal api", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          deletedWidgetId: "widget_1",
+          widgets: []
+        }),
+        { status: 200 }
+      )
+    );
+
+    const payload = await createPortalApiClient().deleteDashboardWidget({
+      dashboardId: "dash_1",
+      widgetId: "widget_1"
+    });
+
+    expect(payload.deletedWidgetId).toBe("widget_1");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/canvas/dashboards/dash_1/widgets/widget_1",
+      {
+        method: "DELETE"
+      }
     );
   });
 

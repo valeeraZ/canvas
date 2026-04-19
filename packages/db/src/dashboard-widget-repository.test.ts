@@ -37,4 +37,19 @@ describe("buildDashboardWidget", () => {
       title: "Revenue trend"
     });
   });
+
+  it("assigns a default layout when one is not provided", () => {
+    const widget = buildDashboardWidget({
+      tenantId: "tenant_123",
+      dashboardId: "dash_1",
+      type: "chart"
+    });
+
+    expect(widget.layout).toEqual({
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1
+    });
+  });
 });

@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { LayoutTemplate } from "lucide-react";
+import { GripVertical, LayoutTemplate, Trash2 } from "lucide-react";
 import type { DashboardChartState } from "./dashboard-chart-renderer";
 import { DashboardChartRenderer } from "./dashboard-chart-renderer";
 import { cn } from "../../lib/utils";
+import { Button } from "../ui/button";
 
 type WidgetSummary = {
   id: string;
@@ -36,7 +37,14 @@ export function DashboardWidgetCard(props: {
     sourceFilename?: string;
   } | null;
   onSelectWidget?: (widgetId: string) => void;
+  draggable?: boolean;
+  onDragStart?: (widgetId: string) => void;
+  onDragOverWidget?: (widgetId: string) => void;
+  onDropWidget?: (widgetId: string) => void;
+  onDeleteWidget?: (widgetId: string) => void;
 }) {
+  const [deleteArmed, setDeleteArmed] = useState(false);
+
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key !== "Enter" && event.key !== " ") {
       return;
@@ -46,13 +54,52 @@ export function DashboardWidgetCard(props: {
     props.onSelectWidget?.(props.widget.id);
   }
 
+  function handleDeleteClick(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!deleteArmed) {
+      setDeleteArmed(true);
+      return;
+    }
+
+    props.onDeleteWidget?.(props.widget.id);
+    setDeleteArmed(false);
+  }
+
   return (
     <div
       role={props.readOnly ? undefined : "button"}
       tabIndex={props.readOnly ? undefined : 0}
       data-focused-widget={props.focused ? "true" : "false"}
+      data-widget-id={props.widget.id}
       onClick={props.readOnly ? undefined : () => props.onSelectWidget?.(props.widget.id)}
       onKeyDown={props.readOnly ? undefined : handleKeyDown}
+      draggable={props.readOnly ? false : props.draggable}
+      onDragStart={
+        props.readOnly || !props.draggable
+          ? undefined
+          : () => props.onDragStart?.(props.widget.id)
+      }
+      onDragOver={
+        props.readOnly || !props.draggable
+          ? undefined
+          : (event) => {
+              event.preventDefault();
+              props.onDragOverWidget?.(props.widget.id);
+            }
+      }
+      onDrop={
+        props.readOnly || !props.draggable
+          ? undefined
+          : (event) => {
+              event.preventDefault();
+              props.onDropWidget?.(props.widget.id);
+            }
+      }
+      onDragEnd={
+        props.readOnly || !props.draggable ? undefined : () => props.onDropWidget?.(props.widget.id)
+      }
       className={cn(
         "grid min-h-48 gap-4 rounded-xl border p-4 text-left transition-colors",
         props.readOnly
@@ -69,6 +116,33 @@ export function DashboardWidgetCard(props: {
             {props.widget.config?.title || `Chart widget ${props.index + 1}`}
           </div>
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            {!props.readOnly ? (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label="Drag widget"
+                  title="Drag widget"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                >
+                  <GripVertical className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant={deleteArmed ? "destructive" : "ghost"}
+                  size="icon-xs"
+                  aria-label={deleteArmed ? "Confirm delete widget" : "Delete widget"}
+                  title={deleteArmed ? "Confirm delete widget" : "Delete widget"}
+                  onClick={handleDeleteClick}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            ) : null}
             {!props.readOnly && props.pending ? <span>Saving...</span> : null}
             {!props.readOnly && props.focused ? <span className="text-primary">Editing</span> : null}
           </div>

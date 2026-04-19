@@ -1366,7 +1366,8 @@ export const DashboardWidgetScalarFieldEnum = {
   dashboardId: 'dashboardId',
   type: 'type',
   datasetId: 'datasetId',
-  config: 'config'
+  config: 'config',
+  layout: 'layout'
 } as const
 
 export type DashboardWidgetScalarFieldEnum = (typeof DashboardWidgetScalarFieldEnum)[keyof typeof DashboardWidgetScalarFieldEnum]

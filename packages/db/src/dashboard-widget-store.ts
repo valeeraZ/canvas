@@ -1,8 +1,15 @@
 import type {
   ChartWidgetConfig,
+  DashboardWidgetLayout,
   DashboardWidgetRecord
 } from "../../../packages/contracts/src/index.js";
 import type { PrismaClient } from "./generated/prisma/client.js";
+import {
+  compactDashboardWidgetLayouts,
+  isValidDashboardWidgetLayout,
+  normalizeDashboardWidgetLayout,
+  swapDashboardWidgetLayouts
+} from "./dashboard-widget-layout.js";
 import { resolveTenantBySlug } from "./tenant-slug.js";
 
 type PersistedDashboardWidget = {
@@ -12,6 +19,7 @@ type PersistedDashboardWidget = {
   type: string;
   datasetId: string | null;
   config: unknown;
+  layout?: unknown;
   dashboard?: {
     tenant?: {
       slug: string;
@@ -59,7 +67,8 @@ function normalizeChartWidgetConfig(input: unknown): ChartWidgetConfig | null {
 }
 
 export function toDashboardWidgetRecord(
-  input: PersistedDashboardWidget
+  input: PersistedDashboardWidget,
+  index = 0
 ): DashboardWidgetRecord {
   return {
     id: input.id,
@@ -67,29 +76,37 @@ export function toDashboardWidgetRecord(
     dashboardId: input.dashboardId,
     type: input.type as DashboardWidgetRecord["type"],
     datasetId: input.datasetId,
-    config: normalizeChartWidgetConfig(input.config)
+    config: normalizeChartWidgetConfig(input.config),
+    layout: normalizeDashboardWidgetLayout(
+      input.layout as Partial<DashboardWidgetLayout> | null | undefined,
+      index
+    )
   };
 }
 
 export function createDashboardWidgetStore(prisma: PrismaClient) {
+  async function listScopedWidgets(input: { tenantId: string; dashboardId: string }) {
+    return prisma.dashboardWidget.findMany({
+      where: {
+        dashboardId: input.dashboardId,
+        dashboard: {
+          tenant: {
+            slug: input.tenantId
+          }
+        }
+      },
+      include: dashboardTenantInclude,
+      orderBy: {
+        id: "asc"
+      }
+    });
+  }
+
   return {
     async listByDashboard(input: { tenantId: string; dashboardId: string }) {
-      const widgets = await prisma.dashboardWidget.findMany({
-        where: {
-          dashboardId: input.dashboardId,
-          dashboard: {
-            tenant: {
-              slug: input.tenantId
-            }
-          }
-        },
-        include: dashboardTenantInclude,
-        orderBy: {
-          id: "asc"
-        }
-      });
+      const widgets = await listScopedWidgets(input);
 
-      return widgets.map(toDashboardWidgetRecord);
+      return widgets.map((widget, index) => toDashboardWidgetRecord(widget, index));
     },
     async create(input: {
       tenantId: string;
@@ -99,18 +116,23 @@ export function createDashboardWidgetStore(prisma: PrismaClient) {
       config?: ChartWidgetConfig | null;
     }) {
       const tenant = await resolveTenantBySlug(prisma, input.tenantId);
+      const existingWidgets = await listScopedWidgets({
+        tenantId: input.tenantId,
+        dashboardId: input.dashboardId
+      });
       const widget = await prisma.dashboardWidget.create({
         data: {
           tenantId: tenant.id,
           dashboardId: input.dashboardId,
           type: input.type,
           datasetId: input.datasetId ?? null,
-          config: input.config ?? null
+          config: input.config ?? null,
+          layout: normalizeDashboardWidgetLayout(null, existingWidgets.length)
         },
         include: dashboardTenantInclude
       });
 
-      return toDashboardWidgetRecord(widget);
+      return toDashboardWidgetRecord(widget, existingWidgets.length);
     },
     async update(input: {
       tenantId: string;
@@ -150,6 +172,88 @@ export function createDashboardWidgetStore(prisma: PrismaClient) {
       });
 
       return toDashboardWidgetRecord(widget);
+    },
+    async updateLayout(input: {
+      tenantId: string;
+      dashboardId: string;
+      widgetId: string;
+      layout: DashboardWidgetLayout;
+    }) {
+      if (!isValidDashboardWidgetLayout(input.layout)) {
+        throw new Error("Invalid dashboard widget layout");
+      }
+
+      const widgets = (await listScopedWidgets({
+        tenantId: input.tenantId,
+        dashboardId: input.dashboardId
+      })).map((widget, index) => toDashboardWidgetRecord(widget, index));
+      const nextWidgets = swapDashboardWidgetLayouts(
+        widgets,
+        input.widgetId,
+        input.layout
+      );
+      const targetWidget = nextWidgets.find((widget) => widget.id === input.widgetId);
+
+      if (!targetWidget) {
+        return null;
+      }
+
+      await prisma.$transaction(
+        nextWidgets.map((widget) =>
+          prisma.dashboardWidget.update({
+            where: {
+              id: widget.id
+            },
+            data: {
+              layout: widget.layout
+            }
+          })
+        )
+      );
+
+      return targetWidget;
+    },
+    async delete(input: {
+      tenantId: string;
+      dashboardId: string;
+      widgetId: string;
+    }) {
+      const widgets = (await listScopedWidgets({
+        tenantId: input.tenantId,
+        dashboardId: input.dashboardId
+      })).map((widget, index) => toDashboardWidgetRecord(widget, index));
+      const widgetToDelete = widgets.find((widget) => widget.id === input.widgetId);
+
+      if (!widgetToDelete) {
+        return null;
+      }
+
+      const remainingWidgets = compactDashboardWidgetLayouts(
+        widgets.filter((widget) => widget.id !== input.widgetId)
+      );
+
+      await prisma.$transaction([
+        prisma.dashboardWidget.delete({
+          where: {
+            id: input.widgetId
+          }
+        }),
+        ...remainingWidgets.map((widget) =>
+          prisma.dashboardWidget.update({
+            where: {
+              id: widget.id
+            },
+            data: {
+              layout: widget.layout
+            }
+          })
+        )
+      ]);
+
+      return {
+        deletedWidgetId: input.widgetId,
+        widgets: remainingWidgets
+      };
     }
   };
 }

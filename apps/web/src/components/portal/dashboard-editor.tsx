@@ -1,6 +1,6 @@
 "use client";
 
-import React, { startTransition, useEffect, useState } from "react";
+import React, { startTransition, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { LayoutTemplate, LoaderCircle, Share2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -41,6 +41,12 @@ type DashboardWidgetSummary = {
     yField: string;
     seriesField?: string;
     title?: string;
+  } | null;
+  layout?: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
   } | null;
 };
 
@@ -121,12 +127,16 @@ export function applyWidgetConfigDrafts(
   widgets: DashboardWidgetSummary[],
   drafts: WidgetDraftMap
 ): DashboardWidgetSummary[] {
-  return widgets.map((widget) => {
+  let changed = false;
+
+  const nextWidgets = widgets.map((widget) => {
     const draft = drafts[widget.id];
 
     if (!draft || areWidgetConfigsEqual(draft, widget.config)) {
       return widget;
     }
+
+    changed = true;
 
     return {
       ...widget,
@@ -134,6 +144,61 @@ export function applyWidgetConfigDrafts(
       config: draft
     };
   });
+
+  return changed ? nextWidgets : widgets;
+}
+
+export function applyWidgetLayoutSwap(
+  widgets: DashboardWidgetSummary[],
+  widgetId: string,
+  targetWidgetId: string
+) {
+  const sourceWidget = widgets.find((widget) => widget.id === widgetId);
+  const targetWidget = widgets.find((widget) => widget.id === targetWidgetId);
+
+  if (!sourceWidget || !targetWidget || sourceWidget.id === targetWidget.id) {
+    return widgets;
+  }
+
+  const sourceLayout = sourceWidget.layout ?? { x: 0, y: 0, w: 1, h: 1 };
+  const targetLayout = targetWidget.layout ?? { x: 0, y: 0, w: 1, h: 1 };
+
+  return widgets.map((widget) => {
+    if (widget.id === widgetId) {
+      return {
+        ...widget,
+        layout: targetLayout
+      };
+    }
+
+    if (widget.id === targetWidgetId) {
+      return {
+        ...widget,
+        layout: sourceLayout
+      };
+    }
+
+    return widget;
+  });
+}
+
+export function resolveDeletedWidgetFocus(
+  widgets: DashboardWidgetSummary[],
+  deletedWidgetId: string
+) {
+  const deleteIndex = widgets.findIndex((widget) => widget.id === deletedWidgetId);
+
+  if (deleteIndex === -1) {
+    return widgets[0]?.id ?? null;
+  }
+
+  const remainingWidgets = widgets.filter((widget) => widget.id !== deletedWidgetId);
+
+  if (remainingWidgets.length === 0) {
+    return null;
+  }
+
+  return remainingWidgets[Math.min(deleteIndex, remainingWidgets.length - 1)]?.id ?? null;
 }
 
 function deriveChartState(input: {
@@ -219,7 +284,8 @@ export function buildWidgetChartStateEntries(input: {
   datasetPreviews: Record<string, DatasetPreviewSummary | null>;
   currentEntries: Record<string, DashboardWidgetChartEntry>;
 }): Record<string, DashboardWidgetChartEntry> {
-  return Object.fromEntries(
+  let changed = false;
+  const nextEntries = Object.fromEntries(
     input.widgets.map((widget) => {
       const nextState = deriveChartState({
         widget,
@@ -233,6 +299,8 @@ export function buildWidgetChartStateEntries(input: {
         if (currentEntry?.queryKey === nextQueryKey) {
           return [widget.id, currentEntry] as const;
         }
+
+        changed = true;
 
         return [
           widget.id,
@@ -251,6 +319,8 @@ export function buildWidgetChartStateEntries(input: {
         return [widget.id, currentEntry] as const;
       }
 
+      changed = true;
+
       return [
         widget.id,
         {
@@ -260,6 +330,12 @@ export function buildWidgetChartStateEntries(input: {
       ] as const;
     })
   );
+
+  if (!changed && Object.keys(nextEntries).length === Object.keys(input.currentEntries).length) {
+    return input.currentEntries;
+  }
+
+  return nextEntries;
 }
 
 export function DashboardEditor(props: {
@@ -286,18 +362,22 @@ export function DashboardEditor(props: {
   );
   const [widgetDrafts, setWidgetDrafts] = useState<WidgetDraftMap>({});
   const [savingWidgetIds, setSavingWidgetIds] = useState<Record<string, boolean>>({});
+  const [optimisticWidgets, setOptimisticWidgets] = useState(props.widgets);
   const [chartEntries, setChartEntries] = useState<
     Record<string, DashboardWidgetChartEntry>
   >(() =>
     buildWidgetChartStateEntries({
-      widgets: props.widgets,
-      datasets: props.datasets,
+        widgets: props.widgets,
+        datasets: props.datasets,
       datasetPreviews: props.datasetPreviews,
       currentEntries: {}
     })
   );
 
-  const effectiveWidgets = applyWidgetConfigDrafts(props.widgets, widgetDrafts);
+  const effectiveWidgets = useMemo(
+    () => applyWidgetConfigDrafts(optimisticWidgets, widgetDrafts),
+    [optimisticWidgets, widgetDrafts]
+  );
   const activeWidget =
     effectiveWidgets.find((widget) => widget.id === activeWidgetId) ?? null;
   const activeWidgetPending = activeWidgetId ? Boolean(savingWidgetIds[activeWidgetId]) : false;
@@ -308,6 +388,10 @@ export function DashboardEditor(props: {
     const preview = props.datasetPreviews[dataset.id];
     return Boolean(preview && preview.columns.length > 0);
   });
+
+  useEffect(() => {
+    setOptimisticWidgets(props.widgets);
+  }, [props.widgets]);
 
   useEffect(() => {
     if (!effectiveWidgets.some((widget) => widget.id === activeWidgetId)) {
@@ -353,7 +437,7 @@ export function DashboardEditor(props: {
         currentEntries: current
       })
     );
-  }, [props.widgets, widgetDrafts, props.datasets, props.datasetPreviews]);
+  }, [effectiveWidgets, props.datasets, props.datasetPreviews]);
 
   useEffect(() => {
     const loadingEntries = Object.entries(chartEntries).filter(([, entry]) => {
@@ -459,7 +543,23 @@ export function DashboardEditor(props: {
     return () => {
       cancelled = true;
     };
-  }, [chartEntries, props.widgets, widgetDrafts]);
+  }, [chartEntries, effectiveWidgets]);
+
+  function setWidgetsSaving(widgetIds: string[], pending: boolean) {
+    setSavingWidgetIds((current) => {
+      const next = { ...current };
+
+      for (const widgetId of widgetIds) {
+        if (pending) {
+          next[widgetId] = true;
+        } else {
+          delete next[widgetId];
+        }
+      }
+
+      return next;
+    });
+  }
 
   function setSelectedDashboard() {
     setEditorPending(true);
@@ -567,6 +667,65 @@ export function DashboardEditor(props: {
     });
   }
 
+  function moveWidget(widgetId: string, targetWidgetId: string) {
+    const previousWidgets = optimisticWidgets;
+    const nextWidgets = applyWidgetLayoutSwap(previousWidgets, widgetId, targetWidgetId);
+    const movedWidget = nextWidgets.find((widget) => widget.id === widgetId);
+
+    if (!movedWidget?.layout || nextWidgets === previousWidgets) {
+      return;
+    }
+
+    setOptimisticWidgets(nextWidgets);
+    setActiveWidgetId(widgetId);
+    setWidgetsSaving([widgetId, targetWidgetId], true);
+    setError(null);
+
+    startTransition(async () => {
+      try {
+        await portalApiClient.updateDashboardWidgetLayout({
+          dashboardId: props.dashboard.id,
+          widgetId,
+          layout: movedWidget.layout
+        });
+        router.refresh();
+      } catch (caught) {
+        setOptimisticWidgets(previousWidgets);
+        setError(toPortalApiError(caught));
+      } finally {
+        setWidgetsSaving([widgetId, targetWidgetId], false);
+      }
+    });
+  }
+
+  function deleteWidget(widgetId: string) {
+    const previousWidgets = optimisticWidgets;
+    const nextWidgets = optimisticWidgets.filter((widget) => widget.id !== widgetId);
+
+    setOptimisticWidgets(nextWidgets);
+    setActiveWidgetId(resolveDeletedWidgetFocus(optimisticWidgets, widgetId));
+    setWidgetsSaving([widgetId], true);
+    setError(null);
+
+    startTransition(async () => {
+      try {
+        const result = await portalApiClient.deleteDashboardWidget({
+          dashboardId: props.dashboard.id,
+          widgetId
+        });
+        setOptimisticWidgets(result.widgets);
+        setActiveWidgetId(resolveDeletedWidgetFocus(previousWidgets, widgetId));
+        router.refresh();
+      } catch (caught) {
+        setOptimisticWidgets(previousWidgets);
+        setActiveWidgetId(previousWidgets.find((widget) => widget.id === activeWidgetId)?.id ?? previousWidgets[0]?.id ?? null);
+        setError(toPortalApiError(caught));
+      } finally {
+        setWidgetsSaving([widgetId], false);
+      }
+    });
+  }
+
   return (
     <section className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -633,6 +792,8 @@ export function DashboardEditor(props: {
                 savingWidgetIds={savingWidgetIds}
                 chartStates={chartStates}
                 onSelectWidget={setActiveWidgetId}
+                onMoveWidget={moveWidget}
+                onDeleteWidget={deleteWidget}
               />
             </div>
             <DashboardWidgetConfigPanel

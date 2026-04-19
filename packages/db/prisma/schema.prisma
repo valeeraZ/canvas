@@ -110,6 +110,7 @@ model DashboardWidget {
   type        String
   datasetId   String?
   config      Json?
+  layout      Json?
   dashboard   Dashboard  @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
   dataset     Dataset?   @relation(fields: [datasetId], references: [id], onDelete: SetNull)
 }

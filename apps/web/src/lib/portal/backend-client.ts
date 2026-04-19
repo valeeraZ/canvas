@@ -275,6 +275,37 @@ export function createPortalBackendClient(session: PortalSession) {
 
       return readJson<DashboardWidgetRecord>(response);
     },
+    async updateDashboardWidgetLayout(input: {
+      dashboardId: string;
+      widgetId: string;
+      layout: DashboardWidgetRecord["layout"];
+    }) {
+      const response = await authorizedFetch(
+        `/dashboards/${input.dashboardId}/widgets/${input.widgetId}/layout`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(input.layout)
+        }
+      );
+
+      return readJson<DashboardWidgetRecord>(response);
+    },
+    async deleteDashboardWidget(input: {
+      dashboardId: string;
+      widgetId: string;
+    }) {
+      const response = await authorizedFetch(
+        `/dashboards/${input.dashboardId}/widgets/${input.widgetId}`,
+        {
+          method: "DELETE"
+        }
+      );
+
+      return readJson<{
+        deletedWidgetId: string;
+        widgets: DashboardWidgetRecord[];
+      }>(response);
+    },
     async getDashboardShare(dashboardId: string) {
       const response = await authorizedFetch(`/dashboards/${dashboardId}/share`);
       return readJson<{

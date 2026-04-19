@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createApiApp } from "../../api/app";
 import type { ChartWidgetConfig } from "../../../../../packages/contracts/src/dashboard-editor.js";
+import type { DashboardWidgetLayout } from "../../../../../packages/contracts/src/widgets.js";
 
 const apps: Array<ReturnType<typeof createApiApp>> = [];
 
@@ -34,6 +35,8 @@ describe("dashboard routes", () => {
     let listWidgetsRequest: unknown;
     let createWidgetRequest: unknown;
     let updateWidgetRequest: unknown;
+    let updateWidgetLayoutRequest: unknown;
+    let deleteWidgetRequest: unknown;
 
     const app = createApiApp({
       authBaseUrl: "http://auth.local",
@@ -160,6 +163,12 @@ describe("dashboard routes", () => {
               dashboardId: "dash_1",
               type: "chart",
               datasetId: "ds_1",
+              layout: {
+                x: 0,
+                y: 0,
+                w: 1,
+                h: 1
+              } satisfies DashboardWidgetLayout,
               config: {
                 datasetId: "ds_1",
                 chartType: "bar",
@@ -177,6 +186,12 @@ describe("dashboard routes", () => {
             dashboardId: "dash_1",
             type: "chart",
             datasetId: "ds_1",
+            layout: {
+              x: 1,
+              y: 0,
+              w: 1,
+              h: 1
+            } satisfies DashboardWidgetLayout,
             config: {
               datasetId: "ds_1",
               chartType: "line",
@@ -193,6 +208,12 @@ describe("dashboard routes", () => {
             dashboardId: "dash_1",
             type: "chart",
             datasetId: "ds_1",
+            layout: {
+              x: 0,
+              y: 0,
+              w: 1,
+              h: 1
+            } satisfies DashboardWidgetLayout,
             config: {
               datasetId: "ds_1",
               chartType: "area",
@@ -200,6 +221,35 @@ describe("dashboard routes", () => {
               yField: "revenue",
               seriesField: "region"
             } satisfies ChartWidgetConfig
+          };
+        },
+        updateDashboardWidgetLayout: async (input: unknown) => {
+          updateWidgetLayoutRequest = input;
+          return {
+            id: "widget_1",
+            tenantId: "canvas",
+            dashboardId: "dash_1",
+            type: "chart",
+            datasetId: "ds_1",
+            layout: {
+              x: 1,
+              y: 0,
+              w: 1,
+              h: 1
+            } satisfies DashboardWidgetLayout,
+            config: {
+              datasetId: "ds_1",
+              chartType: "area",
+              xField: "month",
+              yField: "revenue"
+            } satisfies ChartWidgetConfig
+          };
+        },
+        deleteDashboardWidget: async (input: unknown) => {
+          deleteWidgetRequest = input;
+          return {
+            deletedWidgetId: "widget_1",
+            widgets: []
           };
         }
       }
@@ -400,6 +450,38 @@ describe("dashboard routes", () => {
     expect(updateWidgetResponse.statusCode).toBe(200);
     expect((updateWidgetRequest as { widgetId?: string })?.widgetId).toBe("widget_1");
     expect(updateWidgetResponse.json().config.chartType).toBe("area");
+
+    const updateWidgetLayoutResponse = await app.inject({
+      method: "PATCH",
+      url: "/dashboards/dash_1/widgets/widget_1/layout",
+      headers: {
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
+      },
+      payload: {
+        x: 1,
+        y: 0,
+        w: 1,
+        h: 1
+      }
+    });
+    expect(updateWidgetLayoutResponse.statusCode).toBe(200);
+    expect(
+      (updateWidgetLayoutRequest as { widgetId?: string })?.widgetId
+    ).toBe("widget_1");
+    expect(updateWidgetLayoutResponse.json().layout.x).toBe(1);
+
+    const deleteWidgetResponse = await app.inject({
+      method: "DELETE",
+      url: "/dashboards/dash_1/widgets/widget_1",
+      headers: {
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
+      }
+    });
+    expect(deleteWidgetResponse.statusCode).toBe(200);
+    expect((deleteWidgetRequest as { widgetId?: string })?.widgetId).toBe("widget_1");
+    expect(deleteWidgetResponse.json().deletedWidgetId).toBe("widget_1");
 
     const importResponse = await app.inject({
       method: "POST",

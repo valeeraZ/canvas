@@ -47,6 +47,7 @@ export type DashboardWidgetCountAggregateOutputType = {
   type: number
   datasetId: number
   config: number
+  layout: number
   _all: number
 }
 
@@ -74,6 +75,7 @@ export type DashboardWidgetCountAggregateInputType = {
   type?: true
   datasetId?: true
   config?: true
+  layout?: true
   _all?: true
 }
 
@@ -156,6 +158,7 @@ export type DashboardWidgetGroupByOutputType = {
   type: string
   datasetId: string | null
   config: runtime.JsonValue | null
+  layout: runtime.JsonValue | null
   _count: DashboardWidgetCountAggregateOutputType | null
   _min: DashboardWidgetMinAggregateOutputType | null
   _max: DashboardWidgetMaxAggregateOutputType | null
@@ -186,6 +189,7 @@ export type DashboardWidgetWhereInput = {
   type?: Prisma.StringFilter<"DashboardWidget"> | string
   datasetId?: Prisma.StringNullableFilter<"DashboardWidget"> | string | null
   config?: Prisma.JsonNullableFilter<"DashboardWidget">
+  layout?: Prisma.JsonNullableFilter<"DashboardWidget">
   dashboard?: Prisma.XOR<Prisma.DashboardScalarRelationFilter, Prisma.DashboardWhereInput>
   dataset?: Prisma.XOR<Prisma.DatasetNullableScalarRelationFilter, Prisma.DatasetWhereInput> | null
 }
@@ -197,6 +201,7 @@ export type DashboardWidgetOrderByWithRelationInput = {
   type?: Prisma.SortOrder
   datasetId?: Prisma.SortOrderInput | Prisma.SortOrder
   config?: Prisma.SortOrderInput | Prisma.SortOrder
+  layout?: Prisma.SortOrderInput | Prisma.SortOrder
   dashboard?: Prisma.DashboardOrderByWithRelationInput
   dataset?: Prisma.DatasetOrderByWithRelationInput
 }
@@ -211,6 +216,7 @@ export type DashboardWidgetWhereUniqueInput = Prisma.AtLeast<{
   type?: Prisma.StringFilter<"DashboardWidget"> | string
   datasetId?: Prisma.StringNullableFilter<"DashboardWidget"> | string | null
   config?: Prisma.JsonNullableFilter<"DashboardWidget">
+  layout?: Prisma.JsonNullableFilter<"DashboardWidget">
   dashboard?: Prisma.XOR<Prisma.DashboardScalarRelationFilter, Prisma.DashboardWhereInput>
   dataset?: Prisma.XOR<Prisma.DatasetNullableScalarRelationFilter, Prisma.DatasetWhereInput> | null
 }, "id">
@@ -222,6 +228,7 @@ export type DashboardWidgetOrderByWithAggregationInput = {
   type?: Prisma.SortOrder
   datasetId?: Prisma.SortOrderInput | Prisma.SortOrder
   config?: Prisma.SortOrderInput | Prisma.SortOrder
+  layout?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.DashboardWidgetCountOrderByAggregateInput
   _max?: Prisma.DashboardWidgetMaxOrderByAggregateInput
   _min?: Prisma.DashboardWidgetMinOrderByAggregateInput
@@ -237,6 +244,7 @@ export type DashboardWidgetScalarWhereWithAggregatesInput = {
   type?: Prisma.StringWithAggregatesFilter<"DashboardWidget"> | string
   datasetId?: Prisma.StringNullableWithAggregatesFilter<"DashboardWidget"> | string | null
   config?: Prisma.JsonNullableWithAggregatesFilter<"DashboardWidget">
+  layout?: Prisma.JsonNullableWithAggregatesFilter<"DashboardWidget">
 }
 
 export type DashboardWidgetCreateInput = {
@@ -244,6 +252,7 @@ export type DashboardWidgetCreateInput = {
   tenantId: string
   type: string
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   dashboard: Prisma.DashboardCreateNestedOneWithoutWidgetsInput
   dataset?: Prisma.DatasetCreateNestedOneWithoutWidgetsInput
 }
@@ -255,6 +264,7 @@ export type DashboardWidgetUncheckedCreateInput = {
   type: string
   datasetId?: string | null
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type DashboardWidgetUpdateInput = {
@@ -262,6 +272,7 @@ export type DashboardWidgetUpdateInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   dashboard?: Prisma.DashboardUpdateOneRequiredWithoutWidgetsNestedInput
   dataset?: Prisma.DatasetUpdateOneWithoutWidgetsNestedInput
 }
@@ -273,6 +284,7 @@ export type DashboardWidgetUncheckedUpdateInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   datasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type DashboardWidgetCreateManyInput = {
@@ -282,6 +294,7 @@ export type DashboardWidgetCreateManyInput = {
   type: string
   datasetId?: string | null
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type DashboardWidgetUpdateManyMutationInput = {
@@ -289,6 +302,7 @@ export type DashboardWidgetUpdateManyMutationInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type DashboardWidgetUncheckedUpdateManyInput = {
@@ -298,6 +312,7 @@ export type DashboardWidgetUncheckedUpdateManyInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   datasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type DashboardWidgetListRelationFilter = {
@@ -317,6 +332,7 @@ export type DashboardWidgetCountOrderByAggregateInput = {
   type?: Prisma.SortOrder
   datasetId?: Prisma.SortOrder
   config?: Prisma.SortOrder
+  layout?: Prisma.SortOrder
 }
 
 export type DashboardWidgetMaxOrderByAggregateInput = {
@@ -424,6 +440,7 @@ export type DashboardWidgetCreateWithoutDatasetInput = {
   tenantId: string
   type: string
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   dashboard: Prisma.DashboardCreateNestedOneWithoutWidgetsInput
 }
 
@@ -433,6 +450,7 @@ export type DashboardWidgetUncheckedCreateWithoutDatasetInput = {
   dashboardId: string
   type: string
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type DashboardWidgetCreateOrConnectWithoutDatasetInput = {
@@ -471,6 +489,7 @@ export type DashboardWidgetScalarWhereInput = {
   type?: Prisma.StringFilter<"DashboardWidget"> | string
   datasetId?: Prisma.StringNullableFilter<"DashboardWidget"> | string | null
   config?: Prisma.JsonNullableFilter<"DashboardWidget">
+  layout?: Prisma.JsonNullableFilter<"DashboardWidget">
 }
 
 export type DashboardWidgetCreateWithoutDashboardInput = {
@@ -478,6 +497,7 @@ export type DashboardWidgetCreateWithoutDashboardInput = {
   tenantId: string
   type: string
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   dataset?: Prisma.DatasetCreateNestedOneWithoutWidgetsInput
 }
 
@@ -487,6 +507,7 @@ export type DashboardWidgetUncheckedCreateWithoutDashboardInput = {
   type: string
   datasetId?: string | null
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type DashboardWidgetCreateOrConnectWithoutDashboardInput = {
@@ -521,6 +542,7 @@ export type DashboardWidgetCreateManyDatasetInput = {
   dashboardId: string
   type: string
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type DashboardWidgetUpdateWithoutDatasetInput = {
@@ -528,6 +550,7 @@ export type DashboardWidgetUpdateWithoutDatasetInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   dashboard?: Prisma.DashboardUpdateOneRequiredWithoutWidgetsNestedInput
 }
 
@@ -537,6 +560,7 @@ export type DashboardWidgetUncheckedUpdateWithoutDatasetInput = {
   dashboardId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type DashboardWidgetUncheckedUpdateManyWithoutDatasetInput = {
@@ -545,6 +569,7 @@ export type DashboardWidgetUncheckedUpdateManyWithoutDatasetInput = {
   dashboardId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type DashboardWidgetCreateManyDashboardInput = {
@@ -553,6 +578,7 @@ export type DashboardWidgetCreateManyDashboardInput = {
   type: string
   datasetId?: string | null
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type DashboardWidgetUpdateWithoutDashboardInput = {
@@ -560,6 +586,7 @@ export type DashboardWidgetUpdateWithoutDashboardInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   dataset?: Prisma.DatasetUpdateOneWithoutWidgetsNestedInput
 }
 
@@ -569,6 +596,7 @@ export type DashboardWidgetUncheckedUpdateWithoutDashboardInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   datasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type DashboardWidgetUncheckedUpdateManyWithoutDashboardInput = {
@@ -577,6 +605,7 @@ export type DashboardWidgetUncheckedUpdateManyWithoutDashboardInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   datasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  layout?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 
@@ -588,6 +617,7 @@ export type DashboardWidgetSelect<ExtArgs extends runtime.Types.Extensions.Inter
   type?: boolean
   datasetId?: boolean
   config?: boolean
+  layout?: boolean
   dashboard?: boolean | Prisma.DashboardDefaultArgs<ExtArgs>
   dataset?: boolean | Prisma.DashboardWidget$datasetArgs<ExtArgs>
 }, ExtArgs["result"]["dashboardWidget"]>
@@ -599,6 +629,7 @@ export type DashboardWidgetSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   type?: boolean
   datasetId?: boolean
   config?: boolean
+  layout?: boolean
   dashboard?: boolean | Prisma.DashboardDefaultArgs<ExtArgs>
   dataset?: boolean | Prisma.DashboardWidget$datasetArgs<ExtArgs>
 }, ExtArgs["result"]["dashboardWidget"]>
@@ -610,6 +641,7 @@ export type DashboardWidgetSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   type?: boolean
   datasetId?: boolean
   config?: boolean
+  layout?: boolean
   dashboard?: boolean | Prisma.DashboardDefaultArgs<ExtArgs>
   dataset?: boolean | Prisma.DashboardWidget$datasetArgs<ExtArgs>
 }, ExtArgs["result"]["dashboardWidget"]>
@@ -621,9 +653,10 @@ export type DashboardWidgetSelectScalar = {
   type?: boolean
   datasetId?: boolean
   config?: boolean
+  layout?: boolean
 }
 
-export type DashboardWidgetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "dashboardId" | "type" | "datasetId" | "config", ExtArgs["result"]["dashboardWidget"]>
+export type DashboardWidgetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "dashboardId" | "type" | "datasetId" | "config" | "layout", ExtArgs["result"]["dashboardWidget"]>
 export type DashboardWidgetInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   dashboard?: boolean | Prisma.DashboardDefaultArgs<ExtArgs>
   dataset?: boolean | Prisma.DashboardWidget$datasetArgs<ExtArgs>
@@ -650,6 +683,7 @@ export type $DashboardWidgetPayload<ExtArgs extends runtime.Types.Extensions.Int
     type: string
     datasetId: string | null
     config: runtime.JsonValue | null
+    layout: runtime.JsonValue | null
   }, ExtArgs["result"]["dashboardWidget"]>
   composites: {}
 }
@@ -1081,6 +1115,7 @@ export interface DashboardWidgetFieldRefs {
   readonly type: Prisma.FieldRef<"DashboardWidget", 'String'>
   readonly datasetId: Prisma.FieldRef<"DashboardWidget", 'String'>
   readonly config: Prisma.FieldRef<"DashboardWidget", 'Json'>
+  readonly layout: Prisma.FieldRef<"DashboardWidget", 'Json'>
 }
     
 

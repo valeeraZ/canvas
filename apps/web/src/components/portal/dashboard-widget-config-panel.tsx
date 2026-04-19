@@ -23,6 +23,27 @@ type DatasetOption = {
 export const CONFIG_PANEL_GROUPS = ["Chart", "Data", "Meta"] as const;
 export const WIDGET_TITLE_AUTOSAVE_DELAY_MS = 500;
 
+export function areChartWidgetConfigsEqual(
+  left: ChartWidgetConfig | null,
+  right: ChartWidgetConfig | null
+) {
+  if (left === right) {
+    return true;
+  }
+
+  if (!left || !right) {
+    return left === right;
+  }
+
+  return (
+    left.datasetId === right.datasetId &&
+    left.chartType === right.chartType &&
+    left.xField === right.xField &&
+    left.yField === right.yField &&
+    (left.title ?? "") === (right.title ?? "")
+  );
+}
+
 function getSupportedChartType(
   chartType?: ChartWidgetConfig["chartType"]
 ): "bar" | "line" | "area" {
@@ -89,6 +110,17 @@ export function buildDatasetConfigUpdate(input: {
   };
 }
 
+export function shouldResetWidgetConfigDraft(input: {
+  currentDraft: ChartWidgetConfig | null;
+  widget: DashboardWidgetRecord | null;
+  previews: Record<string, DatasetPreview | null>;
+  datasets: DatasetOption[];
+}) {
+  const nextDraft = buildInitialConfig(input.widget, input.previews, input.datasets);
+
+  return !areChartWidgetConfigsEqual(input.currentDraft, nextDraft);
+}
+
 export function DashboardWidgetConfigPanel(props: {
   widget: DashboardWidgetRecord | null;
   datasets: DatasetOption[];
@@ -101,7 +133,10 @@ export function DashboardWidgetConfigPanel(props: {
   );
 
   useEffect(() => {
-    setDraft(buildInitialConfig(props.widget, props.previews, props.datasets));
+    setDraft((current) => {
+      const next = buildInitialConfig(props.widget, props.previews, props.datasets);
+      return areChartWidgetConfigsEqual(current, next) ? current : next;
+    });
   }, [props.widget, props.previews, props.datasets]);
 
   useEffect(() => {
@@ -153,6 +188,12 @@ export function DashboardWidgetConfigPanel(props: {
     props.onSave(props.widget.id, next);
   }
 
+  function saveNextConfigDeferred(next: ChartWidgetConfig) {
+    window.setTimeout(() => {
+      saveNextConfig(next);
+    }, 0);
+  }
+
   return (
     <Card className="h-full">
       <CardHeader>
@@ -183,7 +224,7 @@ export function DashboardWidgetConfigPanel(props: {
                   chartType: value as ChartWidgetConfig["chartType"]
                 });
                 if (next) {
-                  saveNextConfig(next);
+                  saveNextConfigDeferred(next);
                 }
               }}
             >
@@ -224,7 +265,7 @@ export function DashboardWidgetConfigPanel(props: {
                 });
 
                 setDraft(next);
-                saveNextConfig(next);
+                saveNextConfigDeferred(next);
               }}
             >
               <SelectTrigger className="w-full">
@@ -250,7 +291,7 @@ export function DashboardWidgetConfigPanel(props: {
 
                 const next = { ...draft, xField: value };
                 setDraft(next);
-                saveNextConfig(next);
+                saveNextConfigDeferred(next);
               }}
             >
               <SelectTrigger className="w-full">
@@ -276,7 +317,7 @@ export function DashboardWidgetConfigPanel(props: {
 
                 const next = { ...draft, yField: value };
                 setDraft(next);
-                saveNextConfig(next);
+                saveNextConfigDeferred(next);
               }}
             >
               <SelectTrigger className="w-full">
