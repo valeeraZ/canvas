@@ -36,14 +36,13 @@ export function DashboardWidgetCard(props: {
     name: string;
     sourceFilename?: string;
   } | null;
+  dragHandleRef?: React.Ref<HTMLButtonElement>;
+  dragHandleProps?: React.ComponentPropsWithoutRef<"button">;
   onSelectWidget?: (widgetId: string) => void;
-  draggable?: boolean;
-  onDragStart?: (widgetId: string) => void;
-  onDragOverWidget?: (widgetId: string) => void;
-  onDropWidget?: (widgetId: string) => void;
   onDeleteWidget?: (widgetId: string) => void;
 }) {
   const [deleteArmed, setDeleteArmed] = useState(false);
+  const dragHandleOnClick = props.dragHandleProps?.onClick;
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key !== "Enter" && event.key !== " ") {
@@ -75,31 +74,6 @@ export function DashboardWidgetCard(props: {
       data-widget-id={props.widget.id}
       onClick={props.readOnly ? undefined : () => props.onSelectWidget?.(props.widget.id)}
       onKeyDown={props.readOnly ? undefined : handleKeyDown}
-      draggable={props.readOnly ? false : props.draggable}
-      onDragStart={
-        props.readOnly || !props.draggable
-          ? undefined
-          : () => props.onDragStart?.(props.widget.id)
-      }
-      onDragOver={
-        props.readOnly || !props.draggable
-          ? undefined
-          : (event) => {
-              event.preventDefault();
-              props.onDragOverWidget?.(props.widget.id);
-            }
-      }
-      onDrop={
-        props.readOnly || !props.draggable
-          ? undefined
-          : (event) => {
-              event.preventDefault();
-              props.onDropWidget?.(props.widget.id);
-            }
-      }
-      onDragEnd={
-        props.readOnly || !props.draggable ? undefined : () => props.onDropWidget?.(props.widget.id)
-      }
       className={cn(
         "grid min-h-48 gap-4 rounded-xl border p-4 text-left transition-colors",
         props.readOnly
@@ -113,20 +87,23 @@ export function DashboardWidgetCard(props: {
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-medium">
             <LayoutTemplate className="h-4 w-4 text-muted-foreground" />
-            {props.widget.config?.title || `Chart widget ${props.index + 1}`}
+            {props.widget.config?.title || "Chart widget"}
           </div>
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             {!props.readOnly ? (
               <>
                 <Button
+                  ref={props.dragHandleRef}
                   type="button"
                   variant="ghost"
                   size="icon-xs"
                   aria-label="Drag widget"
                   title="Drag widget"
+                  {...props.dragHandleProps}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
+                    dragHandleOnClick?.(event);
                   }}
                 >
                   <GripVertical className="h-3.5 w-3.5" />

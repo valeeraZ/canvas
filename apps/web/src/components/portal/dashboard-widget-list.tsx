@@ -67,7 +67,7 @@ export function DashboardWidgetList(props: {
           >
             <div className="flex items-center gap-2 text-sm font-medium">
               <LayoutTemplate className="h-4 w-4 text-muted-foreground" />
-              {widget.config?.title || `Chart widget ${index + 1}`}
+              {widget.config?.title || "Chart widget"}
             </div>
             <p className="text-xs text-muted-foreground">
               {props.savingWidgetIds[widget.id]

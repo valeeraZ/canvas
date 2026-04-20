@@ -1,6 +1,19 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  closestCenter,
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors
+} from "@dnd-kit/core";
+import {
+  rectSortingStrategy,
+  SortableContext,
+  useSortable
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { DashboardChartState } from "./dashboard-chart-renderer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { DashboardWidgetCard } from "./dashboard-widget-card";
@@ -70,23 +83,122 @@ export function previewDashboardCanvasSwap(
     return sortedWidgets;
   }
 
-  return sortDashboardCanvasWidgets(sortedWidgets.map((widget) => {
-    if (widget.id === draggedWidget.id) {
-      return {
-        ...widget,
-        layout: targetWidget.layout
-      };
-    }
+  const nextWidgets = [...sortedWidgets];
+  const sourceIndex = nextWidgets.findIndex((widget) => widget.id === draggedWidgetId);
+  const targetIndex = nextWidgets.findIndex((widget) => widget.id === targetWidgetId);
 
-    if (widget.id === targetWidget.id) {
-      return {
-        ...widget,
-        layout: draggedWidget.layout
-      };
-    }
+  if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) {
+    return sortedWidgets;
+  }
 
-    return widget;
+  const [dragged] = nextWidgets.splice(sourceIndex, 1);
+
+  if (!dragged) {
+    return sortedWidgets;
+  }
+
+  nextWidgets.splice(targetIndex, 0, dragged);
+
+  return nextWidgets.map((widget, index) => ({
+    ...widget,
+    layout: {
+      x: index % 2,
+      y: Math.floor(index / 2),
+      w: 1,
+      h: 1
+    }
   }));
+}
+
+export function resolvePreviewMoveTargetWidgetId(input: {
+  widgets: WidgetSummary[];
+  previewWidgets: WidgetSummary[];
+  draggedWidgetId: string;
+}) {
+  const originalWidgets = sortDashboardCanvasWidgets(input.widgets);
+  const nextWidgets = sortDashboardCanvasWidgets(input.previewWidgets);
+  const originalOrder = originalWidgets.map((widget) => widget.id).join("|");
+  const nextOrder = nextWidgets.map((widget) => widget.id).join("|");
+
+  if (originalOrder === nextOrder) {
+    return null;
+  }
+
+  const movedWidget = nextWidgets.find((widget) => widget.id === input.draggedWidgetId);
+
+  if (!movedWidget?.layout) {
+    return null;
+  }
+
+  return (
+    originalWidgets.find((widget) => {
+      return (
+        widget.id !== input.draggedWidgetId &&
+        widget.layout.x === movedWidget.layout!.x &&
+        widget.layout.y === movedWidget.layout!.y
+      );
+    })?.id ?? null
+  );
+}
+
+export function resolveCommittedMoveTargetWidgetId(input: {
+  draggedWidgetId: string;
+  previewTargetWidgetId?: string | null;
+  explicitTargetWidgetId?: string | null;
+  lastOverWidgetId?: string | null;
+}) {
+  if (input.previewTargetWidgetId && input.previewTargetWidgetId !== input.draggedWidgetId) {
+    return input.previewTargetWidgetId;
+  }
+
+  if (input.explicitTargetWidgetId && input.explicitTargetWidgetId !== input.draggedWidgetId) {
+    return input.explicitTargetWidgetId;
+  }
+
+  if (input.lastOverWidgetId && input.lastOverWidgetId !== input.draggedWidgetId) {
+    return input.lastOverWidgetId;
+  }
+
+  return null;
+}
+
+function SortableWidgetCard(props: {
+  widget: WidgetSummary;
+  index: number;
+  focused: boolean;
+  pending: boolean;
+  chartState: DashboardChartState;
+  readOnly?: boolean;
+  datasetDetail?: {
+    id: string;
+    name: string;
+    sourceFilename?: string;
+  } | null;
+  onSelectWidget?: (widgetId: string) => void;
+  onDeleteWidget?: (widgetId: string) => void;
+}) {
+  const { listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
+    useSortable({
+    id: props.widget.id,
+    disabled: props.readOnly
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition
+      }}
+      className={isDragging ? "z-20" : undefined}
+    >
+      <DashboardWidgetCard
+        {...props}
+        dragHandleRef={props.readOnly ? undefined : setActivatorNodeRef}
+        dragHandleProps={props.readOnly ? undefined : listeners}
+      />
+    </div>
+  );
 }
 
 export function DashboardCanvas(props: {
@@ -108,6 +220,16 @@ export function DashboardCanvas(props: {
   onMoveWidget?: (widgetId: string, targetWidgetId: string) => void;
   onDeleteWidget?: (widgetId: string) => void;
 }) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8
+      }
+    })
+  );
+  const lastOverWidgetIdRef = useRef<string | null>(null);
+  const committedTargetWidgetIdRef = useRef<string | null>(null);
+  const activeDraggedWidgetIdRef = useRef<string | null>(null);
   const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
   const [previewWidgets, setPreviewWidgets] = useState<WidgetSummary[]>(() =>
     sortDashboardCanvasWidgets(props.widgets)
@@ -119,6 +241,19 @@ export function DashboardCanvas(props: {
 
   const widgets = draggedWidgetId ? previewWidgets : sortDashboardCanvasWidgets(props.widgets);
 
+  function commitDrag(activeId: string, explicitTargetId?: string | null) {
+    const targetWidgetId = resolveCommittedMoveTargetWidgetId({
+      draggedWidgetId: activeId,
+      previewTargetWidgetId: committedTargetWidgetIdRef.current,
+      explicitTargetWidgetId: explicitTargetId,
+      lastOverWidgetId: lastOverWidgetIdRef.current
+    });
+
+    if (targetWidgetId && targetWidgetId !== activeId) {
+      props.onMoveWidget?.(activeId, targetWidgetId);
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -127,7 +262,7 @@ export function DashboardCanvas(props: {
           Review every chart widget while keeping one active edit focus.
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2">
+      <CardContent>
         {props.widgets.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-8">
             <div className="grid gap-2">
@@ -138,44 +273,81 @@ export function DashboardCanvas(props: {
             </div>
           </div>
         ) : (
-          widgets.map((widget, index) => (
-            <DashboardWidgetCard
-              key={widget.id}
-              widget={widget}
-              index={index}
-              focused={props.activeWidgetId === widget.id}
-              pending={Boolean(props.savingWidgetIds?.[widget.id])}
-              chartState={props.chartStates?.[widget.id] ?? { status: "idle" }}
-              readOnly={props.readOnly}
-              draggable={!props.readOnly}
-              datasetDetail={
-                widget.datasetId ? props.datasetDetails?.[widget.datasetId] ?? null : null
+          <DndContext
+            id="dashboard-canvas-dnd"
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={(event) => {
+              const activeId = String(event.active.id);
+              activeDraggedWidgetIdRef.current = activeId;
+              setDraggedWidgetId(activeId);
+              lastOverWidgetIdRef.current = null;
+              committedTargetWidgetIdRef.current = null;
+            }}
+            onDragOver={(event) => {
+              const overId = event.over?.id ? String(event.over.id) : null;
+              const activeId = String(event.active.id);
+
+              if (!overId || overId === activeId) {
+                return;
               }
-              onSelectWidget={props.onSelectWidget}
-              onDragStart={(widgetId) => {
-                setDraggedWidgetId(widgetId);
-                setPreviewWidgets(sortDashboardCanvasWidgets(props.widgets));
-              }}
-              onDragOverWidget={(targetWidgetId) => {
-                if (!draggedWidgetId) {
-                  return;
-                }
 
-                setPreviewWidgets(
-                  previewDashboardCanvasSwap(props.widgets, draggedWidgetId, targetWidgetId)
-                );
-              }}
-              onDropWidget={(targetWidgetId) => {
-                if (draggedWidgetId && draggedWidgetId !== targetWidgetId) {
-                  props.onMoveWidget?.(draggedWidgetId, targetWidgetId);
-                }
+              lastOverWidgetIdRef.current = overId;
+              const nextPreviewWidgets = previewDashboardCanvasSwap(props.widgets, activeId, overId);
+              committedTargetWidgetIdRef.current = resolvePreviewMoveTargetWidgetId({
+                widgets: props.widgets,
+                previewWidgets: nextPreviewWidgets,
+                draggedWidgetId: activeId
+              });
+              setPreviewWidgets(nextPreviewWidgets);
+            }}
+            onDragCancel={() => {
+              if (activeDraggedWidgetIdRef.current) {
+                commitDrag(activeDraggedWidgetIdRef.current, lastOverWidgetIdRef.current);
+              }
 
-                setDraggedWidgetId(null);
-                setPreviewWidgets(sortDashboardCanvasWidgets(props.widgets));
-              }}
-              onDeleteWidget={props.onDeleteWidget}
-            />
-          ))
+              activeDraggedWidgetIdRef.current = null;
+              setDraggedWidgetId(null);
+              lastOverWidgetIdRef.current = null;
+              committedTargetWidgetIdRef.current = null;
+              setPreviewWidgets(sortDashboardCanvasWidgets(props.widgets));
+            }}
+            onDragEnd={(event) => {
+              const overId = event.over?.id
+                ? String(event.over.id)
+                : lastOverWidgetIdRef.current;
+              const activeId = String(event.active.id);
+
+              commitDrag(activeId, overId);
+
+              activeDraggedWidgetIdRef.current = null;
+              setDraggedWidgetId(null);
+              lastOverWidgetIdRef.current = null;
+              committedTargetWidgetIdRef.current = null;
+              setPreviewWidgets(sortDashboardCanvasWidgets(props.widgets));
+            }}
+          >
+            <SortableContext items={widgets.map((widget) => widget.id)} strategy={rectSortingStrategy}>
+              <div className="grid gap-4 md:grid-cols-2">
+                {widgets.map((widget, index) => (
+                  <SortableWidgetCard
+                    key={widget.id}
+                    widget={widget}
+                    index={index}
+                    focused={props.activeWidgetId === widget.id}
+                    pending={Boolean(props.savingWidgetIds?.[widget.id])}
+                    chartState={props.chartStates?.[widget.id] ?? { status: "idle" }}
+                    readOnly={props.readOnly}
+                    datasetDetail={
+                      widget.datasetId ? props.datasetDetails?.[widget.datasetId] ?? null : null
+                    }
+                    onSelectWidget={props.onSelectWidget}
+                    onDeleteWidget={props.onDeleteWidget}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
       </CardContent>
     </Card>

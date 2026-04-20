@@ -159,12 +159,97 @@ describe("DashboardEditor", () => {
     expect(next).toBe(widgets);
   });
 
-  it("swaps widget layouts for optimistic drag ordering", () => {
-    const widgets = createWidgets();
-    const next = applyWidgetLayoutSwap(widgets, "widget_1", "widget_2");
+  it("inserts a widget ahead of the target for optimistic drag ordering", () => {
+    const widgets = [
+      ...createWidgets(),
+      {
+        id: "widget_3",
+        tenantId: "canvas",
+        dashboardId: "dash_1",
+        type: "chart" as const,
+        datasetId: "ds_1",
+        layout: {
+          x: 0,
+          y: 1,
+          w: 1,
+          h: 1
+        },
+        config: {
+          datasetId: "ds_1",
+          chartType: "area" as const,
+          xField: "month",
+          yField: "revenue",
+          title: "Revenue trend"
+        }
+      }
+    ];
+    const next = applyWidgetLayoutSwap(widgets, "widget_3", "widget_1");
 
-    expect(next[0].layout).toEqual({ x: 1, y: 0, w: 1, h: 1 });
-    expect(next[1].layout).toEqual({ x: 0, y: 0, w: 1, h: 1 });
+    expect(next.find((widget) => widget.id === "widget_3")?.layout).toEqual({
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1
+    });
+    expect(next.find((widget) => widget.id === "widget_1")?.layout).toEqual({
+      x: 1,
+      y: 0,
+      w: 1,
+      h: 1
+    });
+    expect(next.find((widget) => widget.id === "widget_2")?.layout).toEqual({
+      x: 0,
+      y: 1,
+      w: 1,
+      h: 1
+    });
+  });
+
+  it("uses layout order rather than raw array order when computing drag results", () => {
+    const widgets = [
+      {
+        id: "widget_3",
+        tenantId: "canvas",
+        dashboardId: "dash_1",
+        type: "chart" as const,
+        datasetId: "ds_1",
+        layout: {
+          x: 0,
+          y: 1,
+          w: 1,
+          h: 1
+        },
+        config: {
+          datasetId: "ds_1",
+          chartType: "area" as const,
+          xField: "month",
+          yField: "revenue",
+          title: "Revenue trend"
+        }
+      },
+      ...createWidgets()
+    ];
+
+    const next = applyWidgetLayoutSwap(widgets, "widget_3", "widget_1");
+
+    expect(next.find((widget) => widget.id === "widget_3")?.layout).toEqual({
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1
+    });
+    expect(next.find((widget) => widget.id === "widget_1")?.layout).toEqual({
+      x: 1,
+      y: 0,
+      w: 1,
+      h: 1
+    });
+    expect(next.find((widget) => widget.id === "widget_2")?.layout).toEqual({
+      x: 0,
+      y: 1,
+      w: 1,
+      h: 1
+    });
   });
 
   it("moves active focus to a nearby widget after deletion", () => {

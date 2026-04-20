@@ -205,7 +205,7 @@ describe("createDashboardWidgetStore", () => {
     });
   });
 
-  it("swaps layout positions when moving into an occupied slot", () => {
+  it("inserts a moved widget into the target slot and pushes later widgets forward", () => {
     const widgets = swapDashboardWidgetLayouts(
       [
         {
@@ -215,22 +215,34 @@ describe("createDashboardWidgetStore", () => {
         {
           id: "widget_2",
           layout: { x: 1, y: 0, w: 1, h: 1 }
+        },
+        {
+          id: "widget_3",
+          layout: { x: 0, y: 1, w: 1, h: 1 }
         }
       ],
-      "widget_1",
-      { x: 1, y: 0, w: 1, h: 1 }
+      "widget_3",
+      { x: 0, y: 0, w: 1, h: 1 }
     );
 
-    expect(widgets).toEqual([
-      {
-        id: "widget_1",
-        layout: { x: 1, y: 0, w: 1, h: 1 }
-      },
-      {
-        id: "widget_2",
-        layout: { x: 0, y: 0, w: 1, h: 1 }
-      }
-    ]);
+    expect(widgets.find((widget) => widget.id === "widget_3")?.layout).toEqual({
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1
+    });
+    expect(widgets.find((widget) => widget.id === "widget_1")?.layout).toEqual({
+      x: 1,
+      y: 0,
+      w: 1,
+      h: 1
+    });
+    expect(widgets.find((widget) => widget.id === "widget_2")?.layout).toEqual({
+      x: 0,
+      y: 1,
+      w: 1,
+      h: 1
+    });
   });
 
   it("compacts remaining widgets into a stable two-column layout after delete", () => {

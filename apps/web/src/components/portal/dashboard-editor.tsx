@@ -153,33 +153,41 @@ export function applyWidgetLayoutSwap(
   widgetId: string,
   targetWidgetId: string
 ) {
-  const sourceWidget = widgets.find((widget) => widget.id === widgetId);
-  const targetWidget = widgets.find((widget) => widget.id === targetWidgetId);
+  const sortedWidgets = [...widgets].sort((left, right) => {
+    const leftLayout = left.layout ?? { x: 0, y: 0, w: 1, h: 1 };
+    const rightLayout = right.layout ?? { x: 0, y: 0, w: 1, h: 1 };
 
-  if (!sourceWidget || !targetWidget || sourceWidget.id === targetWidget.id) {
+    return (
+      leftLayout.y - rightLayout.y ||
+      leftLayout.x - rightLayout.x ||
+      left.id.localeCompare(right.id)
+    );
+  });
+  const sourceIndex = sortedWidgets.findIndex((widget) => widget.id === widgetId);
+  const targetIndex = sortedWidgets.findIndex((widget) => widget.id === targetWidgetId);
+
+  if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) {
     return widgets;
   }
 
-  const sourceLayout = sourceWidget.layout ?? { x: 0, y: 0, w: 1, h: 1 };
-  const targetLayout = targetWidget.layout ?? { x: 0, y: 0, w: 1, h: 1 };
+  const nextWidgets = [...sortedWidgets];
+  const [draggedWidget] = nextWidgets.splice(sourceIndex, 1);
 
-  return widgets.map((widget) => {
-    if (widget.id === widgetId) {
-      return {
-        ...widget,
-        layout: targetLayout
-      };
+  if (!draggedWidget) {
+    return widgets;
+  }
+
+  nextWidgets.splice(targetIndex, 0, draggedWidget);
+
+  return nextWidgets.map((widget, index) => ({
+    ...widget,
+    layout: {
+      x: index % 2,
+      y: Math.floor(index / 2),
+      w: 1,
+      h: 1
     }
-
-    if (widget.id === targetWidgetId) {
-      return {
-        ...widget,
-        layout: sourceLayout
-      };
-    }
-
-    return widget;
-  });
+  }));
 }
 
 export function resolveDeletedWidgetFocus(

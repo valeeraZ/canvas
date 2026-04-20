@@ -60,18 +60,31 @@ export function compactDashboardWidgetLayouts<T extends { id: string; layout: Da
     }));
 }
 
+function compactDashboardWidgetLayoutsInCurrentOrder<
+  T extends { id: string; layout: DashboardWidgetLayout }
+>(widgets: T[]): Array<T & { layout: DashboardWidgetLayout }> {
+  return widgets.map((widget, index) => ({
+    ...widget,
+    layout: getDefaultDashboardWidgetLayout(index)
+  }));
+}
+
 export function swapDashboardWidgetLayouts<T extends WidgetWithLayout>(
   widgets: T[],
   widgetId: string,
   nextLayout: DashboardWidgetLayout
 ): Array<T & { layout: DashboardWidgetLayout }> {
-  const source = widgets.find((widget) => widget.id === widgetId);
+  const orderedWidgets = [...widgets].sort((left, right) => {
+    const layoutOrder = compareDashboardWidgetLayout(left.layout, right.layout);
+    return layoutOrder || left.id.localeCompare(right.id);
+  });
+  const sourceIndex = orderedWidgets.findIndex((widget) => widget.id === widgetId);
 
-  if (!source) {
+  if (sourceIndex === -1) {
     return widgets.map((widget) => ({ ...widget }));
   }
 
-  const target = widgets.find((widget) => {
+  const target = orderedWidgets.find((widget) => {
     return (
       widget.id !== widgetId &&
       widget.layout.x === nextLayout.x &&
@@ -79,25 +92,33 @@ export function swapDashboardWidgetLayouts<T extends WidgetWithLayout>(
     );
   });
 
-  return widgets.map((widget) => {
-    if (widget.id === widgetId) {
-      return {
-        ...widget,
-        layout: nextLayout
-      };
-    }
+  if (!target) {
+    return widgets.map((widget) =>
+      widget.id === widgetId
+        ? {
+            ...widget,
+            layout: nextLayout
+          }
+        : { ...widget }
+    );
+  }
 
-    if (target && widget.id === target.id) {
-      return {
-        ...widget,
-        layout: source.layout
-      };
-    }
+  const targetIndex = orderedWidgets.findIndex((widget) => widget.id === target.id);
 
-    return {
-      ...widget
-    };
-  });
+  if (targetIndex === -1 || sourceIndex === targetIndex) {
+    return widgets.map((widget) => ({ ...widget }));
+  }
+
+  const nextOrderedWidgets = [...orderedWidgets];
+  const [draggedWidget] = nextOrderedWidgets.splice(sourceIndex, 1);
+
+  if (!draggedWidget) {
+    return widgets.map((widget) => ({ ...widget }));
+  }
+
+  nextOrderedWidgets.splice(targetIndex, 0, draggedWidget);
+
+  return compactDashboardWidgetLayoutsInCurrentOrder(nextOrderedWidgets);
 }
 
 export function isValidDashboardWidgetLayout(input: DashboardWidgetLayout) {

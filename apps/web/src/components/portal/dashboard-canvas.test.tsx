@@ -1,8 +1,11 @@
 import React from "react";
 import { describe, expect, it } from "vitest";
 import { renderToString } from "react-dom/server";
+import { DashboardWidgetCard } from "./dashboard-widget-card";
 import {
   previewDashboardCanvasSwap,
+  resolveCommittedMoveTargetWidgetId,
+  resolvePreviewMoveTargetWidgetId,
   sortDashboardCanvasWidgets
 } from "./dashboard-canvas";
 
@@ -71,7 +74,63 @@ describe("DashboardCanvas", () => {
     expect(html).toContain('data-focused-widget="true"');
   });
 
-  it("previews swap ordering when dragging over another widget", () => {
+  it("uses a stable fallback label for untitled widgets", async () => {
+    const module = await import("./dashboard-canvas").catch(() => ({
+      DashboardCanvas: null
+    }));
+
+    const html = renderToString(
+      <module.DashboardCanvas
+        widgets={[
+          {
+            id: "widget_untitled",
+            tenantId: "canvas",
+            dashboardId: "dash_1",
+            type: "chart",
+            datasetId: "ds_1",
+            layout: {
+              x: 0,
+              y: 0,
+              w: 1,
+              h: 1
+            },
+            config: null
+          }
+        ]}
+        activeWidgetId="widget_untitled"
+      />
+    );
+
+    expect(html).toContain("Chart widget");
+    expect(html).not.toContain("Chart widget 1");
+  });
+
+  it("renders drag activator props on the grip button instead of the card root", () => {
+    const html = renderToString(
+      <DashboardWidgetCard
+        widget={{
+          id: "widget_1",
+          tenantId: "canvas",
+          dashboardId: "dash_1",
+          type: "chart",
+          datasetId: "ds_1",
+          config: null
+        }}
+        index={0}
+        focused={false}
+        pending={false}
+        chartState={{ status: "idle" }}
+        dragHandleProps={{
+          name: "drag-handle-test"
+        }}
+      />
+    );
+
+    expect(html).toContain('name="drag-handle-test"');
+    expect(html).toContain('aria-label="Drag widget"');
+  });
+
+  it("previews insertion ordering when dragging the third widget over the first", () => {
     const widgets = previewDashboardCanvasSwap(
       [
         {
@@ -91,15 +150,78 @@ describe("DashboardCanvas", () => {
           datasetId: "ds_1",
           layout: { x: 1, y: 0, w: 1, h: 1 },
           config: null
+        },
+        {
+          id: "widget_3",
+          tenantId: "canvas",
+          dashboardId: "dash_1",
+          type: "chart",
+          datasetId: "ds_1",
+          layout: { x: 0, y: 1, w: 1, h: 1 },
+          config: null
         }
       ],
-      "widget_1",
-      "widget_2"
+      "widget_3",
+      "widget_1"
     );
 
     expect(sortDashboardCanvasWidgets(widgets).map((widget) => widget.id)).toEqual([
+      "widget_3",
+      "widget_1",
       "widget_2",
-      "widget_1"
     ]);
+  });
+
+  it("resolves a persisted move target from the preview layout when drag end loses over state", () => {
+    const widgets = [
+      {
+        id: "widget_1",
+        tenantId: "canvas",
+        dashboardId: "dash_1",
+        type: "chart" as const,
+        datasetId: "ds_1",
+        layout: { x: 0, y: 0, w: 1, h: 1 },
+        config: null
+      },
+      {
+        id: "widget_2",
+        tenantId: "canvas",
+        dashboardId: "dash_1",
+        type: "chart" as const,
+        datasetId: "ds_1",
+        layout: { x: 1, y: 0, w: 1, h: 1 },
+        config: null
+      },
+      {
+        id: "widget_3",
+        tenantId: "canvas",
+        dashboardId: "dash_1",
+        type: "chart" as const,
+        datasetId: "ds_1",
+        layout: { x: 0, y: 1, w: 1, h: 1 },
+        config: null
+      }
+    ];
+
+    const previewWidgets = previewDashboardCanvasSwap(widgets, "widget_3", "widget_1");
+
+    expect(
+      resolvePreviewMoveTargetWidgetId({
+        widgets,
+        previewWidgets,
+        draggedWidgetId: "widget_3"
+      })
+    ).toBe("widget_1");
+  });
+
+  it("falls back to the last hovered widget when preview target resolution is unavailable", () => {
+    expect(
+      resolveCommittedMoveTargetWidgetId({
+        draggedWidgetId: "widget_3",
+        previewTargetWidgetId: null,
+        explicitTargetWidgetId: "widget_3",
+        lastOverWidgetId: "widget_1"
+      })
+    ).toBe("widget_1");
   });
 });
