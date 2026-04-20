@@ -127,6 +127,7 @@ describe("DashboardEditor", () => {
     expect(html).toContain("Revenue by month");
     expect(html).toContain("Margin by month");
     expect(html).toContain("Series split coming later");
+    expect(html).toContain("Enlarge widget");
     expect(html).toContain('data-focused-widget="true"');
     expect(html).toContain('data-active-widget="true"');
     expect((html.match(/Loading chart\.\.\./g) ?? []).length).toBe(2);

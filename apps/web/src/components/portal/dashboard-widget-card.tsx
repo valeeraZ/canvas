@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { GripVertical, LayoutTemplate, Trash2 } from "lucide-react";
+import { GripVertical, LayoutTemplate, Maximize2, Minimize2, Trash2 } from "lucide-react";
 import type { DashboardChartState } from "./dashboard-chart-renderer";
 import { DashboardChartRenderer } from "./dashboard-chart-renderer";
 import { cn } from "../../lib/utils";
@@ -22,6 +22,12 @@ type WidgetSummary = {
     seriesField?: string;
     title?: string;
   } | null;
+  layout?: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null;
 };
 
 export function DashboardWidgetCard(props: {
@@ -39,10 +45,12 @@ export function DashboardWidgetCard(props: {
   dragHandleRef?: React.Ref<HTMLButtonElement>;
   dragHandleProps?: React.ComponentPropsWithoutRef<"button">;
   onSelectWidget?: (widgetId: string) => void;
+  onResizeWidget?: (widgetId: string, nextWidth: number) => void;
   onDeleteWidget?: (widgetId: string) => void;
 }) {
   const [deleteArmed, setDeleteArmed] = useState(false);
   const dragHandleOnClick = props.dragHandleProps?.onClick;
+  const isExpanded = (props.widget.layout?.w ?? 1) >= 2;
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key !== "Enter" && event.key !== " ") {
@@ -64,6 +72,12 @@ export function DashboardWidgetCard(props: {
 
     props.onDeleteWidget?.(props.widget.id);
     setDeleteArmed(false);
+  }
+
+  function handleResizeClick(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    props.onResizeWidget?.(props.widget.id, isExpanded ? 1 : 2);
   }
 
   return (
@@ -107,6 +121,20 @@ export function DashboardWidgetCard(props: {
                   }}
                 >
                   <GripVertical className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={isExpanded ? "Shrink widget" : "Enlarge widget"}
+                  title={isExpanded ? "Shrink widget" : "Enlarge widget"}
+                  onClick={handleResizeClick}
+                >
+                  {isExpanded ? (
+                    <Minimize2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Maximize2 className="h-3.5 w-3.5" />
+                  )}
                 </Button>
                 <Button
                   type="button"

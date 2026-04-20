@@ -5,6 +5,7 @@ import {
 } from "./dashboard-widget-store";
 import {
   compactDashboardWidgetLayouts,
+  isValidDashboardWidgetLayout,
   normalizeDashboardWidgetLayout,
   swapDashboardWidgetLayouts
 } from "./dashboard-widget-layout";
@@ -261,5 +262,32 @@ describe("createDashboardWidgetStore", () => {
       { x: 0, y: 0, w: 1, h: 1 },
       { x: 1, y: 0, w: 1, h: 1 }
     ]);
+  });
+
+  it("compacts full-width widgets without collapsing their stored span", () => {
+    const widgets = compactDashboardWidgetLayouts([
+      {
+        id: "widget_1",
+        layout: { x: 0, y: 0, w: 2, h: 1 }
+      },
+      {
+        id: "widget_2",
+        layout: { x: 1, y: 0, w: 1, h: 1 }
+      },
+      {
+        id: "widget_3",
+        layout: { x: 0, y: 1, w: 1, h: 1 }
+      }
+    ]);
+
+    expect(widgets.map((widget) => widget.layout)).toEqual([
+      { x: 0, y: 0, w: 2, h: 1 },
+      { x: 0, y: 1, w: 1, h: 1 },
+      { x: 1, y: 1, w: 1, h: 1 }
+    ]);
+  });
+
+  it("rejects layouts whose width would overflow the two-column canvas", () => {
+    expect(isValidDashboardWidgetLayout({ x: 1, y: 0, w: 2, h: 1 })).toBe(false);
   });
 });

@@ -6,6 +6,10 @@ import { LayoutTemplate, LoaderCircle, Share2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DashboardCanvas } from "./dashboard-canvas";
 import type { DashboardChartState } from "./dashboard-chart-renderer";
+import {
+  reorderDashboardCanvasWidgets,
+  resizeDashboardCanvasWidget
+} from "./dashboard-widget-layout";
 import { DashboardExportButton } from "./dashboard-export-button";
 import { DashboardImportDialog } from "./dashboard-import-dialog";
 import { DashboardSharePanel } from "./dashboard-share-panel";
@@ -153,41 +157,15 @@ export function applyWidgetLayoutSwap(
   widgetId: string,
   targetWidgetId: string
 ) {
-  const sortedWidgets = [...widgets].sort((left, right) => {
-    const leftLayout = left.layout ?? { x: 0, y: 0, w: 1, h: 1 };
-    const rightLayout = right.layout ?? { x: 0, y: 0, w: 1, h: 1 };
+  return reorderDashboardCanvasWidgets(widgets, widgetId, targetWidgetId);
+}
 
-    return (
-      leftLayout.y - rightLayout.y ||
-      leftLayout.x - rightLayout.x ||
-      left.id.localeCompare(right.id)
-    );
-  });
-  const sourceIndex = sortedWidgets.findIndex((widget) => widget.id === widgetId);
-  const targetIndex = sortedWidgets.findIndex((widget) => widget.id === targetWidgetId);
-
-  if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) {
-    return widgets;
-  }
-
-  const nextWidgets = [...sortedWidgets];
-  const [draggedWidget] = nextWidgets.splice(sourceIndex, 1);
-
-  if (!draggedWidget) {
-    return widgets;
-  }
-
-  nextWidgets.splice(targetIndex, 0, draggedWidget);
-
-  return nextWidgets.map((widget, index) => ({
-    ...widget,
-    layout: {
-      x: index % 2,
-      y: Math.floor(index / 2),
-      w: 1,
-      h: 1
-    }
-  }));
+export function applyWidgetLayoutResize(
+  widgets: DashboardWidgetSummary[],
+  widgetId: string,
+  nextWidth: number
+) {
+  return resizeDashboardCanvasWidget(widgets, widgetId, nextWidth);
 }
 
 export function resolveDeletedWidgetFocus(
@@ -207,6 +185,27 @@ export function resolveDeletedWidgetFocus(
   }
 
   return remainingWidgets[Math.min(deleteIndex, remainingWidgets.length - 1)]?.id ?? null;
+}
+
+function collectChangedWidgetIds(
+  previousWidgets: DashboardWidgetSummary[],
+  nextWidgets: DashboardWidgetSummary[]
+) {
+  const previousLayouts = new Map(
+    previousWidgets.map((widget) => [
+      widget.id,
+      `${widget.layout?.x ?? 0}:${widget.layout?.y ?? 0}:${widget.layout?.w ?? 1}:${widget.layout?.h ?? 1}`
+    ])
+  );
+
+  return nextWidgets
+    .filter((widget) => {
+      return (
+        previousLayouts.get(widget.id) !==
+        `${widget.layout?.x ?? 0}:${widget.layout?.y ?? 0}:${widget.layout?.w ?? 1}:${widget.layout?.h ?? 1}`
+      );
+    })
+    .map((widget) => widget.id);
 }
 
 function deriveChartState(input: {
@@ -679,14 +678,15 @@ export function DashboardEditor(props: {
     const previousWidgets = optimisticWidgets;
     const nextWidgets = applyWidgetLayoutSwap(previousWidgets, widgetId, targetWidgetId);
     const movedWidget = nextWidgets.find((widget) => widget.id === widgetId);
+    const changedWidgetIds = collectChangedWidgetIds(previousWidgets, nextWidgets);
 
-    if (!movedWidget?.layout || nextWidgets === previousWidgets) {
+    if (!movedWidget?.layout || nextWidgets === previousWidgets || changedWidgetIds.length === 0) {
       return;
     }
 
     setOptimisticWidgets(nextWidgets);
     setActiveWidgetId(widgetId);
-    setWidgetsSaving([widgetId, targetWidgetId], true);
+    setWidgetsSaving(changedWidgetIds, true);
     setError(null);
 
     startTransition(async () => {
@@ -701,7 +701,43 @@ export function DashboardEditor(props: {
         setOptimisticWidgets(previousWidgets);
         setError(toPortalApiError(caught));
       } finally {
-        setWidgetsSaving([widgetId, targetWidgetId], false);
+        setWidgetsSaving(changedWidgetIds, false);
+      }
+    });
+  }
+
+  function resizeWidget(widgetId: string, nextWidth: number) {
+    const previousWidgets = optimisticWidgets;
+    const nextWidgets = applyWidgetLayoutResize(previousWidgets, widgetId, nextWidth);
+    const resizedWidget = nextWidgets.find((widget) => widget.id === widgetId);
+    const changedWidgetIds = collectChangedWidgetIds(previousWidgets, nextWidgets);
+
+    if (
+      !resizedWidget?.layout ||
+      nextWidgets === previousWidgets ||
+      changedWidgetIds.length === 0
+    ) {
+      return;
+    }
+
+    setOptimisticWidgets(nextWidgets);
+    setActiveWidgetId(widgetId);
+    setWidgetsSaving(changedWidgetIds, true);
+    setError(null);
+
+    startTransition(async () => {
+      try {
+        await portalApiClient.updateDashboardWidgetLayout({
+          dashboardId: props.dashboard.id,
+          widgetId,
+          layout: resizedWidget.layout
+        });
+        router.refresh();
+      } catch (caught) {
+        setOptimisticWidgets(previousWidgets);
+        setError(toPortalApiError(caught));
+      } finally {
+        setWidgetsSaving(changedWidgetIds, false);
       }
     });
   }
@@ -801,6 +837,7 @@ export function DashboardEditor(props: {
                 chartStates={chartStates}
                 onSelectWidget={setActiveWidgetId}
                 onMoveWidget={moveWidget}
+                onResizeWidget={resizeWidget}
                 onDeleteWidget={deleteWidget}
               />
             </div>

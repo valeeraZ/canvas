@@ -69,9 +69,47 @@ describe("DashboardCanvas", () => {
     expect(html.indexOf("Margin by month")).toBeLessThan(html.indexOf("Revenue by month"));
     expect(html).toContain("Revenue by month");
     expect(html).toContain("Margin by month");
+    expect(html).toContain("Enlarge widget");
     expect(html).toContain("Drag widget");
     expect(html).toContain("Delete widget");
     expect(html).toContain('data-focused-widget="true"');
+  });
+
+  it("renders a full-width widget with shrink control and column span class", async () => {
+    const module = await import("./dashboard-canvas").catch(() => ({
+      DashboardCanvas: null
+    }));
+
+    const html = renderToString(
+      <module.DashboardCanvas
+        widgets={[
+          {
+            id: "widget_full",
+            tenantId: "canvas",
+            dashboardId: "dash_1",
+            type: "chart",
+            datasetId: "ds_1",
+            layout: {
+              x: 0,
+              y: 0,
+              w: 2,
+              h: 1
+            },
+            config: {
+              datasetId: "ds_1",
+              chartType: "bar",
+              xField: "month",
+              yField: "revenue",
+              title: "Revenue overview"
+            }
+          }
+        ]}
+        activeWidgetId="widget_full"
+      />
+    );
+
+    expect(html).toContain("Shrink widget");
+    expect(html).toContain("md:col-span-2");
   });
 
   it("uses a stable fallback label for untitled widgets", async () => {

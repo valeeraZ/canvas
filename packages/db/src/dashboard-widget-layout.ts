@@ -16,6 +16,22 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+function clampDashboardWidgetWidth(value: number | undefined) {
+  if (!isFiniteNumber(value) || value < 1) {
+    return 1;
+  }
+
+  return Math.min(Math.trunc(value), DASHBOARD_WIDGET_COLUMN_COUNT);
+}
+
+function clampDashboardWidgetHeight(value: number | undefined) {
+  if (!isFiniteNumber(value) || value < 1) {
+    return 1;
+  }
+
+  return Math.trunc(value);
+}
+
 export function getDefaultDashboardWidgetLayout(index: number): DashboardWidgetLayout {
   return {
     x: index % DASHBOARD_WIDGET_COLUMN_COUNT,
@@ -34,8 +50,8 @@ export function normalizeDashboardWidgetLayout(
   return {
     x: isFiniteNumber(input?.x) ? input.x : fallback.x,
     y: isFiniteNumber(input?.y) ? input.y : fallback.y,
-    w: isFiniteNumber(input?.w) && input.w > 0 ? input.w : 1,
-    h: isFiniteNumber(input?.h) && input.h > 0 ? input.h : 1
+    w: clampDashboardWidgetWidth(input?.w),
+    h: clampDashboardWidgetHeight(input?.h)
   };
 }
 
@@ -49,24 +65,54 @@ export function compareDashboardWidgetLayout(
 export function compactDashboardWidgetLayouts<T extends { id: string; layout: DashboardWidgetLayout }>(
   widgets: T[]
 ): Array<T & { layout: DashboardWidgetLayout }> {
-  return [...widgets]
-    .sort((left, right) => {
-      const layoutOrder = compareDashboardWidgetLayout(left.layout, right.layout);
-      return layoutOrder || left.id.localeCompare(right.id);
-    })
-    .map((widget, index) => ({
-      ...widget,
-      layout: getDefaultDashboardWidgetLayout(index)
-    }));
+  const orderedWidgets = [...widgets].sort((left, right) => {
+    const layoutOrder = compareDashboardWidgetLayout(left.layout, right.layout);
+    return layoutOrder || left.id.localeCompare(right.id);
+  });
+
+  return compactDashboardWidgetLayoutsInCurrentOrder(orderedWidgets);
 }
 
 function compactDashboardWidgetLayoutsInCurrentOrder<
   T extends { id: string; layout: DashboardWidgetLayout }
 >(widgets: T[]): Array<T & { layout: DashboardWidgetLayout }> {
-  return widgets.map((widget, index) => ({
-    ...widget,
-    layout: getDefaultDashboardWidgetLayout(index)
-  }));
+  let x = 0;
+  let y = 0;
+
+  return widgets.map((widget) => {
+    const width = clampDashboardWidgetWidth(widget.layout.w);
+    const height = clampDashboardWidgetHeight(widget.layout.h);
+
+    if (x + width > DASHBOARD_WIDGET_COLUMN_COUNT) {
+      x = 0;
+      y += 1;
+    }
+
+    const nextWidget = {
+      ...widget,
+      layout: {
+        x,
+        y,
+        w: width,
+        h: height
+      }
+    };
+
+    if (width === DASHBOARD_WIDGET_COLUMN_COUNT) {
+      x = 0;
+      y += 1;
+      return nextWidget;
+    }
+
+    x += width;
+
+    if (x >= DASHBOARD_WIDGET_COLUMN_COUNT) {
+      x = 0;
+      y += 1;
+    }
+
+    return nextWidget;
+  });
 }
 
 export function swapDashboardWidgetLayouts<T extends WidgetWithLayout>(
@@ -93,13 +139,19 @@ export function swapDashboardWidgetLayouts<T extends WidgetWithLayout>(
   });
 
   if (!target) {
-    return widgets.map((widget) =>
-      widget.id === widgetId
-        ? {
-            ...widget,
-            layout: nextLayout
-          }
-        : { ...widget }
+    return compactDashboardWidgetLayoutsInCurrentOrder(
+      orderedWidgets.map((widget) =>
+        widget.id === widgetId
+          ? {
+              ...widget,
+              layout: {
+                ...nextLayout,
+                w: clampDashboardWidgetWidth(nextLayout.w),
+                h: clampDashboardWidgetHeight(nextLayout.h)
+              }
+            }
+          : { ...widget }
+      )
     );
   }
 
@@ -130,6 +182,7 @@ export function isValidDashboardWidgetLayout(input: DashboardWidgetLayout) {
     input.y >= 0 &&
     Number.isInteger(input.w) &&
     input.w > 0 &&
+    input.x + input.w <= DASHBOARD_WIDGET_COLUMN_COUNT &&
     Number.isInteger(input.h) &&
     input.h > 0
   );

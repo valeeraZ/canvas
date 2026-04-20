@@ -15,6 +15,10 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { DashboardChartState } from "./dashboard-chart-renderer";
+import {
+  reorderDashboardCanvasWidgets,
+  sortDashboardCanvasWidgets
+} from "./dashboard-widget-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { DashboardWidgetCard } from "./dashboard-widget-card";
 
@@ -40,74 +44,14 @@ type WidgetSummary = {
   } | null;
 };
 
-function normalizeWidgetLayout(
-  widget: WidgetSummary,
-  index: number
-) {
-  return {
-    x: widget.layout?.x ?? index % 2,
-    y: widget.layout?.y ?? Math.floor(index / 2),
-    w: widget.layout?.w ?? 1,
-    h: widget.layout?.h ?? 1
-  };
-}
-
-export function sortDashboardCanvasWidgets(widgets: WidgetSummary[]) {
-  return [...widgets]
-    .map((widget, index) => ({
-      ...widget,
-      layout: normalizeWidgetLayout(widget, index)
-    }))
-    .sort((left, right) => {
-      const leftLayout = left.layout!;
-      const rightLayout = right.layout!;
-
-      return (
-        leftLayout.y - rightLayout.y ||
-        leftLayout.x - rightLayout.x ||
-        left.id.localeCompare(right.id)
-      );
-    });
-}
+export { sortDashboardCanvasWidgets } from "./dashboard-widget-layout";
 
 export function previewDashboardCanvasSwap(
   widgets: WidgetSummary[],
   draggedWidgetId: string,
   targetWidgetId: string
 ) {
-  const sortedWidgets = sortDashboardCanvasWidgets(widgets);
-  const draggedWidget = sortedWidgets.find((widget) => widget.id === draggedWidgetId);
-  const targetWidget = sortedWidgets.find((widget) => widget.id === targetWidgetId);
-
-  if (!draggedWidget || !targetWidget || draggedWidget.id === targetWidget.id) {
-    return sortedWidgets;
-  }
-
-  const nextWidgets = [...sortedWidgets];
-  const sourceIndex = nextWidgets.findIndex((widget) => widget.id === draggedWidgetId);
-  const targetIndex = nextWidgets.findIndex((widget) => widget.id === targetWidgetId);
-
-  if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) {
-    return sortedWidgets;
-  }
-
-  const [dragged] = nextWidgets.splice(sourceIndex, 1);
-
-  if (!dragged) {
-    return sortedWidgets;
-  }
-
-  nextWidgets.splice(targetIndex, 0, dragged);
-
-  return nextWidgets.map((widget, index) => ({
-    ...widget,
-    layout: {
-      x: index % 2,
-      y: Math.floor(index / 2),
-      w: 1,
-      h: 1
-    }
-  }));
+  return reorderDashboardCanvasWidgets(widgets, draggedWidgetId, targetWidgetId);
 }
 
 export function resolvePreviewMoveTargetWidgetId(input: {
@@ -175,6 +119,7 @@ function SortableWidgetCard(props: {
     sourceFilename?: string;
   } | null;
   onSelectWidget?: (widgetId: string) => void;
+  onResizeWidget?: (widgetId: string, nextWidth: number) => void;
   onDeleteWidget?: (widgetId: string) => void;
 }) {
   const { listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
@@ -190,7 +135,12 @@ function SortableWidgetCard(props: {
         transform: CSS.Transform.toString(transform),
         transition
       }}
-      className={isDragging ? "z-20" : undefined}
+      className={[
+        props.widget.layout?.w === 2 ? "md:col-span-2" : undefined,
+        isDragging ? "z-20" : undefined
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
       <DashboardWidgetCard
         {...props}
@@ -218,6 +168,7 @@ export function DashboardCanvas(props: {
   >;
   onSelectWidget?: (widgetId: string) => void;
   onMoveWidget?: (widgetId: string, targetWidgetId: string) => void;
+  onResizeWidget?: (widgetId: string, nextWidth: number) => void;
   onDeleteWidget?: (widgetId: string) => void;
 }) {
   const sensors = useSensors(
@@ -342,6 +293,7 @@ export function DashboardCanvas(props: {
                       widget.datasetId ? props.datasetDetails?.[widget.datasetId] ?? null : null
                     }
                     onSelectWidget={props.onSelectWidget}
+                    onResizeWidget={props.onResizeWidget}
                     onDeleteWidget={props.onDeleteWidget}
                   />
                 ))}
