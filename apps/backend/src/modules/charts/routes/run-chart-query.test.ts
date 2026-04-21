@@ -39,6 +39,33 @@ describe("runChartQuery", () => {
     ]);
   });
 
+  it("aggregates parsed dataset rows without requiring persisted DatasetRow records", async () => {
+    const payload = await runChartQuery({
+      chartType: "bar",
+      tenantId: "canvas",
+      datasetId: "ds_1",
+      xField: "region",
+      yField: "amount",
+      allowedFields: ["region", "amount"],
+      rows: [
+        { region: "APAC", amount: 40 },
+        { region: "APAC", amount: 2 },
+        { region: "EMEA", amount: 18 }
+      ]
+    });
+
+    expect(payload).toEqual({
+      chartType: "bar",
+      labels: ["APAC", "EMEA"],
+      series: [
+        {
+          name: "amount",
+          data: [42, 18]
+        }
+      ]
+    });
+  });
+
   it("rejects unsupported phase-1 chart types", async () => {
     await expect(
       runChartQuery({

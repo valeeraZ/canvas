@@ -17,6 +17,6 @@ export function buildUploadPreview(input: {
   return buildDatasetPreview({
     datasetId: input.datasetId,
     headers: normalized.headers,
-    rows: normalized.rows.map((row) => row.map((value) => (value ?? "").toString()))
+    rows: normalized.rows
   });
 }

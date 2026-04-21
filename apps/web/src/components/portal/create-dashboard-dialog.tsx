@@ -21,26 +21,14 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "../ui/select";
 
 export function CreateDashboardDialog(props: {
-  workbooks: Array<{
-    id: string;
-    name: string;
-  }>;
-  defaultWorkbookId?: string | null;
+  appName: string;
 }) {
   const router = useRouter();
   const apiClient = createPortalApiClient();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [workbookId, setWorkbookId] = useState(props.defaultWorkbookId ?? "none");
   const [error, setError] = useState<PortalApiError | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -52,11 +40,11 @@ export function CreateDashboardDialog(props: {
       try {
         const dashboard = await apiClient.createDashboard({
           name: name.trim() || "Untitled Dashboard",
-          workbookId: workbookId === "none" ? null : workbookId
+          workbookId: null
         });
         setOpen(false);
         setName("");
-        router.push(`/portal/dashboards/${dashboard.id}`);
+        router.push(`/portal/${props.appName}/${dashboard.id}`);
         router.refresh();
       } catch (caught) {
         setError(toPortalApiError(caught));
@@ -78,7 +66,7 @@ export function CreateDashboardDialog(props: {
         <DialogHeader>
           <DialogTitle>Create dashboard</DialogTitle>
           <DialogDescription>
-            Create a new dashboard in the current app and optionally attach it to a workbook.
+            Create a new dashboard in the current app.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
@@ -90,22 +78,6 @@ export function CreateDashboardDialog(props: {
               onChange={(event) => setName(event.target.value)}
               placeholder="Executive Overview"
             />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="create-dashboard-workbook">Workbook</Label>
-            <Select value={workbookId} onValueChange={setWorkbookId}>
-              <SelectTrigger id="create-dashboard-workbook">
-                <SelectValue placeholder="Choose a workbook" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No workbook</SelectItem>
-                {props.workbooks.map((workbook) => (
-                  <SelectItem key={workbook.id} value={workbook.id}>
-                    {workbook.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
         <PortalActionAlert error={error} title="Dashboard creation failed" />

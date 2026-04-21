@@ -1,22 +1,22 @@
+import { readScopedPortalSession } from "../scoped-session";
 import {
   createPortalBackendClient,
   createPortalBackendErrorResponse
 } from "../../../../lib/portal/backend-client";
-import { readPortalSessionFromCookieHeader } from "../../../../lib/portal/session";
+import { scopePortalSession } from "../../../../lib/portal/app-scope";
 import { createRouteRequestId, jsonWithRequestId } from "../response";
 
 export async function POST(request: Request) {
   const requestId = createRouteRequestId();
   const body = (await request.json().catch(() => ({}))) as {
+    appName?: string;
     filename?: string;
     name?: string;
     content?: string;
     contentType?: string;
     sizeBytes?: number;
   };
-  const session = readPortalSessionFromCookieHeader(
-    request.headers.get("cookie") ?? ""
-  );
+  const session = readScopedPortalSession(request);
 
   if (!session) {
     return jsonWithRequestId(
@@ -31,7 +31,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await createPortalBackendClient(session).createDatasetUpload({
+    const result = await createPortalBackendClient(
+      scopePortalSession(session, body.appName)
+    ).createDatasetUpload({
       filename: body.filename ?? "dataset.csv",
       name: body.name ?? "Dataset Upload",
       content: body.content,
@@ -47,9 +49,7 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   const requestId = createRouteRequestId();
-  const session = readPortalSessionFromCookieHeader(
-    request.headers.get("cookie") ?? ""
-  );
+  const session = readScopedPortalSession(request);
 
   if (!session) {
     return jsonWithRequestId(

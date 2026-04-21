@@ -12,6 +12,7 @@ import {
 } from "../ui/card";
 
 export function DatasetDetail(props: {
+  appName?: string | null;
   dataset: {
     id: string;
     name: string;
@@ -99,7 +100,15 @@ export function DatasetDetail(props: {
                     </div>
                   </div>
                   <Button asChild variant="outline" size="sm">
-                    <Link href={`/portal/dashboards/${dashboard.id}`}>Open</Link>
+                    <Link
+                      href={
+                        props.appName
+                          ? `/portal/${props.appName}/${dashboard.id}`
+                          : `/portal/dashboards/${dashboard.id}`
+                      }
+                    >
+                      Open
+                    </Link>
                   </Button>
                 </div>
               ))

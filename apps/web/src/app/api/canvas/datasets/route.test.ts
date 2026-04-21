@@ -66,6 +66,7 @@ describe("canvas datasets route", () => {
         cookie: buildCookie()
       },
       body: JSON.stringify({
+        appName: "frame_app",
         filename: "sales.csv",
         name: "Sales Upload",
         content: "Month,Revenue\nJan,120"

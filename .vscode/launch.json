@@ -7,18 +7,17 @@
       "request": "launch",
       "command": "corepack pnpm --dir apps/backend dev",
       "cwd": "${workspaceFolder}",
-      "preLaunchTask": "canvas:db setup",
       "env": {
         "HOST": "127.0.0.1",
-        "PORT": "3001",
-        "AUTH_BASE_URL": "http://auth.local",
-        "CANVAS_APP_NAME": "tenant_demo",
-        "DATABASE_URL": "postgres://canvas:canvas@localhost:5432/canvas",
-        "CANVAS_USE_MOCK_AUTH": "true",
-        "CANVAS_MOCK_DISPLAY_NAME": "Local Dev",
-        "CANVAS_MOCK_EMPLOYEE_ID": "dev-1",
-        "CANVAS_MOCK_ROLES": "ADMIN"
+        "PORT": "3001"
       }
+    },
+    {
+      "name": "Canvas: Backend Worker",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "corepack pnpm --dir apps/backend dev:worker",
+      "cwd": "${workspaceFolder}"
     },
     {
       "name": "Canvas: Web",
@@ -33,6 +32,7 @@
       "name": "Canvas: Full Stack",
       "configurations": [
         "Canvas: Backend",
+        "Canvas: Backend Worker",
         "Canvas: Web"
       ],
       "stopAll": true

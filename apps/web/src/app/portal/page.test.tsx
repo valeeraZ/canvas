@@ -49,9 +49,6 @@ describe("PortalHomePage", () => {
         recentDashboardsByApp: {
           "canvas-ops": "ops-dash"
         },
-        recentWorkbooksByApp: {
-          "canvas-ops": "ops-book"
-        },
         principal: {
           displayName: "Local Dev",
           employeeId: "dev-1",
@@ -76,10 +73,14 @@ describe("PortalHomePage", () => {
         apps: [
           {
             appName: "canvas",
+            appDisplayName: "Canvas Core",
+            appLogoName: "layout-dashboard",
             roles: ["ADMIN"]
           },
           {
             appName: "canvas-ops",
+            appDisplayName: "Canvas Ops",
+            appLogoName: "app-window",
             roles: ["USER"]
           }
         ]
@@ -102,22 +103,6 @@ describe("PortalHomePage", () => {
                 workbookId: "core-book"
               }
             ],
-      listWorkbooks: async () =>
-        input.selectedApp === "canvas-ops"
-          ? [
-              {
-                id: "ops-book",
-                tenantId: "canvas-ops",
-                name: "Operations Workbook"
-              }
-            ]
-          : [
-              {
-                id: "core-book",
-                tenantId: "canvas",
-                name: "Core Workbook"
-              }
-            ]
     }));
 
     const module = await import("./page");
@@ -126,9 +111,10 @@ describe("PortalHomePage", () => {
     );
 
     expect(html).toContain("Your apps");
-    expect(html).toContain("Operations Workbook");
+    expect(html).toContain("Canvas Ops");
     expect(html).toContain("Ops Overview");
-    expect(html).not.toContain("Session context");
+    expect(html).toContain("/portal/canvas-ops");
+    expect(html).not.toContain("Workbook");
     expect(html.indexOf("Ops Overview")).toBeLessThan(
       html.indexOf("Core Overview")
     );

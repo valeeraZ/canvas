@@ -1,7 +1,6 @@
 import { pathToFileURL } from "node:url";
 import { createApiApp } from "./api/app";
 import {
-  createDatasetRowStore,
   createDatasetStore,
   createImportJobStore
 } from "../../../packages/db/src/index.js";
@@ -35,7 +34,6 @@ export function createWorkerModeRuntime(input: {
   now?: () => Date;
   createImportJobStoreImpl?: typeof createImportJobStore;
   createDatasetStoreImpl?: typeof createDatasetStore;
-  createDatasetRowStoreImpl?: typeof createDatasetRowStore;
   createImportJobQueueImpl?: typeof createImportJobQueue;
   createS3ObjectReaderImpl?: typeof createS3ObjectReader;
   createObjectReaderImpl?: typeof createObjectReader;
@@ -53,8 +51,6 @@ export function createWorkerModeRuntime(input: {
     input.createImportJobStoreImpl ?? createImportJobStore;
   const createDatasetStoreImpl =
     input.createDatasetStoreImpl ?? createDatasetStore;
-  const createDatasetRowStoreImpl =
-    input.createDatasetRowStoreImpl ?? createDatasetRowStore;
   const createImportJobQueueImpl =
     input.createImportJobQueueImpl ?? createImportJobQueue;
   const createS3ObjectReaderImpl =
@@ -71,7 +67,6 @@ export function createWorkerModeRuntime(input: {
 
   const importJobs = createImportJobStoreImpl(input.runtime.db);
   const datasets = createDatasetStoreImpl(input.runtime.db);
-  const datasetRows = createDatasetRowStoreImpl(input.runtime.db);
   const importQueue = createImportJobQueueImpl({
     redis: input.runtime.queue
   });
@@ -79,7 +74,6 @@ export function createWorkerModeRuntime(input: {
     createS3ObjectReaderImpl(input.runtime.config.storage)
   );
   const executeJob = createWorkerJobExecutorImpl({
-    datasetRows,
     storageBucket: input.runtime.config.storage.bucket,
     importJobs,
     datasets,

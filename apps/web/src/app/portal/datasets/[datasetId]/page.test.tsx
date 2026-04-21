@@ -5,12 +5,14 @@ import { TooltipProvider } from "../../../../components/ui/tooltip";
 
 const cookiesMock = vi.fn();
 const createPortalBackendClientMock = vi.fn();
+const redirectMock = vi.fn();
 
 vi.mock("next/headers", () => ({
   cookies: cookiesMock
 }));
 
 vi.mock("next/navigation", () => ({
+  redirect: redirectMock,
   useRouter: () => ({
     refresh: vi.fn(),
     push: vi.fn()
@@ -26,9 +28,10 @@ describe("PortalDatasetDetailPage", () => {
   beforeEach(() => {
     cookiesMock.mockReset();
     createPortalBackendClientMock.mockReset();
+    redirectMock.mockReset();
   });
 
-  it("renders dataset metadata and usage", async () => {
+  it("redirects legacy dataset detail URLs into the selected app scope", async () => {
     const session = Buffer.from(
       JSON.stringify({
         token: "local-dev-token",
@@ -56,38 +59,63 @@ describe("PortalDatasetDetailPage", () => {
           displayName: "Local Dev",
           employeeId: "dev-1"
         },
-        apps: [{ appName: "canvas", roles: ["ADMIN"] }]
-      }),
-      getDataset: async () => ({
-        id: "ds_1",
-        name: "Sales Upload",
-        status: "queued",
-        uploadedByDisplayName: "Local Dev",
-        sourceFilename: "sales.csv",
-        contentType: "text/csv",
-        sizeBytes: 256,
-        importStatus: "queued",
-        usageSummary: {
-          dashboards: [{ id: "dash_1", name: "Executive Overview" }],
-          widgets: [],
-          workbooks: []
-        }
+        apps: [{ appName: "canvas", appDisplayName: "Canvas", appLogoName: "app-window", roles: ["ADMIN"] }]
       })
     });
 
     const module = await import("./page");
-    const html = renderToString(
-      <TooltipProvider>
-        {await module.default({
-          params: Promise.resolve({
-            datasetId: "ds_1"
-          })
-        })}
-      </TooltipProvider>
-    );
+    await module.default({
+      params: Promise.resolve({
+        datasetId: "ds_1"
+      })
+    });
 
-    expect(html).toContain("Sales Upload");
-    expect(html).toContain("Local Dev");
-    expect(html).toContain("Executive Overview");
+    expect(redirectMock).toHaveBeenCalledWith("/portal/canvas/datasets/ds_1");
+  });
+
+  it("redirects the legacy dataset detail route into the first accessible app when the stored selected app is stale", async () => {
+    const session = Buffer.from(
+      JSON.stringify({
+        token: "local-dev-token",
+        selectedApp: "retired-app",
+        principal: {
+          displayName: "Local Dev",
+          employeeId: "dev-1",
+          roles: ["ADMIN"]
+        }
+      }),
+      "utf8"
+    ).toString("base64url");
+
+    cookiesMock.mockResolvedValue({
+      get: (name: string) =>
+        name === "canvas_portal_session" ? { value: session } : undefined
+    });
+
+    createPortalBackendClientMock.mockReturnValue({
+      listAccessibleApps: async () => ({
+        principal: {
+          displayName: "Local Dev",
+          employeeId: "dev-1"
+        },
+        apps: [
+          {
+            appName: "frame_app",
+            appDisplayName: "FRAME App",
+            appLogoName: "app-window",
+            roles: ["ADMIN"]
+          }
+        ]
+      })
+    });
+
+    const module = await import("./page");
+    await module.default({
+      params: Promise.resolve({
+        datasetId: "ds_1"
+      })
+    });
+
+    expect(redirectMock).toHaveBeenCalledWith("/portal/frame_app/datasets/ds_1");
   });
 });

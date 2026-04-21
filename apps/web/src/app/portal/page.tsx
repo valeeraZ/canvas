@@ -1,7 +1,6 @@
 import React from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { ArrowRight } from "lucide-react";
 import { AppInventory } from "../../components/portal/app-inventory";
 import { LoginForm } from "../../components/portal/login-form";
 import { PortalShell } from "../../components/portal/portal-shell";
@@ -87,26 +86,20 @@ export default async function PortalHomePage() {
         ...session,
         selectedApp: appName
       });
-      const [dashboards, workbooks] = await Promise.all([
-        appClient.listDashboards(),
-        appClient.listWorkbooks()
-      ]);
+      const dashboards = await appClient.listDashboards();
       const recentDashboardId = session.recentDashboardsByApp?.[appName];
-      const recentWorkbookId = session.recentWorkbooksByApp?.[appName];
       const recentDashboard =
         dashboards.find((dashboard) => dashboard.id === recentDashboardId) ??
         dashboards[0] ??
         null;
-      const recentWorkbook =
-        workbooks.find((workbook) => workbook.id === recentWorkbookId) ??
-        workbooks[0] ??
-        null;
+      const appRecord = appsByName.get(appName);
 
       return {
         appName,
-        roles: appsByName.get(appName)?.roles ?? [],
-        recentDashboardName: recentDashboard?.name ?? null,
-        recentWorkbookName: recentWorkbook?.name ?? null
+        appDisplayName: appRecord?.appDisplayName ?? appName,
+        appLogoName: appRecord?.appLogoName ?? "app-window",
+        roles: appRecord?.roles ?? [],
+        recentDashboardName: recentDashboard?.name ?? null
       };
     })
   );
@@ -114,23 +107,15 @@ export default async function PortalHomePage() {
   return (
     <PortalShell
       apps={orderedApps}
-      currentApp={session.selectedApp}
+      currentApp={null}
       principal={session.principal}
       title="Your apps"
-      description="Start from the apps you can access, then enter an app to manage its dashboards and workbooks."
+      description="Start from the apps you can access, then jump directly into each app's dashboards."
       currentSection="overview"
       breadcrumbs={[
         { label: "Portal", href: "/portal" },
         { label: "Overview" }
       ]}
-      actions={
-        <Button asChild>
-          <Link href="/portal/dashboards">
-            Open dashboards
-            <ArrowRight className="size-4" />
-          </Link>
-        </Button>
-      }
     >
       <section className="grid gap-4">
         <Card>
@@ -138,7 +123,7 @@ export default async function PortalHomePage() {
             <CardTitle>Apps overview</CardTitle>
             <CardDescription>
               Recently used apps float to the top so you can jump back into active
-              dashboard and workbook management quickly.
+              dashboards quickly.
             </CardDescription>
           </CardHeader>
           <CardContent>

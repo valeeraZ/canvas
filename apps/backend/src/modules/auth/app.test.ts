@@ -118,10 +118,14 @@ describe("auth routes", () => {
       apps: [
         {
           appName: "canvas",
+          appDisplayName: "canvas",
+          appLogoName: "app-window",
           roles: ["ADMIN"]
         },
         {
           appName: "canvas-ops",
+          appDisplayName: "canvas-ops",
+          appLogoName: "app-window",
           roles: ["USER"]
         }
       ]

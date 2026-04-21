@@ -4,6 +4,7 @@ import type {
   AuthorizationContext,
   AuthorizationResolver
 } from "../../../../../packages/auth/src/index.js";
+import { fetchAppMetadata } from "../../../../../packages/auth/src/index.js";
 import { selectApp } from "./routes/select-app";
 import {
   accessibleAppsResponseSchema,
@@ -36,6 +37,35 @@ export type AuthModuleOptions = {
   authorizationResolver: AuthorizationResolver;
   sessionStore: CanvasSessionStore;
 };
+
+async function hydrateAccessibleApp(
+  app: AccessibleApp,
+  input: {
+    authBaseUrl: string;
+    token: string;
+    mockContext?: AuthorizationContext;
+  }
+) {
+  if (input.mockContext) {
+    return {
+      ...app,
+      appDisplayName: app.appName,
+      appLogoName: "app-window"
+    };
+  }
+
+  const metadata = await fetchAppMetadata({
+    authBaseUrl: input.authBaseUrl,
+    token: input.token,
+    appName: app.appName
+  });
+
+  return {
+    ...app,
+    appDisplayName: metadata.appDisplayName,
+    appLogoName: metadata.appLogoName
+  };
+}
 
 function readBearerToken(header: string | undefined): string | null {
   if (!header?.startsWith("Bearer ")) {
@@ -140,13 +170,22 @@ export const authModule: FastifyPluginAsync<AuthModuleOptions> = async (
         mockAccessibleApps: options.mockAccessibleApps
       })
     ]);
+    const apps = await Promise.all(
+      (accessibleApps ?? []).map((app) =>
+        hydrateAccessibleApp(app, {
+          authBaseUrl: options.authBaseUrl,
+          token,
+          mockContext: options.mockContext
+        })
+      )
+    );
 
     return {
       principal: principal ?? {
         displayName: options.mockContext?.displayName ?? "Unknown user",
         employeeId: options.mockContext?.employeeId ?? "unknown"
       },
-      apps: accessibleApps ?? []
+      apps
     };
   });
 

@@ -14,7 +14,6 @@ export type DatasetPreview = {
   datasetId: string;
   columns: DatasetPreviewColumn[];
   sampleRows: NormalizedDatasetRecord[];
-  records: NormalizedDatasetRecord[];
 };
 
 export type ChartWidgetConfig = {

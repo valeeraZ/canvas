@@ -80,8 +80,7 @@ function normalizeDatasetPreview(input: unknown): DatasetPreview | null {
   if (
     typeof preview.datasetId !== "string" ||
     !Array.isArray(preview.columns) ||
-    !Array.isArray(preview.sampleRows) ||
-    !Array.isArray(preview.records)
+    !Array.isArray(preview.sampleRows)
   ) {
     return null;
   }
@@ -215,6 +214,7 @@ export function createDatasetStore(prisma: PrismaClient) {
       storageBucket?: string;
       storageObjectKey?: string;
       storageUploadId?: string;
+      status?: DatasetRecord["status"];
       importStatus?: DatasetRecord["status"];
     }) {
       const dataset = await prisma.dataset.findFirst({
@@ -243,6 +243,7 @@ export function createDatasetStore(prisma: PrismaClient) {
           storageBucket: input.storageBucket,
           storageObjectKey: input.storageObjectKey,
           storageUploadId: input.storageUploadId,
+          status: input.status,
           importStatus: input.importStatus
         },
         include: tenantSlugInclude

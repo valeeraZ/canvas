@@ -166,7 +166,8 @@ describe("createDatasetsService", () => {
         storageBucket: "canvas-raw",
         storageObjectKey: "canvas/uploads/sales.csv",
         storageUploadId: "s3-upload-1",
-        importStatus: "queued"
+        status: "profiling",
+        importStatus: "profiling"
       },
       include: {
         tenant: {
@@ -183,7 +184,7 @@ describe("createDatasetsService", () => {
       bucket: "canvas-raw",
       objectKey: "canvas/uploads/sales.csv",
       sizeBytes: 21,
-      importStatus: "queued"
+      importStatus: "profiling"
     });
   });
 
@@ -243,5 +244,84 @@ describe("createDatasetsService", () => {
     ).rejects.toThrow("stream failed");
 
     expect(importQueue.enqueue).not.toHaveBeenCalled();
+  });
+
+  it("runs chart queries from cached object storage content instead of DatasetRow records", async () => {
+    const preview = {
+      datasetId: "ds_1",
+      columns: [
+        { name: "region", type: "string" as const },
+        { name: "amount", type: "number" as const }
+      ],
+      sampleRows: []
+    };
+    const prisma = {
+      dataset: {
+        findFirst: vi
+          .fn()
+          .mockResolvedValueOnce({
+            id: "ds_1",
+            preview
+          })
+          .mockResolvedValueOnce({
+            id: "ds_1",
+            tenantId: "tenant_row_1",
+            name: "Sales Upload",
+            status: "ready",
+            warnings: [],
+            preview,
+            storageBucket: "canvas-raw",
+            storageObjectKey: "canvas/uploads/sales.csv",
+            tenant: {
+              slug: "canvas"
+            }
+          })
+      },
+      $queryRawUnsafe: vi.fn(async () => {
+        throw new Error("DatasetRow records should not be queried");
+      })
+    } as never;
+    const cache = {
+      get: vi.fn(async () => null),
+      set: vi.fn(async () => undefined),
+      delete: vi.fn(async () => undefined)
+    };
+    const objectReader = {
+      read: vi.fn(async () => ({
+        bucket: "canvas-raw",
+        key: "canvas/uploads/sales.csv",
+        body: Buffer.from("Region,Amount\nAPAC,40\nAPAC,2\nEMEA,18")
+      }))
+    };
+    const service = createDatasetsService({
+      db: prisma,
+      tenantId: "canvas",
+      cache,
+      objectReader
+    });
+
+    const payload = await service.runChartQuery({
+      tenantId: "canvas",
+      datasetId: "ds_1",
+      chartType: "bar",
+      xField: "region",
+      yField: "amount"
+    });
+
+    expect(payload).toEqual({
+      chartType: "bar",
+      labels: ["APAC", "EMEA"],
+      series: [
+        {
+          name: "amount",
+          data: [42, 18]
+        }
+      ]
+    });
+    expect(prisma.$queryRawUnsafe).not.toHaveBeenCalled();
+    expect(objectReader.read).toHaveBeenCalledWith({
+      bucket: "canvas-raw",
+      key: "canvas/uploads/sales.csv"
+    });
   });
 });

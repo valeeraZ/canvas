@@ -7,14 +7,10 @@ describe("createBackendRuntimeConfig", () => {
 
     expect(config.host).toBe("127.0.0.1");
     expect(config.port).toBe(3001);
-    expect(config.authBaseUrl).toBe("http://auth.local");
+    expect(config.authBaseUrl).toBe("http://localhost:8000");
     expect(config.appName).toBe("tenant_demo");
     expect(config.databaseUrl).toBe("postgres://canvas:canvas@localhost:5432/canvas");
-    expect(config.mockContext).toEqual({
-      displayName: "Local Dev",
-      employeeId: "dev-1",
-      roles: ["ADMIN"]
-    });
+    expect(config.mockContext).toBeUndefined();
   });
 
   it("allows environment overrides and disables mock auth when requested", () => {

@@ -14,7 +14,7 @@ describe("buildUploadPreview", () => {
       { name: "revenue", type: "number" },
       { name: "active", type: "boolean" }
     ]);
-    expect(preview?.records[1]).toEqual({
+    expect(preview?.sampleRows[1]).toEqual({
       month: "Feb",
       revenue: 150,
       active: false

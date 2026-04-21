@@ -8,9 +8,6 @@ describe("createWorkerJobExecutor", () => {
   it("adapts queue job ids into the import executor contract", async () => {
     const runImportJobImpl = vi.fn(async () => undefined);
     const execute = createWorkerJobExecutor({
-      datasetRows: {
-        replaceRows: vi.fn(async () => [])
-      },
       storageBucket: "canvas-raw",
       importJobs: {
         claimNext: vi.fn(async () => null),
@@ -29,7 +26,6 @@ describe("createWorkerJobExecutor", () => {
           body: Buffer.from("")
         }))
       },
-      persistNormalizedTable: vi.fn(async () => undefined),
       runImportJobImpl
     });
 
@@ -43,23 +39,9 @@ describe("createWorkerJobExecutor", () => {
     );
   });
 
-  it("binds the database client into normalized table persistence", async () => {
-    const datasetRows = {
-      replaceRows: vi.fn(async () => [])
-    };
-    const persistNormalizedTable = vi.fn(async () => undefined);
-    const runImportJobImpl = vi.fn(async ({ persistNormalizedTable, ...input }) => {
-      await persistNormalizedTable({
-        tenantId: "canvas",
-        datasetId: "ds_1",
-        headers: ["month"],
-        rows: [["Jan"]]
-      });
-
-      return input;
-    });
+  it("does not expose row persistence to profiling jobs", async () => {
+    const runImportJobImpl = vi.fn(async (input) => input);
     const execute = createWorkerJobExecutor({
-      datasetRows,
       storageBucket: "canvas-raw",
       importJobs: {
         claimNext: vi.fn(async () => null),
@@ -78,19 +60,16 @@ describe("createWorkerJobExecutor", () => {
           body: Buffer.from("")
         }))
       },
-      persistNormalizedTable,
       runImportJobImpl
     });
 
     await execute("job_123");
 
-    expect(persistNormalizedTable).toHaveBeenCalledWith({
-      datasetRows,
-      tenantId: "canvas",
-      datasetId: "ds_1",
-      headers: ["month"],
-      rows: [["Jan"]]
-    });
+    expect(runImportJobImpl).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        persistNormalizedTable: expect.any(Function)
+      })
+    );
   });
 });
 

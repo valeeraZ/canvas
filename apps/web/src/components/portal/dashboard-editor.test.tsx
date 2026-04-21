@@ -33,8 +33,7 @@ describe("DashboardEditor", () => {
         { name: "revenue", type: "number" as const },
         { name: "profit", type: "number" as const }
       ],
-      sampleRows: [{ month: "Jan", revenue: 120, profit: 32 }],
-      records: [{ month: "Jan", revenue: 120, profit: 32 }]
+      sampleRows: [{ month: "Jan", revenue: 120, profit: 32 }]
     }
   };
 

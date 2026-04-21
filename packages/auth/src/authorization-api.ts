@@ -14,6 +14,12 @@ export type AccessibleApp = {
   roles: string[];
 };
 
+export type AuthorizationAppMetadata = {
+  appName: string;
+  appDisplayName: string;
+  appLogoName: string;
+};
+
 export type AuthorizationApiInput = {
   authBaseUrl: string;
   token: string;
@@ -26,6 +32,21 @@ export type AuthorizationApiInput = {
 function createHeaders(token: string): HeadersInit {
   return {
     Authorization: `Bearer ${token}`
+  };
+}
+
+function normalizeAppName(value: string | undefined) {
+  return value?.trim() ?? "";
+}
+
+function normalizeAccessibleApp(item: {
+  app_name?: string;
+  appName?: string;
+  roles?: string[];
+}): AccessibleApp {
+  return {
+    appName: normalizeAppName(item.app_name ?? item.appName),
+    roles: Array.isArray(item.roles) ? item.roles : []
   };
 }
 
@@ -109,10 +130,43 @@ export async function fetchAccessibleApps(input: {
     roles: string[];
   }>;
 
-  return payload.map((item) => ({
-    appName: item.app_name,
-    roles: item.roles
-  }));
+  return payload.map(normalizeAccessibleApp);
+}
+
+export async function fetchAppMetadata(input: {
+  authBaseUrl: string;
+  token: string;
+  appName: string;
+  fetchImpl?: typeof fetch;
+}): Promise<AuthorizationAppMetadata> {
+  const fetchImpl = input.fetchImpl ?? fetch;
+  const baseUrl = input.authBaseUrl.replace(/\/+$/, "");
+  const response = await fetchImpl(
+    `${baseUrl}/v1/app/${encodeURIComponent(input.appName)}`,
+    {
+      headers: createHeaders(input.token)
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch app metadata");
+  }
+
+  const payload = (await response.json()) as {
+    app_name?: string;
+    appName?: string;
+    app_display_name?: string;
+    appDisplayName?: string;
+    app_logo_name?: string;
+    appLogoName?: string;
+  };
+
+  return {
+    appName: normalizeAppName(payload.app_name ?? payload.appName) || input.appName,
+    appDisplayName:
+      payload.app_display_name ?? payload.appDisplayName ?? input.appName,
+    appLogoName: payload.app_logo_name ?? payload.appLogoName ?? "app-window"
+  };
 }
 
 export async function fetchAuthorizationContext(
@@ -130,22 +184,22 @@ export async function fetchAuthorizationContext(
     fetchImpl
   });
 
-  const rolesResponse = await fetchImpl(
-    `${baseUrl}/v1/authorization/roles/${input.appName}`,
-    {
-      headers: createHeaders(input.token)
-    }
-  );
+  const accessibleApps = await fetchAccessibleApps({
+    authBaseUrl: baseUrl,
+    token: input.token,
+    fetchImpl,
+    mockContext: input.mockContext,
+    mockAccessibleApps: input.mockAccessibleApps
+  });
+  const matchedApp = accessibleApps.find((app) => app.appName === input.appName);
 
-  if (!rolesResponse.ok) {
-    throw new Error("Failed to fetch tenant roles");
+  if (!matchedApp) {
+    throw new Error("App is not accessible to the current principal");
   }
-
-  const roles = (await rolesResponse.json()) as { roles: string[] };
 
   return {
     displayName: currentUser.display_name,
     employeeId: currentUser.employee_id,
-    roles: roles.roles
+    roles: matchedApp.roles
   };
 }

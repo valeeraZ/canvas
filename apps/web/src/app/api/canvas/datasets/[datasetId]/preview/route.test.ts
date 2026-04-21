@@ -35,8 +35,7 @@ describe("canvas dataset preview route", () => {
               { name: "month", type: "string" },
               { name: "revenue", type: "number" }
             ],
-            sampleRows: [{ month: "Jan", revenue: 120 }],
-            records: [{ month: "Jan", revenue: 120 }]
+            sampleRows: [{ month: "Jan", revenue: 120 }]
           }),
           { status: 200 }
         )

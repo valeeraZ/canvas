@@ -126,11 +126,7 @@ describe("dataset routes", () => {
               { name: "month", type: "string" },
               { name: "revenue", type: "number" }
             ],
-            sampleRows: [{ month: "Jan", revenue: 120 }],
-            records: [
-              { month: "Jan", revenue: 120 },
-              { month: "Feb", revenue: 150 }
-            ]
+            sampleRows: [{ month: "Jan", revenue: 120 }]
           };
         },
         runChartQuery: async (input?: {
@@ -165,7 +161,7 @@ describe("dataset routes", () => {
             bucket: "canvas-raw",
             objectKey: "canvas-data/uploads/sales.csv",
             sizeBytes: 11,
-            importStatus: "queued"
+            importStatus: "profiling"
           };
         }
       }
@@ -271,6 +267,7 @@ describe("dataset routes", () => {
     });
     expect(uploadResponse.statusCode).toBe(200);
     expect(uploadResponse.json().uploadId).toBe("upload_123");
+    expect(uploadResponse.json().importStatus).toBe("profiling");
     expect((uploadFileRequest as { tenantId?: string })?.tenantId).toBe(
       "canvas-data"
     );

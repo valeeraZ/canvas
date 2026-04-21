@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import type { ChartWidgetConfig, DatasetPreview } from "../../../../../packages/contracts/src/dashboard-editor.js";
-import type { DashboardWidgetRecord } from "../../../../../packages/contracts/src/widgets.js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -18,6 +17,12 @@ type DatasetOption = {
   id: string;
   name: string;
   status: string;
+};
+
+type ConfigPanelWidget = {
+  id: string;
+  datasetId: string | null;
+  config: ChartWidgetConfig | null;
 };
 
 export const CONFIG_PANEL_GROUPS = ["Chart", "Data", "Meta"] as const;
@@ -55,7 +60,7 @@ function getSupportedChartType(
 }
 
 function buildInitialConfig(
-  widget: DashboardWidgetRecord | null,
+  widget: ConfigPanelWidget | null,
   previews: Record<string, DatasetPreview | null>,
   datasets: DatasetOption[]
 ): ChartWidgetConfig | null {
@@ -112,7 +117,7 @@ export function buildDatasetConfigUpdate(input: {
 
 export function shouldResetWidgetConfigDraft(input: {
   currentDraft: ChartWidgetConfig | null;
-  widget: DashboardWidgetRecord | null;
+  widget: ConfigPanelWidget | null;
   previews: Record<string, DatasetPreview | null>;
   datasets: DatasetOption[];
 }) {
@@ -122,7 +127,7 @@ export function shouldResetWidgetConfigDraft(input: {
 }
 
 export function DashboardWidgetConfigPanel(props: {
-  widget: DashboardWidgetRecord | null;
+  widget: ConfigPanelWidget | null;
   datasets: DatasetOption[];
   previews: Record<string, DatasetPreview | null>;
   pending: boolean;

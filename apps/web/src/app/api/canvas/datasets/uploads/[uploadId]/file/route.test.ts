@@ -47,7 +47,7 @@ describe("canvas dataset upload file route", () => {
             bucket: "canvas-raw",
             objectKey: "canvas/uploads/sales.csv",
             sizeBytes: 21,
-            importStatus: "queued"
+            importStatus: "profiling"
           }),
           {
             status: 200,

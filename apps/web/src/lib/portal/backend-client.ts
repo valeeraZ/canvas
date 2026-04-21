@@ -212,6 +212,8 @@ export function createPortalBackendClient(session: PortalSession) {
         };
         apps: Array<{
           appName: string;
+          appDisplayName: string;
+          appLogoName: string;
           roles: string[];
         }>;
       }>(response);
@@ -369,9 +371,12 @@ export function createPortalBackendClient(session: PortalSession) {
       return readJson<
         Array<{
           id: string;
+          tenantId: string;
           name: string;
           status: string;
           warningCount: number;
+          uploadedByExternalUserId?: string;
+          uploadedByDisplayName?: string;
         }>
       >(response);
     },

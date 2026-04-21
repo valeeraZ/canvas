@@ -19,12 +19,17 @@ import {
 } from "../ui/table";
 
 export function DatasetList(props: {
+  appName?: string | null;
   datasets: Array<{
     id: string;
+    tenantId?: string;
     name: string;
     status: string;
     warningCount: number;
+    uploadedByExternalUserId?: string;
+    uploadedByDisplayName?: string;
   }>;
+  appLabels?: Record<string, string>;
   actions?: React.ReactNode;
 }) {
   return (
@@ -50,6 +55,8 @@ export function DatasetList(props: {
           <TableHeader>
             <TableRow>
               <TableHead>Dataset</TableHead>
+              <TableHead>App</TableHead>
+              <TableHead>Author</TableHead>
               <TableHead>ID</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Warnings</TableHead>
@@ -61,10 +68,29 @@ export function DatasetList(props: {
                 <TableCell className="font-medium">
                   <Link
                     className="text-foreground hover:text-primary"
-                    href={`/portal/datasets/${dataset.id}`}
+                    href={
+                      dataset.tenantId
+                        ? `/portal/${dataset.tenantId}/datasets/${dataset.id}`
+                        : props.appName
+                          ? `/portal/${props.appName}/datasets/${dataset.id}`
+                        : `/portal/datasets/${dataset.id}`
+                    }
                   >
                     {dataset.name}
                   </Link>
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {props.appLabels?.[dataset.tenantId ?? ""] ??
+                    dataset.tenantId ??
+                    props.appName ??
+                    "Unknown"}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {dataset.uploadedByDisplayName
+                    ? dataset.uploadedByExternalUserId
+                      ? `${dataset.uploadedByDisplayName} (${dataset.uploadedByExternalUserId})`
+                      : dataset.uploadedByDisplayName
+                    : dataset.uploadedByExternalUserId ?? "Unknown"}
                 </TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">
                   {dataset.id}

@@ -24,14 +24,10 @@ describe("dashboard editor contracts", () => {
         { name: "revenue", type: "number" },
         { name: "active", type: "boolean" }
       ],
-      sampleRows: [{ month: "Jan", revenue: 120, active: true }],
-      records: [
-        { month: "Jan", revenue: 120, active: true },
-        { month: "Feb", revenue: 150, active: false }
-      ]
+      sampleRows: [{ month: "Jan", revenue: 120, active: true }]
     };
 
     expect(preview.columns[1]?.type).toBe("number");
-    expect(preview.records[0]?.month).toBe("Jan");
+    expect(preview.sampleRows[0]?.month).toBe("Jan");
   });
 });

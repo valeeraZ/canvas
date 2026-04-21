@@ -1,4 +1,4 @@
-import { readPortalSessionFromCookieHeader } from "../../../../../../lib/portal/session";
+import { readScopedPortalSession } from "../../../scoped-session";
 import {
   createPortalBackendClient,
   createPortalBackendErrorResponse
@@ -22,9 +22,7 @@ export async function POST(
   };
 
   const { dashboardId } = await context.params;
-  const session = readPortalSessionFromCookieHeader(
-    request.headers.get("cookie") ?? ""
-  );
+  const session = readScopedPortalSession(request);
 
   if (!session) {
     return jsonWithRequestId(

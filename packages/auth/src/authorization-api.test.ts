@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import * as authorizationApi from "./authorization-api";
 
 describe("fetchAuthorizationContext", () => {
-  it("loads current user and app roles with bearer auth", async () => {
+  it("loads current user and resolves app roles from the accessible app list", async () => {
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(
@@ -15,7 +15,19 @@ describe("fetchAuthorizationContext", () => {
         )
       )
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ roles: ["USER", "ADMIN"] }), { status: 200 })
+        new Response(
+          JSON.stringify([
+            {
+              app_name: "canvas",
+              roles: ["USER", "ADMIN"]
+            },
+            {
+              app_name: "canvas-ops",
+              roles: ["USER"]
+            }
+          ]),
+          { status: 200 }
+        )
       );
 
     const result = await authorizationApi.fetchAuthorizationContext({
@@ -39,7 +51,7 @@ describe("fetchAuthorizationContext", () => {
     );
     expect(fetchImpl).toHaveBeenNthCalledWith(
       2,
-      "https://auth.internal/v1/authorization/roles/canvas",
+      "https://auth.internal/v1/authorization/roles",
       {
         headers: {
           Authorization: "Bearer token-123"
@@ -98,6 +110,51 @@ describe("fetchAuthorizationContext", () => {
     );
   });
 
+  it("loads app metadata from the auth app endpoint", async () => {
+    const fetchImpl = vi.fn().mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          app_name: "frame_app",
+          app_display_name: "FRAME App",
+          app_logo_name: "app-window"
+        }),
+        { status: 200 }
+      )
+    );
+
+    const result = await (authorizationApi as typeof authorizationApi & {
+      fetchAppMetadata: (input: {
+        authBaseUrl: string;
+        token: string;
+        appName: string;
+        fetchImpl: typeof fetch;
+      }) => Promise<{
+        appName: string;
+        appDisplayName: string;
+        appLogoName: string;
+      }>;
+    }).fetchAppMetadata({
+      authBaseUrl: "https://auth.internal",
+      token: "token-123",
+      appName: "frame_app",
+      fetchImpl
+    });
+
+    expect(result).toEqual({
+      appName: "frame_app",
+      appDisplayName: "FRAME App",
+      appLogoName: "app-window"
+    });
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://auth.internal/v1/app/frame_app",
+      {
+        headers: {
+          Authorization: "Bearer token-123"
+        }
+      }
+    );
+  });
+
   it("supports local mock context without calling external endpoints", async () => {
     const fetchImpl = vi.fn();
 
@@ -119,5 +176,39 @@ describe("fetchAuthorizationContext", () => {
       roles: ["ADMIN"]
     });
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("rejects authorization for an app outside the accessible app list", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            display_name: "Ada Lovelace",
+            employee_id: "emp-42"
+          }),
+          { status: 200 }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            {
+              app_name: "canvas-ops",
+              roles: ["USER"]
+            }
+          ]),
+          { status: 200 }
+        )
+      );
+
+    await expect(
+      authorizationApi.fetchAuthorizationContext({
+        authBaseUrl: "https://auth.internal",
+        token: "token-123",
+        appName: "canvas",
+        fetchImpl
+      })
+    ).rejects.toThrow("App is not accessible to the current principal");
   });
 });

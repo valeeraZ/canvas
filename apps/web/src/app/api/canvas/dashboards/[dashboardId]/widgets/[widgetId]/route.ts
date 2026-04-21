@@ -1,4 +1,4 @@
-import { readPortalSessionFromCookieHeader } from "../../../../../../../lib/portal/session";
+import { readScopedPortalSession } from "../../../../scoped-session";
 import {
   createPortalBackendClient,
   createPortalBackendErrorResponse
@@ -14,9 +14,7 @@ type RouteContext = {
 
 export async function PATCH(request: Request, context: RouteContext) {
   const requestId = createRouteRequestId();
-  const session = readPortalSessionFromCookieHeader(
-    request.headers.get("cookie") ?? ""
-  );
+  const session = readScopedPortalSession(request);
 
   if (!session) {
     return jsonWithRequestId(
@@ -49,9 +47,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(request: Request, context: RouteContext) {
   const requestId = createRouteRequestId();
-  const session = readPortalSessionFromCookieHeader(
-    request.headers.get("cookie") ?? ""
-  );
+  const session = readScopedPortalSession(request);
 
   if (!session) {
     return jsonWithRequestId(

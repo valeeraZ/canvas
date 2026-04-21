@@ -1,16 +1,14 @@
+import { readScopedPortalSession } from "../../scoped-session";
 import { NextResponse } from "next/server";
 import {
   createPortalBackendClient,
   createPortalBackendErrorResponse
 } from "../../../../../lib/portal/backend-client";
-import { readPortalSessionFromCookieHeader } from "../../../../../lib/portal/session";
 import { createRouteRequestId, jsonWithRequestId } from "../../response";
 
 export async function GET(request: Request) {
   const requestId = createRouteRequestId();
-  const session = readPortalSessionFromCookieHeader(
-    request.headers.get("cookie") ?? ""
-  );
+  const session = readScopedPortalSession(request);
 
   if (!session) {
     return jsonWithRequestId(

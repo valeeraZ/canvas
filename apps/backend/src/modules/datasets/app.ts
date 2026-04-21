@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import type { ExpiringStore } from "../../../../../packages/auth/src/index.js";
 import { createDatasetStore, createImportJobStore } from "../../../../../packages/db/src/index.js";
 import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
 import type { ChartPayload, ChartQueryRequest } from "../../../../../packages/contracts/src/charts.js";
@@ -18,6 +19,7 @@ import { createUploadSession } from "./routes/create-upload";
 import { mapDatasetDetail } from "./routes/get-dataset";
 import { mapDatasetSummary } from "./routes/list-datasets";
 import { buildUploadPreview } from "./lib/build-upload-preview";
+import { createDatasetContentLoader } from "./lib/dataset-content-cache";
 
 type DatasetWarning = {
   code: string;
@@ -151,6 +153,17 @@ type CreateDatasetsServiceInput = {
   };
   storageBucket?: string;
   uploadPartSizeBytes?: number;
+  cache?: ExpiringStore;
+  objectReader?: {
+    read(input: {
+      bucket: string;
+      key: string;
+    }): Promise<{
+      bucket: string;
+      key: string;
+      body: Buffer;
+    }>;
+  };
 };
 
 export function createDatasetsService(
@@ -158,6 +171,13 @@ export function createDatasetsService(
 ): DatasetsService {
   const datasets = createDatasetStore(input.db);
   const importJobs = createImportJobStore(input.db);
+  const datasetContentLoader =
+    input.cache && input.objectReader
+      ? createDatasetContentLoader({
+          cache: input.cache,
+          objectReader: input.objectReader
+        })
+      : null;
 
   return {
     listDatasets(tenantId: string) {
@@ -292,6 +312,34 @@ export function createDatasetsService(
         return null;
       }
 
+      const dataset = await datasets.findByTenantAndId(
+        queryInput.tenantId,
+        queryInput.datasetId
+      );
+
+      if (
+        datasetContentLoader &&
+        dataset?.storageBucket &&
+        dataset.storageObjectKey
+      ) {
+        const content = await datasetContentLoader.load({
+          tenantId: queryInput.tenantId,
+          datasetId: queryInput.datasetId,
+          bucket: dataset.storageBucket,
+          objectKey: dataset.storageObjectKey
+        });
+
+        return executeChartQuery({
+          tenantId: queryInput.tenantId,
+          datasetId: queryInput.datasetId,
+          chartType: queryInput.chartType,
+          xField: queryInput.xField,
+          yField: queryInput.yField,
+          allowedFields: preview.columns.map((column) => column.name),
+          rows: content.rows
+        });
+      }
+
       return executeChartQuery({
         db: input.db,
         tenantId: queryInput.tenantId,
@@ -342,7 +390,8 @@ export function createDatasetsService(
         storageBucket: upload.bucket,
         storageObjectKey: upload.objectKey,
         storageUploadId: upload.uploadId,
-        importStatus: "queued"
+        status: "profiling",
+        importStatus: "profiling"
       });
 
       await input.importQueue?.enqueue(importJob.id);
@@ -353,7 +402,7 @@ export function createDatasetsService(
         bucket: upload.bucket,
         objectKey: upload.objectKey,
         sizeBytes: upload.sizeBytes,
-        importStatus: "queued"
+        importStatus: "profiling"
       };
     }
   };

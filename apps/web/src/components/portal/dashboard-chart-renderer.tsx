@@ -13,7 +13,7 @@ import {
   YAxis
 } from "recharts";
 import type { ChartPayload } from "../../../../../packages/contracts/src/charts.js";
-import type { DashboardWidgetRecord } from "../../../../../packages/contracts/src/widgets.js";
+import type { ChartWidgetConfig } from "../../../../../packages/contracts/src/dashboard-editor.js";
 import { cn } from "../../lib/utils";
 import {
   ChartContainer,
@@ -34,6 +34,10 @@ export type DashboardChartState =
   | { status: "error"; message: string }
   | { status: "ready"; payload: ChartPayload };
 
+type ChartRendererWidget = {
+  config: ChartWidgetConfig | null;
+};
+
 function renderStateMessage(state: DashboardChartState) {
   switch (state.status) {
     case "loading":
@@ -53,7 +57,7 @@ function renderStateMessage(state: DashboardChartState) {
 }
 
 export function DashboardChartRenderer(props: {
-  widget: DashboardWidgetRecord;
+  widget: ChartRendererWidget;
   state: DashboardChartState;
   compact?: boolean;
   pending?: boolean;

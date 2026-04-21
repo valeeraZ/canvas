@@ -64,7 +64,7 @@ export function buildDatasetPreview(input: {
   rows: Array<Array<string | number | boolean | null>>;
 }): DatasetPreview {
   const normalizedHeaders = input.headers.map(normalizeHeader);
-  const records: NormalizedDatasetRecord[] = input.rows.map((row) => {
+  const sampleRows: NormalizedDatasetRecord[] = input.rows.map((row) => {
     return normalizedHeaders.reduce<NormalizedDatasetRecord>((record, header, index) => {
       record[header] = normalizeCellValue(row[index] ?? null);
       return record;
@@ -73,13 +73,12 @@ export function buildDatasetPreview(input: {
 
   const columns = normalizedHeaders.map<DatasetPreviewColumn>((header) => ({
     name: header,
-    type: inferColumnType(records.map((record) => record[header] ?? null))
+    type: inferColumnType(sampleRows.map((record) => record[header] ?? null))
   }));
 
   return {
     datasetId: input.datasetId,
     columns,
-    sampleRows: records.slice(0, 5),
-    records
+    sampleRows: sampleRows.slice(0, 5)
   };
 }

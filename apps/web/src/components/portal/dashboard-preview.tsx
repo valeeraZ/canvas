@@ -45,7 +45,6 @@ type DatasetPreviewSummary = {
     type: "string" | "number" | "boolean" | "date" | "unknown";
   }>;
   sampleRows: Array<Record<string, string | number | boolean | null>>;
-  records: Array<Record<string, string | number | boolean | null>>;
 };
 
 const portalApiClient = createPortalApiClient();

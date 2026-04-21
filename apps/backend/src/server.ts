@@ -10,7 +10,9 @@ import {
   createQueueClient
 } from "../../../packages/queue/src/index.js";
 import {
+  createObjectReader,
   createS3MultipartUploadService,
+  createS3ObjectReader,
   readStorageConfig,
   type StorageClientConfig
 } from "../../../packages/storage/src/index.js";
@@ -19,7 +21,7 @@ import { createDatasetsService } from "./modules/datasets/app";
 
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 3001;
-const DEFAULT_AUTH_BASE_URL = "http://auth.local";
+const DEFAULT_AUTH_BASE_URL = "http://localhost:8000";
 const DEFAULT_APP_NAME = "tenant_demo";
 const DEFAULT_DATABASE_URL = "postgres://canvas:canvas@localhost:5432/canvas";
 const DEFAULT_MOCK_CONTEXT: AuthorizationContext = {
@@ -85,7 +87,7 @@ function parseRoles(value: string | undefined): string[] {
 export function createBackendRuntimeConfig(
   source: Record<string, string | undefined>
 ): BackendRuntimeConfig {
-  const useMockAuth = parseBooleanFlag(source.CANVAS_USE_MOCK_AUTH, true);
+  const useMockAuth = parseBooleanFlag(source.CANVAS_USE_MOCK_AUTH, false);
   const storage = source.S3_BUCKET ? readStorageConfig(source) : undefined;
 
   return {
@@ -127,6 +129,9 @@ export function createBackendRuntime(
         redisUrl: config.redisUrl
       })
     : undefined;
+  const objectReader = config.storage
+    ? createObjectReader(createS3ObjectReader(config.storage))
+    : undefined;
   const datasets =
     db && config.storage
       ? createDatasetsService({
@@ -138,7 +143,9 @@ export function createBackendRuntime(
               })
             : undefined,
           multipartUploads: createS3MultipartUploadService(config.storage),
-          storageBucket: config.storage.bucket
+          storageBucket: config.storage.bucket,
+          cache,
+          objectReader
         })
       : undefined;
 

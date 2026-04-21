@@ -67,10 +67,6 @@ describe("createWorkerModeRuntime", () => {
     };
     const createImportJobStoreImpl = vi.fn(() => importJobs);
     const createDatasetStoreImpl = vi.fn(() => datasets);
-    const datasetRows = {
-      replaceRows: vi.fn(async () => [])
-    };
-    const createDatasetRowStoreImpl = vi.fn(() => datasetRows);
     const createImportJobQueueImpl = vi.fn(() => importQueue);
     const createS3ObjectReaderImpl = vi.fn(() => ({
       getObject: vi.fn(async () => Buffer.from(""))
@@ -108,7 +104,6 @@ describe("createWorkerModeRuntime", () => {
       now: () => now,
       createImportJobStoreImpl,
       createDatasetStoreImpl,
-      createDatasetRowStoreImpl,
       createImportJobQueueImpl,
       createS3ObjectReaderImpl,
       createObjectReaderImpl,
@@ -119,7 +114,6 @@ describe("createWorkerModeRuntime", () => {
 
     expect(createImportJobStoreImpl).toHaveBeenCalledWith(db);
     expect(createDatasetStoreImpl).toHaveBeenCalledWith(db);
-    expect(createDatasetRowStoreImpl).toHaveBeenCalledWith(db);
     expect(createImportJobQueueImpl).toHaveBeenCalledWith({
       redis: queue
     });
@@ -137,7 +131,6 @@ describe("createWorkerModeRuntime", () => {
         storageBucket: "canvas-raw",
         importJobs,
         datasets,
-        datasetRows,
         objectReader
       })
     );

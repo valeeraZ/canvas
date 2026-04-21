@@ -1,4 +1,5 @@
 import type { DashboardWidgetRecord } from "../../../../../packages/contracts/src/widgets.js";
+import { readPortalAppNameFromPathname } from "./app-scope";
 
 export type PortalApiClient = {
   createSession: (input: {
@@ -112,7 +113,6 @@ export type PortalApiClient = {
       type: "string" | "number" | "boolean" | "date" | "unknown";
     }>;
     sampleRows: Array<Record<string, string | number | boolean | null>>;
-    records: Array<Record<string, string | number | boolean | null>>;
   }>;
   runDatasetChartQuery: (input: {
     datasetId: string;
@@ -124,7 +124,7 @@ export type PortalApiClient = {
     labels: string[];
     series: Array<{ name: string; data: number[] }>;
   }>;
-  getDataset: (datasetId: string) => Promise<{
+  getDataset: (datasetId: string, input?: { appName?: string }) => Promise<{
     id: string;
     name: string;
     status: string;
@@ -151,6 +151,7 @@ export type PortalApiClient = {
     };
   }>;
   createDatasetUpload: (input: {
+    appName?: string;
     filename: string;
     name: string;
     content?: string;
@@ -171,8 +172,10 @@ export type PortalApiClient = {
     };
   }>;
   uploadDatasetFile: (input: {
+    appName?: string;
     uploadId: string;
     file: File;
+    onProgress?: (percent: number) => void;
   }) => Promise<{
     uploadId: string;
     datasetId: string;
@@ -281,9 +284,72 @@ async function readPortalApiJson<T>(response: Response): Promise<T> {
 }
 
 export function createPortalApiClient(): PortalApiClient {
+  function createScopedHeaders(headers?: HeadersInit, appNameOverride?: string) {
+    const nextHeaders = new Headers(headers);
+    const appName =
+      appNameOverride ??
+      (typeof window !== "undefined"
+        ? readPortalAppNameFromPathname(window.location.pathname)
+        : null);
+
+    if (appName) {
+      nextHeaders.set("x-canvas-app-name", appName);
+    }
+
+    return nextHeaders;
+  }
+
+  async function portalFetch(
+    input: string,
+    init: RequestInit = {},
+    options: { appName?: string } = {}
+  ) {
+    return fetch(input, {
+      ...init,
+      headers: createScopedHeaders(init.headers, options.appName)
+    });
+  }
+
+  async function uploadFileWithProgress(input: {
+    path: string;
+    file: File;
+    appName?: string;
+    onProgress: (percent: number) => void;
+  }) {
+    return new Promise<Response>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const headers = createScopedHeaders({
+        "content-type": input.file.type || "application/octet-stream"
+      }, input.appName);
+
+      xhr.open("PUT", input.path);
+      headers.forEach((value, key) => {
+        xhr.setRequestHeader(key, value);
+      });
+      xhr.upload.onprogress = (event) => {
+        if (!event.lengthComputable || event.total <= 0) {
+          return;
+        }
+
+        input.onProgress(Math.round((event.loaded / event.total) * 100));
+      };
+      xhr.onload = () => {
+        resolve(
+          new Response(xhr.responseText, {
+            status: xhr.status
+          })
+        );
+      };
+      xhr.onerror = () => {
+        reject(new PortalApiError({ message: PUBLIC_PORTAL_API_MESSAGE }));
+      };
+      xhr.send(input.file);
+    });
+  }
+
   return {
     async createSession(input) {
-      const response = await fetch("/api/canvas/session", {
+      const response = await portalFetch("/api/canvas/session", {
         method: "POST",
         headers: {
           "content-type": "application/json"
@@ -294,14 +360,14 @@ export function createPortalApiClient(): PortalApiClient {
       return readPortalApiJson(response);
     },
     async listApps() {
-      const response = await fetch("/api/canvas/auth/apps");
+      const response = await portalFetch("/api/canvas/auth/apps");
       const payload = await readPortalApiJson<{
         apps: Array<{ appName: string }>;
       }>(response);
       return payload.apps.map((app) => app.appName);
     },
     async selectApp(input) {
-      const response = await fetch("/api/canvas/auth/select-app", {
+      const response = await portalFetch("/api/canvas/auth/select-app", {
         method: "POST",
         headers: {
           "content-type": "application/json"
@@ -312,11 +378,11 @@ export function createPortalApiClient(): PortalApiClient {
       return readPortalApiJson(response);
     },
     async listDashboards() {
-      const response = await fetch("/api/canvas/dashboards");
+      const response = await portalFetch("/api/canvas/dashboards");
       return readPortalApiJson(response);
     },
     async createDashboard(input) {
-      const response = await fetch("/api/canvas/dashboards", {
+      const response = await portalFetch("/api/canvas/dashboards", {
         method: "POST",
         headers: {
           "content-type": "application/json"
@@ -327,13 +393,13 @@ export function createPortalApiClient(): PortalApiClient {
       return readPortalApiJson(response);
     },
     async listDashboardWidgets(dashboardId) {
-      const response = await fetch(
+      const response = await portalFetch(
         `/api/canvas/dashboards/${dashboardId}/widgets`
       );
       return readPortalApiJson(response);
     },
     async createDashboardWidget(input) {
-      const response = await fetch(
+      const response = await portalFetch(
         `/api/canvas/dashboards/${input.dashboardId}/widgets`,
         {
           method: "POST",
@@ -351,7 +417,7 @@ export function createPortalApiClient(): PortalApiClient {
       return readPortalApiJson(response);
     },
     async updateDashboardWidget(input) {
-      const response = await fetch(
+      const response = await portalFetch(
         `/api/canvas/dashboards/${input.dashboardId}/widgets/${input.widgetId}`,
         {
           method: "PATCH",
@@ -365,7 +431,7 @@ export function createPortalApiClient(): PortalApiClient {
       return readPortalApiJson(response);
     },
     async updateDashboardWidgetLayout(input) {
-      const response = await fetch(
+      const response = await portalFetch(
         `/api/canvas/dashboards/${input.dashboardId}/widgets/${input.widgetId}/layout`,
         {
           method: "PATCH",
@@ -379,7 +445,7 @@ export function createPortalApiClient(): PortalApiClient {
       return readPortalApiJson(response);
     },
     async deleteDashboardWidget(input) {
-      const response = await fetch(
+      const response = await portalFetch(
         `/api/canvas/dashboards/${input.dashboardId}/widgets/${input.widgetId}`,
         {
           method: "DELETE"
@@ -389,7 +455,7 @@ export function createPortalApiClient(): PortalApiClient {
       return readPortalApiJson(response);
     },
     async shareDashboard(input) {
-      const response = await fetch(
+      const response = await portalFetch(
         `/api/canvas/dashboards/${input.dashboardId}/share`,
         {
           method: "POST",
@@ -405,11 +471,11 @@ export function createPortalApiClient(): PortalApiClient {
       return readPortalApiJson(response);
     },
     async getSelectedDashboard() {
-      const response = await fetch("/api/canvas/dashboards/selected-dashboard");
+      const response = await portalFetch("/api/canvas/dashboards/selected-dashboard");
       return readPortalApiJson(response);
     },
     async setSelectedDashboard(input) {
-      const response = await fetch("/api/canvas/dashboards/selected-dashboard", {
+      const response = await portalFetch("/api/canvas/dashboards/selected-dashboard", {
         method: "POST",
         headers: {
           "content-type": "application/json"
@@ -420,13 +486,13 @@ export function createPortalApiClient(): PortalApiClient {
       return readPortalApiJson(response);
     },
     async exportDashboard(input) {
-      const response = await fetch(
+      const response = await portalFetch(
         `/api/canvas/dashboards/${input.dashboardId}/export`
       );
       return readPortalApiJson(response);
     },
     async importDashboard(input) {
-      const response = await fetch("/api/canvas/dashboards/import", {
+      const response = await portalFetch("/api/canvas/dashboards/import", {
         method: "POST",
         headers: {
           "content-type": "application/json"
@@ -437,11 +503,11 @@ export function createPortalApiClient(): PortalApiClient {
       return readPortalApiJson(response);
     },
     async getDatasetPreview(datasetId) {
-      const response = await fetch(`/api/canvas/datasets/${datasetId}/preview`);
+      const response = await portalFetch(`/api/canvas/datasets/${datasetId}/preview`);
       return readPortalApiJson(response);
     },
     async runDatasetChartQuery(input) {
-      const response = await fetch(
+      const response = await portalFetch(
         `/api/canvas/datasets/${input.datasetId}/chart-query`,
         {
           method: "POST",
@@ -458,12 +524,16 @@ export function createPortalApiClient(): PortalApiClient {
 
       return readPortalApiJson(response);
     },
-    async getDataset(datasetId) {
-      const response = await fetch(`/api/canvas/datasets/${datasetId}`);
+    async getDataset(datasetId, input) {
+      const response = await portalFetch(
+        `/api/canvas/datasets/${datasetId}`,
+        {},
+        { appName: input?.appName }
+      );
       return readPortalApiJson(response);
     },
     async createDatasetUpload(input) {
-      const response = await fetch("/api/canvas/datasets", {
+      const response = await portalFetch("/api/canvas/datasets", {
         method: "POST",
         headers: {
           "content-type": "application/json"
@@ -474,21 +544,27 @@ export function createPortalApiClient(): PortalApiClient {
       return readPortalApiJson(response);
     },
     async uploadDatasetFile(input) {
-      const response = await fetch(
-        `/api/canvas/datasets/uploads/${input.uploadId}/file`,
-        {
-          method: "PUT",
-          headers: {
-            "content-type": input.file.type || "application/octet-stream"
-          },
-          body: input.file
-        }
-      );
+      const path = `/api/canvas/datasets/uploads/${input.uploadId}/file`;
+      const response =
+        input.onProgress && typeof XMLHttpRequest !== "undefined"
+          ? await uploadFileWithProgress({
+              path,
+              file: input.file,
+              appName: input.appName,
+              onProgress: input.onProgress
+            })
+          : await portalFetch(path, {
+              method: "PUT",
+              headers: {
+                "content-type": input.file.type || "application/octet-stream"
+              },
+              body: input.file
+            }, { appName: input.appName });
 
       return readPortalApiJson(response);
     },
     async createWorkbook(input) {
-      const response = await fetch("/api/canvas/workbooks", {
+      const response = await portalFetch("/api/canvas/workbooks", {
         method: "POST",
         headers: {
           "content-type": "application/json"

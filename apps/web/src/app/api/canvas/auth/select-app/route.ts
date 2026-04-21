@@ -1,3 +1,4 @@
+import { readScopedPortalSession } from "../../scoped-session";
 import { NextResponse } from "next/server";
 import {
   createPortalBackendClient,
@@ -7,7 +8,6 @@ import {
   prependRecentValue,
   encodePortalSession,
   PORTAL_SESSION_COOKIE,
-  readPortalSessionFromCookieHeader
 } from "../../../../../lib/portal/session";
 import { createRouteRequestId, jsonWithRequestId } from "../../response";
 
@@ -16,9 +16,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     appName?: string;
   };
-  const session = readPortalSessionFromCookieHeader(
-    request.headers.get("cookie") ?? ""
-  );
+  const session = readScopedPortalSession(request);
 
   if (!session) {
     return jsonWithRequestId(

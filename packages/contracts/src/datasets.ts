@@ -1,4 +1,10 @@
-export type DatasetStatus = "queued" | "processing" | "ready" | "warning" | "failed";
+export type DatasetStatus =
+  | "queued"
+  | "profiling"
+  | "processing"
+  | "ready"
+  | "warning"
+  | "failed";
 
 export type DatasetRecord = {
   id: string;

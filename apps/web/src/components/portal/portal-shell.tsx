@@ -2,13 +2,11 @@ import React from "react";
 import Link from "next/link";
 import {
   AppWindow,
-  BookOpen,
   ChevronRight,
   Database,
   LayoutDashboard,
   Sparkles
 } from "lucide-react";
-import { AppSwitcher } from "./app-switcher";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -33,8 +31,8 @@ import {
 } from "../ui/sidebar";
 
 type PortalShellProps = {
-  apps: string[];
-  currentApp: string;
+  apps?: string[];
+  currentApp?: string | null;
   principal?: {
     displayName: string;
     employeeId: string;
@@ -42,7 +40,7 @@ type PortalShellProps = {
   } | null;
   title: string;
   description: string;
-  currentSection: "overview" | "dashboards" | "datasets" | "workbooks";
+  currentSection: "overview" | "dashboards" | "datasets";
   breadcrumbs: Array<{
     label: string;
     href?: string;
@@ -66,9 +64,6 @@ export function PortalShell(props: PortalShellProps) {
                 Data console
               </span>
             </div>
-          </div>
-          <div className="px-2">
-            <AppSwitcher apps={props.apps} currentApp={props.currentApp} />
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -115,19 +110,6 @@ export function PortalShell(props: PortalShellProps) {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={props.currentSection === "workbooks"}
-                    tooltip="Workbooks"
-                    className="h-10 rounded-xl px-3 text-[15px] font-medium text-sidebar-foreground/78 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground data-active:bg-sidebar-accent data-active:text-sidebar-foreground data-active:shadow-[inset_0_0_0_1px_var(--color-sidebar-border)]"
-                  >
-                    <Link href="/portal/workbooks">
-                      <BookOpen />
-                      <span>Workbooks</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -166,9 +148,11 @@ export function PortalShell(props: PortalShellProps) {
         <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div className="grid gap-1">
-              <p className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
-                Active app: {props.currentApp}
-              </p>
+              {props.currentApp ? (
+                <p className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                  Active app: {props.currentApp}
+                </p>
+              ) : null}
               <h1 className="text-3xl font-semibold tracking-tight">
                 {props.title}
               </h1>

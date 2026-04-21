@@ -1,4 +1,5 @@
 export {
+  fetchAppMetadata,
   fetchAccessibleApps,
   fetchAuthorizationContext,
   fetchCurrentPrincipal
@@ -6,6 +7,7 @@ export {
 export type {
   AccessibleApp,
   AuthorizationApiInput,
+  AuthorizationAppMetadata,
   AuthorizationContext,
   AuthorizationPrincipal
 } from "./authorization-api.js";

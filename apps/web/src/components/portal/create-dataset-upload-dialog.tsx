@@ -1,14 +1,10 @@
 "use client";
 
 import React, { startTransition, useState } from "react";
-import { useRouter } from "next/navigation";
 import { LoaderCircle, Upload } from "lucide-react";
-import {
-  createPortalApiClient,
-  type PortalApiError,
-  toPortalApiError
-} from "../../lib/portal/api-client";
+import type { PortalApiError } from "../../lib/portal/api-client";
 import { PortalActionAlert } from "./portal-action-alert";
+import { useDatasetUploadProgress } from "./dataset-upload-progress-provider";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -22,14 +18,21 @@ import {
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 
-export function CreateDatasetUploadDialog() {
-  const router = useRouter();
-  const apiClient = createPortalApiClient();
+export function CreateDatasetUploadDialog(props: {
+  appOptions?: Array<{
+    appName: string;
+    appDisplayName: string;
+  }>;
+}) {
+  const { startDatasetUpload } = useDatasetUploadProgress();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Sales Upload");
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<PortalApiError | null>(null);
   const [pending, setPending] = useState(false);
+  const [selectedApp, setSelectedApp] = useState(
+    props.appOptions?.[0]?.appName ?? ""
+  );
 
   function submit() {
     if (!file) {
@@ -41,20 +44,14 @@ export function CreateDatasetUploadDialog() {
 
     startTransition(async () => {
       try {
-        const session = await apiClient.createDatasetUpload({
-          filename: file.name,
+        await startDatasetUpload({
+          appName: selectedApp || undefined,
           name: name.trim() || "Dataset Upload",
-          contentType: file.type || undefined,
-          sizeBytes: file.size
-        });
-        await apiClient.uploadDatasetFile({
-          uploadId: session.uploadId,
           file
         });
         setOpen(false);
-        router.refresh();
       } catch (caught) {
-        setError(toPortalApiError(caught));
+        setError(caught instanceof Error ? (caught as PortalApiError) : null);
       } finally {
         setPending(false);
       }
@@ -86,6 +83,23 @@ export function CreateDatasetUploadDialog() {
               placeholder="Sales Upload"
             />
           </div>
+          {props.appOptions && props.appOptions.length > 0 ? (
+            <div className="grid gap-2">
+              <Label htmlFor="create-dataset-app">Target app</Label>
+              <select
+                id="create-dataset-app"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                value={selectedApp}
+                onChange={(event) => setSelectedApp(event.target.value)}
+              >
+                {props.appOptions.map((app) => (
+                  <option key={app.appName} value={app.appName}>
+                    {app.appDisplayName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
           <div className="grid gap-2">
             <Label htmlFor="create-dataset-file">Select file</Label>
             <Input
@@ -117,7 +131,7 @@ export function CreateDatasetUploadDialog() {
           <Button
             type="button"
             onClick={submit}
-            disabled={pending || !file}
+            disabled={pending || !file || (props.appOptions?.length ? !selectedApp : false)}
           >
             {pending ? <LoaderCircle className="size-4 animate-spin" /> : null}
             Upload file

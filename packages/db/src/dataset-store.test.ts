@@ -22,8 +22,7 @@ describe("toDatasetRecord", () => {
         { name: "month", type: "string" },
         { name: "revenue", type: "number" }
       ],
-      sampleRows: [{ month: "Jan", revenue: 120 }],
-      records: [{ month: "Jan", revenue: 120 }]
+      sampleRows: [{ month: "Jan", revenue: 120 }]
     };
     const prisma = {
       tenant: {
@@ -80,8 +79,7 @@ describe("toDatasetRecord", () => {
         { name: "month", type: "string" },
         { name: "revenue", type: "number" }
       ],
-      sampleRows: [{ month: "Jan", revenue: 120 }],
-      records: [{ month: "Jan", revenue: 120 }]
+      sampleRows: [{ month: "Jan", revenue: 120 }]
     };
 
     const prisma = {
@@ -96,7 +94,7 @@ describe("toDatasetRecord", () => {
     const store = createDatasetStore(prisma);
     const result = await store.findPreviewByTenantAndId("canvas", "ds_1");
 
-    expect(result?.records[0]?.revenue).toBe(120);
+    expect(result?.sampleRows[0]?.revenue).toBe(120);
   });
 
   it("persists dataset storage metadata and uploader details", async () => {
@@ -187,7 +185,7 @@ describe("toDatasetRecord", () => {
           id: "ds_3",
           tenantId: "tenant_row_1",
           name: "Sales Upload",
-          status: "queued",
+          status: "profiling",
           warnings: [],
           preview: null,
           contentType: "text/csv",
@@ -195,7 +193,7 @@ describe("toDatasetRecord", () => {
           storageBucket: "canvas-raw",
           storageObjectKey: "canvas/uploads/sales.csv",
           storageUploadId: "s3-upload-1",
-          importStatus: "queued",
+          importStatus: "profiling",
           tenant: {
             slug: "canvas"
           }
@@ -212,7 +210,8 @@ describe("toDatasetRecord", () => {
       storageBucket: "canvas-raw",
       storageObjectKey: "canvas/uploads/sales.csv",
       storageUploadId: "s3-upload-1",
-      importStatus: "queued"
+      importStatus: "profiling",
+      status: "profiling"
     });
 
     expect(prisma.dataset.update).toHaveBeenCalledWith({
@@ -225,7 +224,8 @@ describe("toDatasetRecord", () => {
         storageBucket: "canvas-raw",
         storageObjectKey: "canvas/uploads/sales.csv",
         storageUploadId: "s3-upload-1",
-        importStatus: "queued"
+        importStatus: "profiling",
+        status: "profiling"
       },
       include: {
         tenant: {
@@ -236,6 +236,7 @@ describe("toDatasetRecord", () => {
       }
     });
     expect(dataset?.storageUploadId).toBe("s3-upload-1");
+    expect(dataset?.importStatus).toBe("profiling");
   });
 
   it("marks a dataset as processing when a worker claims its import job", async () => {
@@ -291,8 +292,7 @@ describe("toDatasetRecord", () => {
         { name: "month", type: "string" },
         { name: "revenue", type: "number" }
       ],
-      sampleRows: [{ month: "Jan", revenue: 120 }],
-      records: [{ month: "Jan", revenue: 120 }]
+      sampleRows: [{ month: "Jan", revenue: 120 }]
     };
     const prisma = {
       dataset: {

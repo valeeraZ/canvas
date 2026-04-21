@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { runImportJob } from "./run-import-job";
 
 describe("runImportJob", () => {
-  it("claims a queued job, persists typed rows, and marks dataset/job ready", async () => {
+  it("claims a queued job, profiles schema, and marks dataset/job ready", async () => {
     const claimJob = vi.fn(async () => ({
       id: "job_123",
       datasetId: "ds_1",
@@ -15,9 +15,6 @@ describe("runImportJob", () => {
       key: "canvas/uploads/sales.csv",
       body: Buffer.from("Month,Revenue,Active\n2026-04-01,120,true")
     }));
-    const persistNormalizedTable = vi.fn(async () => ({
-      rowCount: 1
-    }));
     const markDatasetReady = vi.fn(async () => undefined);
     const markJobReady = vi.fn(async () => undefined);
 
@@ -27,7 +24,6 @@ describe("runImportJob", () => {
       claimJob,
       markDatasetProcessing,
       readObject,
-      persistNormalizedTable,
       markDatasetReady,
       markJobReady,
       markDatasetFailed: vi.fn(async () => undefined),
@@ -47,12 +43,6 @@ describe("runImportJob", () => {
       bucket: "canvas-raw",
       key: "canvas/uploads/sales.csv"
     });
-    expect(persistNormalizedTable).toHaveBeenCalledWith({
-      tenantId: "canvas",
-      datasetId: "ds_1",
-      headers: ["month", "revenue", "active"],
-      rows: [["2026-04-01", 120, true]]
-    });
     expect(markDatasetReady).toHaveBeenCalledWith({
       tenantId: "canvas",
       datasetId: "ds_1",
@@ -64,13 +54,6 @@ describe("runImportJob", () => {
           { name: "active", type: "boolean" }
         ],
         sampleRows: [
-          {
-            month: "2026-04-01",
-            revenue: 120,
-            active: true
-          }
-        ],
-        records: [
           {
             month: "2026-04-01",
             revenue: 120,
@@ -104,10 +87,6 @@ describe("runImportJob", () => {
           bucket: "canvas-raw",
           key: "canvas/uploads/sales.csv",
           body: Buffer.from("")
-        })),
-        persistNormalizedTable: vi.fn(async () => ({
-          tableName: "tenant_canvas_dataset_ds_1",
-          rowCount: 0
         })),
         markDatasetReady: vi.fn(async () => undefined),
         markJobReady: vi.fn(async () => undefined),

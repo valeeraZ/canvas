@@ -130,6 +130,14 @@ export const accessibleAppsResponseSchema = {
             type: "string",
             description: "App identifier returned by the upstream authorization service."
           },
+          appDisplayName: {
+            type: "string",
+            description: "Human-readable app name returned by the auth app metadata endpoint."
+          },
+          appLogoName: {
+            type: "string",
+            description: "Lucide icon name returned by the auth app metadata endpoint."
+          },
           roles: {
             type: "array",
             description: "Effective roles for the current principal in this app.",
@@ -138,7 +146,7 @@ export const accessibleAppsResponseSchema = {
             }
           }
         },
-        required: ["appName", "roles"]
+        required: ["appName", "appDisplayName", "appLogoName", "roles"]
       }
     }
   },
@@ -157,6 +165,10 @@ export const datasetSummarySchema = {
       description: "Dataset display name.",
       type: "string"
     },
+    tenantId: {
+      description: "App slug that owns the dataset.",
+      type: "string"
+    },
     status: {
       description: "Current ingestion status for the dataset.",
       type: "string"
@@ -164,9 +176,17 @@ export const datasetSummarySchema = {
     warningCount: {
       description: "Count of ingestion warnings associated with the dataset.",
       type: "number"
+    },
+    uploadedByExternalUserId: {
+      description: "External user identifier of the uploader.",
+      type: "string"
+    },
+    uploadedByDisplayName: {
+      description: "Display name of the uploader.",
+      type: "string"
     }
   },
-  required: ["id", "name", "status", "warningCount"]
+  required: ["id", "name", "tenantId", "status", "warningCount"]
 } as const;
 
 export const datasetDetailSchema = {
@@ -493,16 +513,9 @@ export const datasetPreviewSchema = {
         type: "object",
         additionalProperties: true
       }
-    },
-    records: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: true
-      }
     }
   },
-  required: ["datasetId", "columns", "sampleRows", "records"]
+  required: ["datasetId", "columns", "sampleRows"]
 } as const;
 
 export const chartQueryRequestSchema = {

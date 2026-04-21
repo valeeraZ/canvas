@@ -23,10 +23,11 @@ describe("buildDatasetPreview", () => {
       revenue: 120,
       active: true
     });
-    expect(preview.records[2]).toEqual({
+    expect(preview.sampleRows[2]).toEqual({
       month: "2026-04-03",
       revenue: null,
       active: true
     });
+    expect("records" in preview).toBe(false);
   });
 });

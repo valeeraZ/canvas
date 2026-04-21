@@ -1,4 +1,3 @@
-import { writeNormalizedTable } from "../modules/ingestion/persist/write-normalized-table.js";
 import { runImportJob } from "./handlers/run-import-job";
 import { createImportQueueLoop } from "./queue-loop";
 
@@ -7,13 +6,6 @@ export { createWorkerRuntime } from "./runtime";
 export { createImportQueueLoop } from "./queue-loop";
 
 export function createWorkerJobExecutor(input: {
-  datasetRows: {
-    replaceRows(input: {
-      tenantId: string;
-      datasetId: string;
-      rows: Array<Record<string, string | number | boolean | null>>;
-    }): Promise<unknown>;
-  };
   storageBucket: string;
   importJobs: {
     claimNext(input: {
@@ -61,12 +53,9 @@ export function createWorkerJobExecutor(input: {
       body: Buffer;
     }>;
   };
-  persistNormalizedTable?: typeof writeNormalizedTable;
   runImportJobImpl?: typeof runImportJob;
 }) {
   const runImportJobImpl = input.runImportJobImpl ?? runImportJob;
-  const persistNormalizedTable =
-    input.persistNormalizedTable ?? writeNormalizedTable;
 
   return async function executeJob(jobId: string) {
     return runImportJobImpl({
@@ -76,14 +65,9 @@ export function createWorkerJobExecutor(input: {
         input.importJobs.claimNext({
           importJobId: jobId,
           claimedAt
-        }),
+      }),
       markDatasetProcessing: input.datasets.markProcessing,
       readObject: input.objectReader.read,
-      persistNormalizedTable: (persistInput) =>
-        persistNormalizedTable({
-          datasetRows: input.datasetRows,
-          ...persistInput
-        }),
       markDatasetReady: input.datasets.markReady,
       markJobReady: ({ jobId, completedAt }) =>
         input.importJobs.markReady({

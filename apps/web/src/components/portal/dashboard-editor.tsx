@@ -70,7 +70,6 @@ type DatasetPreviewSummary = {
     type: "string" | "number" | "boolean" | "date" | "unknown";
   }>;
   sampleRows: Array<Record<string, string | number | boolean | null>>;
-  records: Array<Record<string, string | number | boolean | null>>;
 };
 
 export type DashboardWidgetChartEntry = {
@@ -684,6 +683,8 @@ export function DashboardEditor(props: {
       return;
     }
 
+    const layout = movedWidget.layout;
+
     setOptimisticWidgets(nextWidgets);
     setActiveWidgetId(widgetId);
     setWidgetsSaving(changedWidgetIds, true);
@@ -694,7 +695,7 @@ export function DashboardEditor(props: {
         await portalApiClient.updateDashboardWidgetLayout({
           dashboardId: props.dashboard.id,
           widgetId,
-          layout: movedWidget.layout
+          layout
         });
         router.refresh();
       } catch (caught) {
@@ -720,6 +721,8 @@ export function DashboardEditor(props: {
       return;
     }
 
+    const layout = resizedWidget.layout;
+
     setOptimisticWidgets(nextWidgets);
     setActiveWidgetId(widgetId);
     setWidgetsSaving(changedWidgetIds, true);
@@ -730,7 +733,7 @@ export function DashboardEditor(props: {
         await portalApiClient.updateDashboardWidgetLayout({
           dashboardId: props.dashboard.id,
           widgetId,
-          layout: resizedWidget.layout
+          layout
         });
         router.refresh();
       } catch (caught) {

@@ -19,6 +19,7 @@ import {
 } from "../ui/table";
 
 export function DashboardList(props: {
+  appName: string;
   dashboards: Array<{
     id: string;
     name: string;
@@ -82,7 +83,7 @@ export function DashboardList(props: {
                     <TableCell className="text-right">
                       <Link
                         className="inline-flex items-center gap-1 text-sm font-medium text-primary"
-                        href={`/portal/dashboards/${dashboard.id}`}
+                        href={`/portal/${props.appName}/${dashboard.id}`}
                       >
                         Manage
                         <ArrowRight className="h-4 w-4" />

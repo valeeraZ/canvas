@@ -93,7 +93,10 @@ describe("createPortalApiClient", () => {
 
     expect(widgets[0]?.id).toBe("widget_1");
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/canvas/dashboards/dash_1/widgets"
+      "/api/canvas/dashboards/dash_1/widgets",
+      expect.objectContaining({
+        headers: expect.any(Headers)
+      })
     );
   });
 
@@ -134,18 +137,15 @@ describe("createPortalApiClient", () => {
     expect(widget.layout.x).toBe(1);
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/canvas/dashboards/dash_1/widgets/widget_1/layout",
-      {
+      expect.objectContaining({
         method: "PATCH",
-        headers: {
-          "content-type": "application/json"
-        },
         body: JSON.stringify({
           x: 1,
           y: 0,
           w: 1,
           h: 1
         })
-      }
+      })
     );
   });
 
@@ -170,9 +170,9 @@ describe("createPortalApiClient", () => {
     expect(payload.deletedWidgetId).toBe("widget_1");
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/canvas/dashboards/dash_1/widgets/widget_1",
-      {
+      expect.objectContaining({
         method: "DELETE"
-      }
+      })
     );
   });
 
@@ -187,8 +187,7 @@ describe("createPortalApiClient", () => {
             { name: "month", type: "string" },
             { name: "revenue", type: "number" }
           ],
-          sampleRows: [{ month: "Jan", revenue: 120 }],
-          records: [{ month: "Jan", revenue: 120 }]
+          sampleRows: [{ month: "Jan", revenue: 120 }]
         }),
         { status: 200 }
       )
@@ -197,7 +196,13 @@ describe("createPortalApiClient", () => {
     const preview = await createPortalApiClient().getDatasetPreview("ds_1");
 
     expect(preview.columns[1]?.type).toBe("number");
-    expect(fetchMock).toHaveBeenCalledWith("/api/canvas/datasets/ds_1/preview");
+    expect("records" in preview).toBe(false);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/canvas/datasets/ds_1/preview",
+      expect.objectContaining({
+        headers: expect.any(Headers)
+      })
+    );
   });
 
   it("runs dataset chart queries through the portal api", async () => {
@@ -227,17 +232,17 @@ describe("createPortalApiClient", () => {
     });
 
     expect(payload.labels).toEqual(["Jan", "Feb"]);
-    expect(fetchMock).toHaveBeenCalledWith("/api/canvas/datasets/ds_1/chart-query", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        chartType: "bar",
-        xField: "month",
-        yField: "revenue"
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/canvas/datasets/ds_1/chart-query",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          chartType: "bar",
+          xField: "month",
+          yField: "revenue"
+        })
       })
-    });
+    );
   });
 
   it("creates dataset uploads and uploads a file through the portal api", async () => {
@@ -270,13 +275,14 @@ describe("createPortalApiClient", () => {
           bucket: "canvas-raw",
           objectKey: "canvas/uploads/sales.csv",
           sizeBytes: 21,
-          importStatus: "queued"
+          importStatus: "profiling"
         }),
         { status: 200 }
       )
     );
 
     const created = await createPortalApiClient().createDatasetUpload({
+      appName: "frame_app",
       filename: "sales.csv",
       name: "Sales Upload",
       content: "Month,Revenue\nJan,120"
@@ -291,22 +297,98 @@ describe("createPortalApiClient", () => {
     expect(created.dataset.id).toBe("ds_1");
     expect(created.uploadId).toBe("upload_123");
     expect(uploaded.datasetId).toBe("ds_1");
-    expect(fetchMock).toHaveBeenCalledWith("/api/canvas/datasets", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        filename: "sales.csv",
-        name: "Sales Upload",
-        content: "Month,Revenue\nJan,120"
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/canvas/datasets",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          appName: "frame_app",
+          filename: "sales.csv",
+          name: "Sales Upload",
+          content: "Month,Revenue\nJan,120"
+        })
       })
-    });
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/canvas/datasets/uploads/upload_123/file",
       expect.objectContaining({
         method: "PUT"
       })
     );
+  });
+
+  it("reports browser upload progress when uploading a dataset file", async () => {
+    const progressEvents: number[] = [];
+    const requests: Array<{
+      method?: string;
+      url?: string;
+      headers: Record<string, string>;
+      body?: unknown;
+    }> = [];
+
+    class FakeXMLHttpRequest {
+      status = 200;
+      responseText = JSON.stringify({
+        uploadId: "upload_123",
+        datasetId: "ds_1",
+        bucket: "canvas-raw",
+        objectKey: "canvas/uploads/sales.csv",
+        sizeBytes: 21,
+        importStatus: "profiling"
+      });
+      upload: {
+        onprogress?: (event: { lengthComputable: boolean; loaded: number; total: number }) => void;
+      } = {};
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      private request = {
+        headers: {} as Record<string, string>
+      };
+
+      open(method: string, url: string) {
+        this.request.method = method;
+        this.request.url = url;
+      }
+
+      setRequestHeader(name: string, value: string) {
+        this.request.headers[name] = value;
+      }
+
+      send(body: unknown) {
+        this.request.body = body;
+        requests.push(this.request);
+        this.upload.onprogress?.({
+          lengthComputable: true,
+          loaded: 10,
+          total: 20
+        });
+        this.upload.onprogress?.({
+          lengthComputable: true,
+          loaded: 20,
+          total: 20
+        });
+        this.onload?.();
+      }
+    }
+
+    vi.stubGlobal("XMLHttpRequest", FakeXMLHttpRequest);
+
+    const uploaded = await createPortalApiClient().uploadDatasetFile({
+      uploadId: "upload_123",
+      file: new File(["Month,Revenue\nJan,120"], "sales.csv", {
+        type: "text/csv"
+      }),
+      onProgress: (percent) => progressEvents.push(percent)
+    });
+
+    expect(uploaded.importStatus).toBe("profiling");
+    expect(progressEvents).toEqual([50, 100]);
+    expect(requests[0]).toMatchObject({
+      method: "PUT",
+      url: "/api/canvas/datasets/uploads/upload_123/file",
+      headers: {
+        "content-type": "text/csv"
+      }
+    });
   });
 });
