@@ -164,4 +164,42 @@ describe("DashboardWidgetConfigPanel", () => {
       })
     ).toBe(false);
   });
+
+  it("renders table-specific controls for table widgets", () => {
+    const html = renderToString(
+      <DashboardWidgetConfigPanel
+        widget={{
+          id: "table_1",
+          tenantId: "canvas",
+          dashboardId: "dash_1",
+          type: "table",
+          datasetId: "ds_1",
+          config: {
+            datasetId: "ds_1",
+            columns: ["month", "revenue"],
+            pageSize: 10,
+            title: "Sales rows"
+          }
+        }}
+        datasets={[{ id: "ds_1", name: "Sales Upload", status: "ready" }]}
+        previews={{
+          ds_1: {
+            datasetId: "ds_1",
+            columns: [
+              { name: "month", type: "string" },
+              { name: "revenue", type: "number" }
+            ],
+            sampleRows: [{ month: "Jan", revenue: 120 }]
+          }
+        }}
+        pending={false}
+        onSave={() => {}}
+      />
+    );
+
+    expect(html).toContain("Table");
+    expect(html).toContain("Visible columns");
+    expect(html).toContain("Page size");
+    expect(html).toContain("Sales rows");
+  });
 });

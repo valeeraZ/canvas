@@ -4,7 +4,12 @@ import type {
   ChartQueryRequest
 } from "../../../../../packages/contracts/src/charts.js";
 import type { DashboardExportPackage } from "../../../../../packages/contracts/src/dashboard-portability.js";
-import type { ChartWidgetConfig, DatasetPreview } from "../../../../../packages/contracts/src/dashboard-editor.js";
+import type {
+  ChartWidgetConfig,
+  DatasetPreview,
+  TableWidgetConfig,
+  TableRowsPayload
+} from "../../../../../packages/contracts/src/dashboard-editor.js";
 import type { DashboardWidgetRecord } from "../../../../../packages/contracts/src/widgets.js";
 
 type PortalDashboardRecord = {
@@ -273,7 +278,7 @@ export function createPortalBackendClient(session: PortalSession) {
       dashboardId: string;
       type: DashboardWidgetRecord["type"];
       datasetId?: string | null;
-      config?: ChartWidgetConfig | null;
+      config?: ChartWidgetConfig | TableWidgetConfig | null;
     }) {
       const response = await authorizedFetch(`/dashboards/${input.dashboardId}/widgets`, {
         method: "POST",
@@ -289,7 +294,7 @@ export function createPortalBackendClient(session: PortalSession) {
     async updateDashboardWidget(input: {
       dashboardId: string;
       widgetId: string;
-      config: ChartWidgetConfig;
+      config: ChartWidgetConfig | TableWidgetConfig;
     }) {
       const response = await authorizedFetch(
         `/dashboards/${input.dashboardId}/widgets/${input.widgetId}`,
@@ -487,6 +492,26 @@ export function createPortalBackendClient(session: PortalSession) {
     async getDatasetPreview(datasetId: string) {
       const response = await authorizedFetch(`/datasets/${datasetId}/preview`);
       return readJson<DatasetPreview>(response);
+    },
+    async getDatasetRowsPage(input: {
+      datasetId: string;
+      page: number;
+      pageSize: number;
+      columns?: string[];
+    }) {
+      const params = new URLSearchParams({
+        page: String(input.page),
+        pageSize: String(input.pageSize)
+      });
+
+      if (input.columns?.length) {
+        params.set("columns", input.columns.join(","));
+      }
+
+      const response = await authorizedFetch(
+        `/datasets/${input.datasetId}/rows?${params.toString()}`
+      );
+      return readJson<TableRowsPayload>(response);
     },
     async runDatasetChartQuery(input: ChartQueryRequest) {
       const response = await authorizedFetch(

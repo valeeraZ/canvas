@@ -5,8 +5,26 @@ import Link from "next/link";
 import { GripVertical, LayoutTemplate, Maximize2, Minimize2, Trash2 } from "lucide-react";
 import type { DashboardChartState } from "./dashboard-chart-renderer";
 import { DashboardChartRenderer } from "./dashboard-chart-renderer";
+import type { DashboardTableState } from "./dashboard-table-renderer";
+import { DashboardTableRenderer } from "./dashboard-table-renderer";
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
+
+type ChartWidgetConfig = {
+  datasetId: string;
+  chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
+  xField: string;
+  yField: string;
+  seriesField?: string;
+  title?: string;
+};
+
+type TableWidgetConfig = {
+  datasetId: string;
+  columns: string[];
+  pageSize: number;
+  title?: string;
+};
 
 type WidgetSummary = {
   id: string;
@@ -14,14 +32,7 @@ type WidgetSummary = {
   dashboardId: string;
   type: "chart" | "table" | "metric" | "text";
   datasetId: string | null;
-  config: {
-    datasetId: string;
-    chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
-    xField: string;
-    yField: string;
-    seriesField?: string;
-    title?: string;
-  } | null;
+  config: ChartWidgetConfig | TableWidgetConfig | null;
   layout?: {
     x: number;
     y: number;
@@ -36,6 +47,7 @@ export function DashboardWidgetCard(props: {
   focused: boolean;
   pending: boolean;
   chartState: DashboardChartState;
+  tableState?: DashboardTableState;
   readOnly?: boolean;
   datasetDetail?: {
     id: string;
@@ -47,6 +59,7 @@ export function DashboardWidgetCard(props: {
   onSelectWidget?: (widgetId: string) => void;
   onResizeWidget?: (widgetId: string, nextWidth: number) => void;
   onDeleteWidget?: (widgetId: string) => void;
+  onTablePageChange?: (widgetId: string, page: number) => void;
 }) {
   const [deleteArmed, setDeleteArmed] = useState(false);
   const dragHandleOnClick = props.dragHandleProps?.onClick;
@@ -153,7 +166,11 @@ export function DashboardWidgetCard(props: {
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          <p>{props.widget.config?.chartType ?? props.widget.type}</p>
+          <p>
+            {props.widget.type === "chart" && props.widget.config && "chartType" in props.widget.config
+              ? props.widget.config.chartType
+              : props.widget.type}
+          </p>
           {props.datasetDetail ? (
             <div className="flex min-w-0 items-center gap-2">
               <Link
@@ -175,12 +192,31 @@ export function DashboardWidgetCard(props: {
           )}
         </div>
       </div>
-      <DashboardChartRenderer
-        widget={props.widget}
-        state={props.chartState}
-        pending={props.readOnly ? false : props.pending}
-        compact
-      />
+      {props.widget.type === "table" ? (
+        <DashboardTableRenderer
+          widget={{
+            config:
+              props.widget.config && "columns" in props.widget.config
+                ? props.widget.config
+                : null
+          }}
+          state={props.tableState ?? { status: "idle" }}
+          pending={props.readOnly ? false : props.pending}
+          onPageChange={(page) => props.onTablePageChange?.(props.widget.id, page)}
+        />
+      ) : (
+        <DashboardChartRenderer
+          widget={{
+            config:
+              props.widget.config && "chartType" in props.widget.config
+                ? props.widget.config
+                : null
+          }}
+          state={props.chartState}
+          pending={props.readOnly ? false : props.pending}
+          compact
+        />
+      )}
     </div>
   );
 }

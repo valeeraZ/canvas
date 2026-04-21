@@ -607,6 +607,36 @@ export const chartPayloadSchema = {
   required: ["chartType", "labels", "series"]
 } as const;
 
+export const tableRowsPayloadSchema = {
+  type: "object",
+  description: "Paginated dataset rows returned for table widgets.",
+  properties: {
+    columns: {
+      type: "array",
+      items: {
+        type: "string"
+      }
+    },
+    rows: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: true
+      }
+    },
+    page: {
+      type: "integer"
+    },
+    pageSize: {
+      type: "integer"
+    },
+    totalRows: {
+      type: "integer"
+    }
+  },
+  required: ["columns", "rows", "page", "pageSize", "totalRows"]
+} as const;
+
 export const selectedDashboardSchema = {
   type: "object",
   description: "Per-user selected dashboard for the active app.",

@@ -30,3 +30,18 @@ export type ChartWidgetConfig = {
   seriesField?: string;
   title?: string;
 };
+
+export type TableWidgetConfig = {
+  datasetId: string;
+  columns: string[];
+  pageSize: number;
+  title?: string;
+};
+
+export type TableRowsPayload = {
+  columns: string[];
+  rows: NormalizedDatasetRecord[];
+  page: number;
+  pageSize: number;
+  totalRows: number;
+};

@@ -11,7 +11,7 @@ type WidgetSummary = {
   id: string;
   type: "chart" | "table" | "metric" | "text";
   config: {
-    chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
+    chartType?: "bar" | "line" | "area" | "pie" | "radar" | "radial";
     title?: string;
   } | null;
 };
@@ -26,20 +26,33 @@ export function DashboardWidgetList(props: {
   addChartHint?: string;
   onSelectWidget: (widgetId: string) => void;
   onAddChart: () => void;
+  onAddTable: () => void;
 }) {
   return (
     <Card className="h-full">
       <CardHeader className="flex flex-row items-center justify-between gap-3">
         <CardTitle className="text-base">Widgets</CardTitle>
-        <Button
-          type="button"
-          size="sm"
-          onClick={props.onAddChart}
-          disabled={props.editorPending || !props.canAddChart}
-        >
-          <Plus className="h-4 w-4" />
-          Add chart
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            size="sm"
+            onClick={props.onAddChart}
+            disabled={props.editorPending || !props.canAddChart}
+          >
+            <Plus className="h-4 w-4" />
+            Add chart
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={props.onAddTable}
+            disabled={props.editorPending || !props.canAddChart}
+          >
+            <Plus className="h-4 w-4" />
+            Add table
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="grid gap-2">
         {!props.canAddChart && props.addChartHint ? (
@@ -67,7 +80,7 @@ export function DashboardWidgetList(props: {
           >
             <div className="flex items-center gap-2 text-sm font-medium">
               <LayoutTemplate className="h-4 w-4 text-muted-foreground" />
-              {widget.config?.title || "Chart widget"}
+              {widget.config?.title || (widget.type === "table" ? "Table widget" : "Chart widget")}
             </div>
             <p className="text-xs text-muted-foreground">
               {props.savingWidgetIds[widget.id]

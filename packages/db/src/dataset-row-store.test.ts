@@ -106,4 +106,49 @@ describe("createDatasetRowStore", () => {
       revenue: 42
     });
   });
+
+  it("lists a paginated row slice and total count for one dataset", async () => {
+    const prisma = {
+      datasetRow: {
+        count: vi.fn().mockResolvedValue(21),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "row_11",
+            tenantId: "canvas",
+            datasetId: "ds_1",
+            rowIndex: 10,
+            record: { month: "2026-04-11", revenue: 84 }
+          }
+        ])
+      }
+    } as never;
+
+    const store = createDatasetRowStore(prisma);
+    const page = await store.listPageByDataset({
+      tenantId: "canvas",
+      datasetId: "ds_1",
+      page: 2,
+      pageSize: 10
+    });
+
+    expect(prisma.datasetRow.count).toHaveBeenCalledWith({
+      where: {
+        tenantId: "canvas",
+        datasetId: "ds_1"
+      }
+    });
+    expect(prisma.datasetRow.findMany).toHaveBeenCalledWith({
+      where: {
+        tenantId: "canvas",
+        datasetId: "ds_1"
+      },
+      orderBy: {
+        rowIndex: "asc"
+      },
+      skip: 10,
+      take: 10
+    });
+    expect(page.totalRows).toBe(21);
+    expect(page.rows[0]?.record).toEqual({ month: "2026-04-11", revenue: 84 });
+  });
 });

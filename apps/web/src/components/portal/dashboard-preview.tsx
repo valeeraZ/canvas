@@ -16,14 +16,22 @@ type WidgetSummary = {
   dashboardId: string;
   type: "chart" | "table" | "metric" | "text";
   datasetId: string | null;
-  config: {
-    datasetId: string;
-    chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
-    xField: string;
-    yField: string;
-    seriesField?: string;
-    title?: string;
-  } | null;
+  config:
+    | {
+        datasetId: string;
+        chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
+        xField: string;
+        yField: string;
+        seriesField?: string;
+        title?: string;
+      }
+    | {
+        datasetId: string;
+        columns: string[];
+        pageSize: number;
+        title?: string;
+      }
+    | null;
   layout?: {
     x: number;
     y: number;
@@ -94,17 +102,14 @@ export function DashboardPreview(props: {
     for (const [widgetId, entry] of loadingEntries) {
       const widget = props.widgets.find((item) => item.id === widgetId);
 
-      if (!widget?.config) {
+      if (!widget?.config || !("chartType" in widget.config)) {
         continue;
       }
 
       void portalApiClient
         .runDatasetChartQuery({
           datasetId: widget.config.datasetId,
-          chartType:
-            widget.config.chartType === "line" || widget.config.chartType === "area"
-              ? widget.config.chartType
-              : "bar",
+          chartType: widget.config.chartType,
           xField: widget.config.xField,
           yField: widget.config.yField
         })

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { ChartWidgetConfig, DatasetPreview } from "./dashboard-editor";
+import type {
+  ChartWidgetConfig,
+  DatasetPreview,
+  TableRowsPayload,
+  TableWidgetConfig
+} from "./dashboard-editor";
 
 describe("dashboard editor contracts", () => {
   it("describes a chart widget config for dashboard rendering", () => {
@@ -29,5 +34,24 @@ describe("dashboard editor contracts", () => {
 
     expect(preview.columns[1]?.type).toBe("number");
     expect(preview.sampleRows[0]?.month).toBe("Jan");
+  });
+
+  it("describes table widget config and paginated row payloads", () => {
+    const config: TableWidgetConfig = {
+      datasetId: "ds_sales",
+      columns: ["month", "revenue"],
+      pageSize: 10,
+      title: "Sales rows"
+    };
+    const payload: TableRowsPayload = {
+      columns: ["month", "revenue"],
+      rows: [{ month: "Jan", revenue: 120 }],
+      page: 2,
+      pageSize: 10,
+      totalRows: 21
+    };
+
+    expect(config.columns).toEqual(["month", "revenue"]);
+    expect(payload.totalRows).toBe(21);
   });
 });

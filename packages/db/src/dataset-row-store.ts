@@ -47,6 +47,37 @@ export function createDatasetRowStore(prisma: PrismaClient) {
           rowIndex: "asc"
         }
       });
+    },
+    async listPageByDataset(input: {
+      tenantId: string;
+      datasetId: string;
+      page: number;
+      pageSize: number;
+    }) {
+      const page = Math.max(1, Math.floor(input.page));
+      const pageSize = Math.max(1, Math.floor(input.pageSize));
+      const where = {
+        tenantId: input.tenantId,
+        datasetId: input.datasetId
+      };
+      const [totalRows, rows] = await Promise.all([
+        prisma.datasetRow.count({ where }),
+        prisma.datasetRow.findMany({
+          where,
+          orderBy: {
+            rowIndex: "asc"
+          },
+          skip: (page - 1) * pageSize,
+          take: pageSize
+        })
+      ]);
+
+      return {
+        rows,
+        page,
+        pageSize,
+        totalRows
+      };
     }
   };
 }

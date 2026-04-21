@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import type { ChartWidgetConfig, DatasetPreview } from "../../../../../packages/contracts/src/dashboard-editor.js";
+import type {
+  ChartWidgetConfig,
+  DatasetPreview,
+  TableWidgetConfig
+} from "../../../../../packages/contracts/src/dashboard-editor.js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -21,8 +25,11 @@ type DatasetOption = {
 
 type ConfigPanelWidget = {
   id: string;
+  tenantId?: string;
+  dashboardId?: string;
+  type?: "chart" | "table" | "metric" | "text";
   datasetId: string | null;
-  config: ChartWidgetConfig | null;
+  config: ChartWidgetConfig | TableWidgetConfig | null;
 };
 
 export const CONFIG_PANEL_GROUPS = ["Chart", "Data", "Meta"] as const;
@@ -82,6 +89,10 @@ function buildInitialConfig(
   datasets: DatasetOption[]
 ): ChartWidgetConfig | null {
   if (widget?.config) {
+    if (!("chartType" in widget.config)) {
+      return null;
+    }
+
     return {
       ...widget.config,
       chartType: getSupportedChartType(widget.config.chartType),
@@ -97,10 +108,12 @@ function buildInitialConfig(
 
   const preview = previews[datasetId];
   const columns = preview?.columns ?? [];
+  const chartType =
+    widget?.config && "chartType" in widget.config ? widget.config.chartType : undefined;
 
   return {
     datasetId,
-    chartType: getSupportedChartType(widget?.config?.chartType),
+    chartType: getSupportedChartType(chartType),
     xField: columns[0]?.name ?? "",
     yField:
       columns.find(
@@ -148,7 +161,7 @@ export function DashboardWidgetConfigPanel(props: {
   datasets: DatasetOption[];
   previews: Record<string, DatasetPreview | null>;
   pending: boolean;
-  onSave: (widgetId: string, config: ChartWidgetConfig) => void;
+  onSave: (widgetId: string, config: ChartWidgetConfig | TableWidgetConfig) => void;
 }) {
   const [draft, setDraft] = useState<ChartWidgetConfig | null>(
     buildInitialConfig(props.widget, props.previews, props.datasets)
@@ -194,6 +207,84 @@ export function DashboardWidgetConfigPanel(props: {
 
   const preview = draft?.datasetId ? props.previews[draft.datasetId] : null;
   const fields: DatasetPreview["columns"] = preview?.columns ?? [];
+  const tableConfig =
+    props.widget?.type === "table" &&
+    props.widget.config &&
+    "columns" in props.widget.config
+      ? props.widget.config
+      : null;
+
+  if (props.widget?.type === "table") {
+    const datasetId = tableConfig?.datasetId ?? props.widget.datasetId ?? props.datasets[0]?.id ?? "";
+    const tablePreview = datasetId ? props.previews[datasetId] : null;
+    const columns = tablePreview?.columns.map((column) => column.name) ?? [];
+
+    return (
+      <Card className="h-full">
+        <CardHeader>
+          <CardTitle className="text-base">Configure widget</CardTitle>
+          <CardDescription>Changes save automatically while you edit.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <section className="grid gap-3">
+            <div className="grid gap-1">
+              <p className="text-sm font-medium">Table</p>
+              <p className="text-xs text-muted-foreground">
+                Choose which dataset rows this widget should show.
+              </p>
+            </div>
+            <div className="grid gap-2">
+              <Label>Dataset</Label>
+              <Select value={datasetId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select dataset" />
+                </SelectTrigger>
+                <SelectContent>
+                  {props.datasets.map((dataset: DatasetOption) => (
+                    <SelectItem key={dataset.id} value={dataset.id}>
+                      {dataset.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Visible columns</Label>
+              <div className="rounded-xl border border-border bg-muted/20 p-3 text-sm">
+                {(tableConfig?.columns.length ? tableConfig.columns : columns).join(", ")}
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="table-page-size">Page size</Label>
+              <Input
+                id="table-page-size"
+                value={String(tableConfig?.pageSize ?? 10)}
+                readOnly
+              />
+            </div>
+          </section>
+          <section className="grid gap-3">
+            <div className="grid gap-1">
+              <p className="text-sm font-medium">Meta</p>
+              <p className="text-xs text-muted-foreground">Tune the widget label.</p>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="table-title">Title</Label>
+              <Input
+                id="table-title"
+                value={tableConfig?.title ?? ""}
+                readOnly
+                placeholder="Sales rows"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {props.pending ? "Saving..." : "Changes save automatically."}
+            </p>
+          </section>
+        </CardContent>
+      </Card>
+    );
+  }
 
   function updateDraft(partial: Partial<ChartWidgetConfig>) {
     setDraft((current: ChartWidgetConfig | null) => {

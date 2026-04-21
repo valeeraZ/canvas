@@ -245,6 +245,38 @@ describe("createPortalApiClient", () => {
     );
   });
 
+  it("loads a paginated dataset rows page through the portal api", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          columns: ["month", "revenue"],
+          rows: [{ month: "Jan", revenue: 120 }],
+          page: 2,
+          pageSize: 10,
+          totalRows: 21
+        }),
+        { status: 200 }
+      )
+    );
+
+    const payload = await createPortalApiClient().getDatasetRowsPage({
+      datasetId: "ds_1",
+      page: 2,
+      pageSize: 10,
+      columns: ["month", "revenue"]
+    });
+
+    expect(payload.rows[0]?.month).toBe("Jan");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/canvas/datasets/ds_1/rows?page=2&pageSize=10&columns=month%2Crevenue",
+      expect.objectContaining({
+        headers: expect.any(Headers)
+      })
+    );
+  });
+
   it("creates dataset uploads and uploads a file through the portal api", async () => {
     vi.stubGlobal("fetch", fetchMock);
 

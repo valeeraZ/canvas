@@ -89,26 +89,36 @@ export type PortalApiClient = {
     dashboardId: string;
     type: "chart" | "table" | "metric" | "text";
     datasetId?: string | null;
-    config?: {
+    config?: ({
       datasetId: string;
       chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
       xField: string;
       yField: string;
       seriesField?: string;
       title?: string;
-    } | null;
+    } | {
+      datasetId: string;
+      columns: string[];
+      pageSize: number;
+      title?: string;
+    }) | null;
   }) => Promise<DashboardWidgetRecord>;
   updateDashboardWidget: (input: {
     dashboardId: string;
     widgetId: string;
-    config: {
+    config: ({
       datasetId: string;
       chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
       xField: string;
       yField: string;
       seriesField?: string;
       title?: string;
-    };
+    } | {
+      datasetId: string;
+      columns: string[];
+      pageSize: number;
+      title?: string;
+    });
   }) => Promise<DashboardWidgetRecord>;
   updateDashboardWidgetLayout: (input: {
     dashboardId: string;
@@ -129,6 +139,18 @@ export type PortalApiClient = {
       type: "string" | "number" | "boolean" | "date" | "unknown";
     }>;
     sampleRows: Array<Record<string, string | number | boolean | null>>;
+  }>;
+  getDatasetRowsPage: (input: {
+    datasetId: string;
+    page: number;
+    pageSize: number;
+    columns?: string[];
+  }) => Promise<{
+    columns: string[];
+    rows: Array<Record<string, string | number | boolean | null>>;
+    page: number;
+    pageSize: number;
+    totalRows: number;
   }>;
   runDatasetChartQuery: (input: {
     datasetId: string;
@@ -573,6 +595,21 @@ export function createPortalApiClient(): PortalApiClient {
     },
     async getDatasetPreview(datasetId) {
       const response = await portalFetch(`/api/canvas/datasets/${datasetId}/preview`);
+      return readPortalApiJson(response);
+    },
+    async getDatasetRowsPage(input) {
+      const params = new URLSearchParams({
+        page: String(input.page),
+        pageSize: String(input.pageSize)
+      });
+
+      if (input.columns?.length) {
+        params.set("columns", input.columns.join(","));
+      }
+
+      const response = await portalFetch(
+        `/api/canvas/datasets/${input.datasetId}/rows?${params.toString()}`
+      );
       return readPortalApiJson(response);
     },
     async runDatasetChartQuery(input) {
