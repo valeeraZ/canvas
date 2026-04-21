@@ -39,15 +39,42 @@ function normalizeAppName(value: string | undefined) {
   return value?.trim() ?? "";
 }
 
+function normalizeRoles(
+  value:
+    | string[]
+    | {
+        roles?: string[];
+      }
+    | undefined
+) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (Array.isArray(value?.roles)) {
+    return value.roles;
+  }
+
+  return [];
+}
+
 function normalizeAccessibleApp(item: {
   app_name?: string;
   appName?: string;
-  roles?: string[];
+  roles?:
+    | string[]
+    | {
+        roles?: string[];
+      };
 }): AccessibleApp {
   return {
     appName: normalizeAppName(item.app_name ?? item.appName),
-    roles: Array.isArray(item.roles) ? item.roles : []
+    roles: normalizeRoles(item.roles)
   };
+}
+
+function filterAppsWithRoles(apps: AccessibleApp[]) {
+  return apps.filter((app) => app.roles.length > 0);
 }
 
 async function fetchCurrentUser(input: {
@@ -99,11 +126,11 @@ export async function fetchAccessibleApps(input: {
   mockAccessibleApps?: AccessibleApp[];
 }): Promise<AccessibleApp[]> {
   if (input.mockAccessibleApps?.length) {
-    return input.mockAccessibleApps;
+    return filterAppsWithRoles(input.mockAccessibleApps);
   }
 
   if (input.mockContext) {
-    return [
+    return filterAppsWithRoles([
       {
         appName: "canvas",
         roles: input.mockContext.roles
@@ -112,7 +139,7 @@ export async function fetchAccessibleApps(input: {
         appName: "canvas-ops",
         roles: input.mockContext.roles
       }
-    ];
+    ]);
   }
 
   const fetchImpl = input.fetchImpl ?? fetch;
@@ -127,10 +154,14 @@ export async function fetchAccessibleApps(input: {
 
   const payload = (await response.json()) as Array<{
     app_name: string;
-    roles: string[];
+    roles:
+      | string[]
+      | {
+          roles?: string[];
+        };
   }>;
 
-  return payload.map(normalizeAccessibleApp);
+  return filterAppsWithRoles(payload.map(normalizeAccessibleApp));
 }
 
 export async function fetchAppMetadata(input: {

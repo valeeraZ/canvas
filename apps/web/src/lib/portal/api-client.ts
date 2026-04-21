@@ -1,6 +1,20 @@
 import type { DashboardWidgetRecord } from "../../../../../packages/contracts/src/widgets.js";
 import { readPortalAppNameFromPathname } from "./app-scope";
 
+type PortalDashboardRecord = {
+  id: string;
+  tenantId: string;
+  name: string;
+  workbookId: string | null;
+  status: string;
+  author: {
+    externalUserId: string | null;
+    displayName: string | null;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type PortalApiClient = {
   createSession: (input: {
     token: string;
@@ -25,7 +39,7 @@ export type PortalApiClient = {
     };
   }>;
   listDashboards: () => Promise<{
-    dashboards: Array<{ id: string; name: string }>;
+    dashboards: PortalDashboardRecord[];
     selectedDashboardId: string | null;
   }>;
   shareDashboard: (input: {
@@ -34,9 +48,11 @@ export type PortalApiClient = {
   }) => Promise<unknown>;
   getSelectedDashboard: () => Promise<{ dashboardId: string | null }>;
   setSelectedDashboard: (input: {
+    appName?: string;
     dashboardId: string | null;
   }) => Promise<{ dashboardId: string | null }>;
   exportDashboard: (input: {
+    appName?: string;
     dashboardId: string;
   }) => Promise<{
     version: 1;
@@ -53,21 +69,21 @@ export type PortalApiClient = {
       workbookId: string | null;
     };
     shareSubjects: Array<{ type: "user" | "group" | "role"; id: string }>;
-  }) => Promise<{
-    id: string;
-    tenantId: string;
-    name: string;
-    workbookId: string | null;
-  }>;
+  }) => Promise<PortalDashboardRecord>;
   createDashboard: (input: {
+    appName?: string;
     name: string;
     workbookId?: string | null;
-  }) => Promise<{
-    id: string;
-    tenantId: string;
+  }) => Promise<PortalDashboardRecord>;
+  renameDashboard: (input: {
+    appName?: string;
+    dashboardId: string;
     name: string;
-    workbookId: string | null;
-  }>;
+  }) => Promise<PortalDashboardRecord>;
+  removeDashboard: (input: {
+    appName?: string;
+    dashboardId: string;
+  }) => Promise<{ deletedDashboardId: string }>;
   listDashboardWidgets: (dashboardId: string) => Promise<DashboardWidgetRecord[]>;
   createDashboardWidget: (input: {
     dashboardId: string;
@@ -382,13 +398,54 @@ export function createPortalApiClient(): PortalApiClient {
       return readPortalApiJson(response);
     },
     async createDashboard(input) {
-      const response = await portalFetch("/api/canvas/dashboards", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json"
+      const response = await portalFetch(
+        "/api/canvas/dashboards",
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            name: input.name,
+            workbookId: input.workbookId
+          })
         },
-        body: JSON.stringify(input)
-      });
+        {
+          appName: input.appName
+        }
+      );
+
+      return readPortalApiJson(response);
+    },
+    async renameDashboard(input) {
+      const response = await portalFetch(
+        `/api/canvas/dashboards/${input.dashboardId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            name: input.name
+          })
+        },
+        {
+          appName: input.appName
+        }
+      );
+
+      return readPortalApiJson(response);
+    },
+    async removeDashboard(input) {
+      const response = await portalFetch(
+        `/api/canvas/dashboards/${input.dashboardId}`,
+        {
+          method: "DELETE"
+        },
+        {
+          appName: input.appName
+        }
+      );
 
       return readPortalApiJson(response);
     },
@@ -475,19 +532,31 @@ export function createPortalApiClient(): PortalApiClient {
       return readPortalApiJson(response);
     },
     async setSelectedDashboard(input) {
-      const response = await portalFetch("/api/canvas/dashboards/selected-dashboard", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json"
+      const response = await portalFetch(
+        "/api/canvas/dashboards/selected-dashboard",
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            dashboardId: input.dashboardId
+          })
         },
-        body: JSON.stringify(input)
-      });
+        {
+          appName: input.appName
+        }
+      );
 
       return readPortalApiJson(response);
     },
     async exportDashboard(input) {
       const response = await portalFetch(
-        `/api/canvas/dashboards/${input.dashboardId}/export`
+        `/api/canvas/dashboards/${input.dashboardId}/export`,
+        {},
+        {
+          appName: input.appName
+        }
       );
       return readPortalApiJson(response);
     },

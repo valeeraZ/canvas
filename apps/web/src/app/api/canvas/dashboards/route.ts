@@ -29,10 +29,7 @@ export async function GET(request: Request) {
     ]);
 
     return jsonWithRequestId({
-      dashboards: dashboards.map((dashboard) => ({
-        id: dashboard.id,
-        name: dashboard.name
-      })),
+      dashboards,
       selectedDashboardId: selected.dashboardId
     }, { requestId });
   } catch (error) {

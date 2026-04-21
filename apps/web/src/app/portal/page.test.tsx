@@ -110,7 +110,8 @@ describe("PortalHomePage", () => {
       <TooltipProvider>{await module.default()}</TooltipProvider>
     );
 
-    expect(html).toContain("Your apps");
+    expect(html).toContain("Accessible Apps");
+    expect(html).not.toContain("Apps overview");
     expect(html).toContain("Canvas Ops");
     expect(html).toContain("Ops Overview");
     expect(html).toContain("/portal/canvas-ops");

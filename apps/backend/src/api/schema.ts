@@ -382,9 +382,43 @@ export const dashboardSchema = {
     workbookId: {
       description: "Workbook identifier backing the dashboard, or null when unassigned.",
       type: ["string", "null"]
+    },
+    status: {
+      description: "Dashboard lifecycle status.",
+      type: "string"
+    },
+    author: {
+      description: "Principal that created the dashboard.",
+      type: "object",
+      properties: {
+        externalUserId: {
+          type: ["string", "null"]
+        },
+        displayName: {
+          type: ["string", "null"]
+        }
+      },
+      required: ["externalUserId", "displayName"]
+    },
+    createdAt: {
+      description: "ISO timestamp when the dashboard was created.",
+      type: "string"
+    },
+    updatedAt: {
+      description: "ISO timestamp when the dashboard was last updated.",
+      type: "string"
     }
   },
-  required: ["id", "tenantId", "name", "workbookId"]
+  required: [
+    "id",
+    "tenantId",
+    "name",
+    "workbookId",
+    "status",
+    "author",
+    "createdAt",
+    "updatedAt"
+  ]
 } as const;
 
 export const chartWidgetConfigSchema = {

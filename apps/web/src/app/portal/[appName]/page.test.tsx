@@ -66,7 +66,14 @@ describe("PortalAppDashboardsPage", () => {
           id: "dash_1",
           tenantId: "frame_app",
           name: "Executive Overview",
-          workbookId: null
+          workbookId: null,
+          status: "active",
+          author: {
+            externalUserId: "dev-1",
+            displayName: "Local Dev"
+          },
+          createdAt: "2026-04-21T09:00:00.000Z",
+          updatedAt: "2026-04-21T10:00:00.000Z"
         }
       ],
       getSelectedDashboard: async () => ({
@@ -89,5 +96,6 @@ describe("PortalAppDashboardsPage", () => {
     expect(html).toContain("Executive Overview");
     expect(html).toContain("/portal/frame_app/dash_1");
     expect(html).toContain("Portal");
+    expect(html.match(/Create dashboard/g)?.length).toBe(1);
   });
 });

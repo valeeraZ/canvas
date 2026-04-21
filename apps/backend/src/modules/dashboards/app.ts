@@ -43,7 +43,20 @@ export type DashboardsService = {
     tenantId: string;
     name: string;
     workbookId?: string;
+    createdByExternalUserId?: string;
+    createdByDisplayName?: string;
   }) => Promise<DashboardRecord>;
+  renameDashboard: (input: {
+    tenantId: string;
+    dashboardId: string;
+    name: string;
+  }) => Promise<DashboardRecord | null>;
+  removeDashboard: (input: {
+    tenantId: string;
+    dashboardId: string;
+  }) => Promise<{
+    deletedDashboardId: string;
+  } | null>;
   shareDashboard: (input: {
     tenantId: string;
     dashboardId: string;
@@ -89,6 +102,8 @@ export type DashboardsService = {
   importDashboard: (input: {
     tenantId: string;
     package: DashboardExportPackage;
+    createdByExternalUserId?: string;
+    createdByDisplayName?: string;
   }) => Promise<DashboardRecord>;
   getSelectedDashboard: (input: {
     tenantId: string;
@@ -192,12 +207,26 @@ export function createDashboardsService(input: {
     getDashboard(dashboardId: string, tenantId: string) {
       return dashboards.findByTenantAndId(tenantId, dashboardId);
     },
-    createDashboard(payload: { tenantId: string; name: string; workbookId?: string }) {
+    createDashboard(payload: {
+      tenantId: string;
+      name: string;
+      workbookId?: string;
+      createdByExternalUserId?: string;
+      createdByDisplayName?: string;
+    }) {
       return dashboards.create({
         tenantId: payload.tenantId,
         name: payload.name,
-        workbookId: payload.workbookId
+        workbookId: payload.workbookId,
+        createdByExternalUserId: payload.createdByExternalUserId,
+        createdByDisplayName: payload.createdByDisplayName
       });
+    },
+    renameDashboard(payload) {
+      return dashboards.rename(payload);
+    },
+    removeDashboard(payload) {
+      return dashboards.remove(payload);
     },
     shareDashboard(payload) {
       return shareDashboard({
@@ -253,7 +282,9 @@ export function createDashboardsService(input: {
       const dashboard = await dashboards.create({
         tenantId: payload.tenantId,
         name: payload.package.dashboard.name,
-        workbookId: payload.package.dashboard.workbookId ?? undefined
+        workbookId: payload.package.dashboard.workbookId ?? undefined,
+        createdByExternalUserId: payload.createdByExternalUserId,
+        createdByDisplayName: payload.createdByDisplayName
       });
 
       await visibility.replaceRules({
@@ -446,6 +477,160 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     }
 
     return dashboard;
+  });
+
+  app.patch<{
+    Params: {
+      dashboardId: string;
+    };
+    Body: {
+      name?: string;
+    };
+  }>("/dashboards/:dashboardId", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Rename one dashboard",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Renames one dashboard in the selected app.",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      params: {
+        type: "object",
+        required: ["dashboardId"],
+        properties: {
+          dashboardId: {
+            description: "Dashboard identifier inside the active app.",
+            type: "string"
+          }
+        }
+      },
+      body: {
+        type: "object",
+        required: ["name"],
+        properties: {
+          name: {
+            description: "Next dashboard display name.",
+            type: "string"
+          }
+        }
+      },
+      response: {
+        200: dashboardSchema,
+        400: messageResponseSchema,
+        401: messageResponseSchema,
+        404: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
+    const name = request.body?.name?.trim();
+
+    if (!name) {
+      reply.status(400);
+      return {
+        message: "name is required"
+      };
+    }
+
+    const dashboard = await options.dashboards.renameDashboard({
+      tenantId: request.tenantContext.tenantId,
+      dashboardId: request.params.dashboardId,
+      name
+    });
+
+    if (!dashboard) {
+      reply.status(404);
+      return {
+        message: "Dashboard not found"
+      };
+    }
+
+    return dashboard;
+  });
+
+  app.delete<{
+    Params: {
+      dashboardId: string;
+    };
+  }>("/dashboards/:dashboardId", {
+    schema: {
+      tags: ["dashboards"],
+      summary: "Remove one dashboard",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Removes one dashboard in the selected app.",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      params: {
+        type: "object",
+        required: ["dashboardId"],
+        properties: {
+          dashboardId: {
+            description: "Dashboard identifier inside the active app.",
+            type: "string"
+          }
+        }
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            deletedDashboardId: {
+              type: "string"
+            }
+          },
+          required: ["deletedDashboardId"]
+        },
+        401: messageResponseSchema,
+        404: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
+    const result = await options.dashboards.removeDashboard({
+      tenantId: request.tenantContext.tenantId,
+      dashboardId: request.params.dashboardId
+    });
+
+    if (!result) {
+      reply.status(404);
+      return {
+        message: "Dashboard not found"
+      };
+    }
+
+    return result;
   });
 
   app.post<{
@@ -1018,7 +1203,9 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
 
     return options.dashboards.importDashboard({
       tenantId: request.tenantContext.tenantId,
-      package: request.body
+      package: request.body,
+      createdByExternalUserId: request.tenantContext.externalUserId,
+      createdByDisplayName: request.tenantContext.displayName
     });
   });
 
@@ -1125,7 +1312,9 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     return options.dashboards.createDashboard({
       tenantId: request.tenantContext.tenantId,
       name: request.body?.name ?? "Untitled Dashboard",
-      workbookId: request.body?.workbookId
+      workbookId: request.body?.workbookId,
+      createdByExternalUserId: request.tenantContext.externalUserId,
+      createdByDisplayName: request.tenantContext.displayName
     });
   });
 };

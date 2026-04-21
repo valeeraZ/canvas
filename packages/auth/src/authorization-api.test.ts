@@ -110,6 +110,84 @@ describe("fetchAuthorizationContext", () => {
     );
   });
 
+  it("loads accessible apps from nested auth roles payloads", async () => {
+    const fetchImpl = vi.fn().mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          {
+            app_name: "frame_app",
+            roles: {
+              roles: ["ADMIN", "USER"]
+            }
+          },
+          {
+            app_name: "other_app",
+            roles: {
+              roles: []
+            }
+          }
+        ]),
+        { status: 200 }
+      )
+    );
+
+    const result = await (authorizationApi as typeof authorizationApi & {
+      fetchAccessibleApps: (input: {
+        authBaseUrl: string;
+        token: string;
+        fetchImpl: typeof fetch;
+      }) => Promise<Array<{ appName: string; roles: string[] }>>;
+    }).fetchAccessibleApps({
+      authBaseUrl: "https://auth.internal",
+      token: "token-123",
+      fetchImpl
+    });
+
+    expect(result).toEqual([
+      {
+        appName: "frame_app",
+        roles: ["ADMIN", "USER"]
+      }
+    ]);
+  });
+
+  it("filters apps with no resolved roles from the accessible app list", async () => {
+    const fetchImpl = vi.fn().mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          {
+            app_name: "canvas",
+            roles: ["ADMIN"]
+          },
+          {
+            app_name: "canvas-empty",
+            roles: []
+          }
+        ]),
+        { status: 200 }
+      )
+    );
+
+    const result = await (authorizationApi as typeof authorizationApi & {
+      fetchAccessibleApps: (input: {
+        authBaseUrl: string;
+        token: string;
+        fetchImpl: typeof fetch;
+      }) => Promise<Array<{ appName: string; roles: string[] }>>;
+    }).fetchAccessibleApps({
+      authBaseUrl: "https://auth.internal",
+      token: "token-123",
+      fetchImpl
+    });
+
+    expect(result).toEqual([
+      {
+        appName: "canvas",
+        roles: ["ADMIN"]
+      }
+    ]);
+  });
+
   it("loads app metadata from the auth app endpoint", async () => {
     const fetchImpl = vi.fn().mockResolvedValueOnce(
       new Response(

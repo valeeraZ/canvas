@@ -1,0 +1,8 @@
+ALTER TABLE "Dashboard"
+ADD COLUMN "status" TEXT NOT NULL DEFAULT 'active',
+ADD COLUMN "createdByExternalUserId" TEXT,
+ADD COLUMN "createdByDisplayName" TEXT,
+ADD COLUMN "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+CREATE UNIQUE INDEX "Dashboard_id_tenantId_key" ON "Dashboard"("id", "tenantId");

@@ -132,6 +132,107 @@ describe("auth routes", () => {
     });
   });
 
+  it("does not list apps without resolved roles", async () => {
+    const app = createApiApp({
+      authBaseUrl: "http://auth.local",
+      mockContext: {
+        displayName: "Local Dev",
+        employeeId: "dev-1",
+        roles: ["ADMIN"]
+      },
+      mockAccessibleApps: [
+        {
+          appName: "canvas",
+          roles: ["ADMIN"]
+        },
+        {
+          appName: "canvas-empty",
+          roles: []
+        }
+      ]
+    });
+
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/auth/apps",
+      headers: {
+        authorization: "Bearer local-dev-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().apps).toEqual([
+      {
+        appName: "canvas",
+        appDisplayName: "canvas",
+        appLogoName: "app-window",
+        roles: ["ADMIN"]
+      }
+    ]);
+  });
+
+  it("does not list apps without resolved roles from a cached resolver result", async () => {
+    const app = createApiApp({
+      authBaseUrl: "http://auth.local",
+      mockContext: {
+        displayName: "Local Dev",
+        employeeId: "dev-1",
+        roles: ["ADMIN"]
+      },
+      authorizationResolver: {
+        async getPrincipal() {
+          return {
+            displayName: "Local Dev",
+            employeeId: "dev-1"
+          };
+        },
+        async listAccessibleApps() {
+          return [
+            {
+              appName: "canvas",
+              roles: ["ADMIN"]
+            },
+            {
+              appName: "other_app",
+              roles: []
+            }
+          ];
+        },
+        async resolve() {
+          return {
+            appName: "canvas",
+            displayName: "Local Dev",
+            employeeId: "dev-1",
+            roles: ["ADMIN"],
+            groups: []
+          };
+        }
+      }
+    });
+
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/auth/apps",
+      headers: {
+        authorization: "Bearer local-dev-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().apps).toEqual([
+      {
+        appName: "canvas",
+        appDisplayName: "canvas",
+        appLogoName: "app-window",
+        roles: ["ADMIN"]
+      }
+    ]);
+  });
+
   it("switches app context in the canvas session", async () => {
     const app = createApiApp({
       authBaseUrl: "http://auth.local",

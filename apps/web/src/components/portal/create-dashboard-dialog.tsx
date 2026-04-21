@@ -21,14 +21,28 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "../ui/select";
 
 export function CreateDashboardDialog(props: {
-  appName: string;
+  appName?: string;
+  apps?: Array<{
+    appName: string;
+    appDisplayName: string;
+  }>;
 }) {
   const router = useRouter();
   const apiClient = createPortalApiClient();
+  const initialAppName = props.appName ?? props.apps?.[0]?.appName ?? "";
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [selectedAppName, setSelectedAppName] = useState(initialAppName);
   const [error, setError] = useState<PortalApiError | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -38,13 +52,15 @@ export function CreateDashboardDialog(props: {
 
     startTransition(async () => {
       try {
+        const appName = props.appName ?? selectedAppName;
         const dashboard = await apiClient.createDashboard({
+          appName,
           name: name.trim() || "Untitled Dashboard",
           workbookId: null
         });
         setOpen(false);
         setName("");
-        router.push(`/portal/${props.appName}/${dashboard.id}`);
+        router.push(`/portal/${appName}/${dashboard.id}`);
         router.refresh();
       } catch (caught) {
         setError(toPortalApiError(caught));
@@ -66,10 +82,29 @@ export function CreateDashboardDialog(props: {
         <DialogHeader>
           <DialogTitle>Create dashboard</DialogTitle>
           <DialogDescription>
-            Create a new dashboard in the current app.
+            Create a new dashboard in the selected app.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
+          {!props.appName && props.apps?.length ? (
+            <div className="grid gap-2">
+              <Label htmlFor="create-dashboard-app">App</Label>
+              <Select value={selectedAppName} onValueChange={setSelectedAppName}>
+                <SelectTrigger id="create-dashboard-app" className="w-full">
+                  <SelectValue placeholder="Select app" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {props.apps.map((app) => (
+                      <SelectItem key={app.appName} value={app.appName}>
+                        {app.appDisplayName}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
           <div className="grid gap-2">
             <Label htmlFor="create-dashboard-name">Dashboard name</Label>
             <Input

@@ -29,6 +29,11 @@ export type DashboardMinAggregateOutputType = {
   tenantId: string | null
   workbookId: string | null
   name: string | null
+  status: string | null
+  createdByExternalUserId: string | null
+  createdByDisplayName: string | null
+  createdAt: Date | null
+  updatedAt: Date | null
 }
 
 export type DashboardMaxAggregateOutputType = {
@@ -36,6 +41,11 @@ export type DashboardMaxAggregateOutputType = {
   tenantId: string | null
   workbookId: string | null
   name: string | null
+  status: string | null
+  createdByExternalUserId: string | null
+  createdByDisplayName: string | null
+  createdAt: Date | null
+  updatedAt: Date | null
 }
 
 export type DashboardCountAggregateOutputType = {
@@ -43,6 +53,11 @@ export type DashboardCountAggregateOutputType = {
   tenantId: number
   workbookId: number
   name: number
+  status: number
+  createdByExternalUserId: number
+  createdByDisplayName: number
+  createdAt: number
+  updatedAt: number
   _all: number
 }
 
@@ -52,6 +67,11 @@ export type DashboardMinAggregateInputType = {
   tenantId?: true
   workbookId?: true
   name?: true
+  status?: true
+  createdByExternalUserId?: true
+  createdByDisplayName?: true
+  createdAt?: true
+  updatedAt?: true
 }
 
 export type DashboardMaxAggregateInputType = {
@@ -59,6 +79,11 @@ export type DashboardMaxAggregateInputType = {
   tenantId?: true
   workbookId?: true
   name?: true
+  status?: true
+  createdByExternalUserId?: true
+  createdByDisplayName?: true
+  createdAt?: true
+  updatedAt?: true
 }
 
 export type DashboardCountAggregateInputType = {
@@ -66,6 +91,11 @@ export type DashboardCountAggregateInputType = {
   tenantId?: true
   workbookId?: true
   name?: true
+  status?: true
+  createdByExternalUserId?: true
+  createdByDisplayName?: true
+  createdAt?: true
+  updatedAt?: true
   _all?: true
 }
 
@@ -146,6 +176,11 @@ export type DashboardGroupByOutputType = {
   tenantId: string
   workbookId: string | null
   name: string
+  status: string
+  createdByExternalUserId: string | null
+  createdByDisplayName: string | null
+  createdAt: Date
+  updatedAt: Date
   _count: DashboardCountAggregateOutputType | null
   _min: DashboardMinAggregateOutputType | null
   _max: DashboardMaxAggregateOutputType | null
@@ -174,6 +209,11 @@ export type DashboardWhereInput = {
   tenantId?: Prisma.StringFilter<"Dashboard"> | string
   workbookId?: Prisma.StringNullableFilter<"Dashboard"> | string | null
   name?: Prisma.StringFilter<"Dashboard"> | string
+  status?: Prisma.StringFilter<"Dashboard"> | string
+  createdByExternalUserId?: Prisma.StringNullableFilter<"Dashboard"> | string | null
+  createdByDisplayName?: Prisma.StringNullableFilter<"Dashboard"> | string | null
+  createdAt?: Prisma.DateTimeFilter<"Dashboard"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Dashboard"> | Date | string
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   widgets?: Prisma.DashboardWidgetListRelationFilter
   visibilityRules?: Prisma.DashboardVisibilityRuleListRelationFilter
@@ -185,6 +225,11 @@ export type DashboardOrderByWithRelationInput = {
   tenantId?: Prisma.SortOrder
   workbookId?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  createdByExternalUserId?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdByDisplayName?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   tenant?: Prisma.TenantOrderByWithRelationInput
   widgets?: Prisma.DashboardWidgetOrderByRelationAggregateInput
   visibilityRules?: Prisma.DashboardVisibilityRuleOrderByRelationAggregateInput
@@ -193,23 +238,34 @@ export type DashboardOrderByWithRelationInput = {
 
 export type DashboardWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  id_tenantId?: Prisma.DashboardIdTenantIdCompoundUniqueInput
   AND?: Prisma.DashboardWhereInput | Prisma.DashboardWhereInput[]
   OR?: Prisma.DashboardWhereInput[]
   NOT?: Prisma.DashboardWhereInput | Prisma.DashboardWhereInput[]
   tenantId?: Prisma.StringFilter<"Dashboard"> | string
   workbookId?: Prisma.StringNullableFilter<"Dashboard"> | string | null
   name?: Prisma.StringFilter<"Dashboard"> | string
+  status?: Prisma.StringFilter<"Dashboard"> | string
+  createdByExternalUserId?: Prisma.StringNullableFilter<"Dashboard"> | string | null
+  createdByDisplayName?: Prisma.StringNullableFilter<"Dashboard"> | string | null
+  createdAt?: Prisma.DateTimeFilter<"Dashboard"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Dashboard"> | Date | string
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   widgets?: Prisma.DashboardWidgetListRelationFilter
   visibilityRules?: Prisma.DashboardVisibilityRuleListRelationFilter
   appPreferences?: Prisma.PrincipalAppPreferenceListRelationFilter
-}, "id">
+}, "id" | "id_tenantId">
 
 export type DashboardOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   workbookId?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  createdByExternalUserId?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdByDisplayName?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   _count?: Prisma.DashboardCountOrderByAggregateInput
   _max?: Prisma.DashboardMaxOrderByAggregateInput
   _min?: Prisma.DashboardMinOrderByAggregateInput
@@ -223,12 +279,22 @@ export type DashboardScalarWhereWithAggregatesInput = {
   tenantId?: Prisma.StringWithAggregatesFilter<"Dashboard"> | string
   workbookId?: Prisma.StringNullableWithAggregatesFilter<"Dashboard"> | string | null
   name?: Prisma.StringWithAggregatesFilter<"Dashboard"> | string
+  status?: Prisma.StringWithAggregatesFilter<"Dashboard"> | string
+  createdByExternalUserId?: Prisma.StringNullableWithAggregatesFilter<"Dashboard"> | string | null
+  createdByDisplayName?: Prisma.StringNullableWithAggregatesFilter<"Dashboard"> | string | null
+  createdAt?: Prisma.DateTimeWithAggregatesFilter<"Dashboard"> | Date | string
+  updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Dashboard"> | Date | string
 }
 
 export type DashboardCreateInput = {
   id?: string
   workbookId?: string | null
   name: string
+  status?: string
+  createdByExternalUserId?: string | null
+  createdByDisplayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   tenant: Prisma.TenantCreateNestedOneWithoutDashboardsInput
   widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDashboardInput
   visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutDashboardInput
@@ -240,6 +306,11 @@ export type DashboardUncheckedCreateInput = {
   tenantId: string
   workbookId?: string | null
   name: string
+  status?: string
+  createdByExternalUserId?: string | null
+  createdByDisplayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDashboardInput
   visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutDashboardInput
   appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutSelectedDashboardInput
@@ -249,6 +320,11 @@ export type DashboardUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutDashboardsNestedInput
   widgets?: Prisma.DashboardWidgetUpdateManyWithoutDashboardNestedInput
   visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutDashboardNestedInput
@@ -260,6 +336,11 @@ export type DashboardUncheckedUpdateInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDashboardNestedInput
   visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutDashboardNestedInput
   appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutSelectedDashboardNestedInput
@@ -270,12 +351,22 @@ export type DashboardCreateManyInput = {
   tenantId: string
   workbookId?: string | null
   name: string
+  status?: string
+  createdByExternalUserId?: string | null
+  createdByDisplayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type DashboardUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type DashboardUncheckedUpdateManyInput = {
@@ -283,6 +374,11 @@ export type DashboardUncheckedUpdateManyInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type DashboardListRelationFilter = {
@@ -295,11 +391,21 @@ export type DashboardOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
+export type DashboardIdTenantIdCompoundUniqueInput = {
+  id: string
+  tenantId: string
+}
+
 export type DashboardCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   workbookId?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  createdByExternalUserId?: Prisma.SortOrder
+  createdByDisplayName?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type DashboardMaxOrderByAggregateInput = {
@@ -307,6 +413,11 @@ export type DashboardMaxOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   workbookId?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  createdByExternalUserId?: Prisma.SortOrder
+  createdByDisplayName?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type DashboardMinOrderByAggregateInput = {
@@ -314,6 +425,11 @@ export type DashboardMinOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   workbookId?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  createdByExternalUserId?: Prisma.SortOrder
+  createdByDisplayName?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type DashboardScalarRelationFilter = {
@@ -368,6 +484,10 @@ export type DashboardUncheckedUpdateManyWithoutTenantNestedInput = {
   deleteMany?: Prisma.DashboardScalarWhereInput | Prisma.DashboardScalarWhereInput[]
 }
 
+export type DateTimeFieldUpdateOperationsInput = {
+  set?: Date | string
+}
+
 export type DashboardCreateNestedOneWithoutWidgetsInput = {
   create?: Prisma.XOR<Prisma.DashboardCreateWithoutWidgetsInput, Prisma.DashboardUncheckedCreateWithoutWidgetsInput>
   connectOrCreate?: Prisma.DashboardCreateOrConnectWithoutWidgetsInput
@@ -416,6 +536,11 @@ export type DashboardCreateWithoutTenantInput = {
   id?: string
   workbookId?: string | null
   name: string
+  status?: string
+  createdByExternalUserId?: string | null
+  createdByDisplayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDashboardInput
   visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutDashboardInput
   appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutSelectedDashboardInput
@@ -425,6 +550,11 @@ export type DashboardUncheckedCreateWithoutTenantInput = {
   id?: string
   workbookId?: string | null
   name: string
+  status?: string
+  createdByExternalUserId?: string | null
+  createdByDisplayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDashboardInput
   visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutDashboardInput
   appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutSelectedDashboardInput
@@ -464,12 +594,22 @@ export type DashboardScalarWhereInput = {
   tenantId?: Prisma.StringFilter<"Dashboard"> | string
   workbookId?: Prisma.StringNullableFilter<"Dashboard"> | string | null
   name?: Prisma.StringFilter<"Dashboard"> | string
+  status?: Prisma.StringFilter<"Dashboard"> | string
+  createdByExternalUserId?: Prisma.StringNullableFilter<"Dashboard"> | string | null
+  createdByDisplayName?: Prisma.StringNullableFilter<"Dashboard"> | string | null
+  createdAt?: Prisma.DateTimeFilter<"Dashboard"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Dashboard"> | Date | string
 }
 
 export type DashboardCreateWithoutWidgetsInput = {
   id?: string
   workbookId?: string | null
   name: string
+  status?: string
+  createdByExternalUserId?: string | null
+  createdByDisplayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   tenant: Prisma.TenantCreateNestedOneWithoutDashboardsInput
   visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutDashboardInput
   appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutSelectedDashboardInput
@@ -480,6 +620,11 @@ export type DashboardUncheckedCreateWithoutWidgetsInput = {
   tenantId: string
   workbookId?: string | null
   name: string
+  status?: string
+  createdByExternalUserId?: string | null
+  createdByDisplayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutDashboardInput
   appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutSelectedDashboardInput
 }
@@ -504,6 +649,11 @@ export type DashboardUpdateWithoutWidgetsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutDashboardsNestedInput
   visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutDashboardNestedInput
   appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutSelectedDashboardNestedInput
@@ -514,6 +664,11 @@ export type DashboardUncheckedUpdateWithoutWidgetsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutDashboardNestedInput
   appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutSelectedDashboardNestedInput
 }
@@ -522,6 +677,11 @@ export type DashboardCreateWithoutVisibilityRulesInput = {
   id?: string
   workbookId?: string | null
   name: string
+  status?: string
+  createdByExternalUserId?: string | null
+  createdByDisplayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   tenant: Prisma.TenantCreateNestedOneWithoutDashboardsInput
   widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDashboardInput
   appPreferences?: Prisma.PrincipalAppPreferenceCreateNestedManyWithoutSelectedDashboardInput
@@ -532,6 +692,11 @@ export type DashboardUncheckedCreateWithoutVisibilityRulesInput = {
   tenantId: string
   workbookId?: string | null
   name: string
+  status?: string
+  createdByExternalUserId?: string | null
+  createdByDisplayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDashboardInput
   appPreferences?: Prisma.PrincipalAppPreferenceUncheckedCreateNestedManyWithoutSelectedDashboardInput
 }
@@ -556,6 +721,11 @@ export type DashboardUpdateWithoutVisibilityRulesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutDashboardsNestedInput
   widgets?: Prisma.DashboardWidgetUpdateManyWithoutDashboardNestedInput
   appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutSelectedDashboardNestedInput
@@ -566,6 +736,11 @@ export type DashboardUncheckedUpdateWithoutVisibilityRulesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDashboardNestedInput
   appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutSelectedDashboardNestedInput
 }
@@ -574,6 +749,11 @@ export type DashboardCreateWithoutAppPreferencesInput = {
   id?: string
   workbookId?: string | null
   name: string
+  status?: string
+  createdByExternalUserId?: string | null
+  createdByDisplayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   tenant: Prisma.TenantCreateNestedOneWithoutDashboardsInput
   widgets?: Prisma.DashboardWidgetCreateNestedManyWithoutDashboardInput
   visibilityRules?: Prisma.DashboardVisibilityRuleCreateNestedManyWithoutDashboardInput
@@ -584,6 +764,11 @@ export type DashboardUncheckedCreateWithoutAppPreferencesInput = {
   tenantId: string
   workbookId?: string | null
   name: string
+  status?: string
+  createdByExternalUserId?: string | null
+  createdByDisplayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   widgets?: Prisma.DashboardWidgetUncheckedCreateNestedManyWithoutDashboardInput
   visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedCreateNestedManyWithoutDashboardInput
 }
@@ -608,6 +793,11 @@ export type DashboardUpdateWithoutAppPreferencesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutDashboardsNestedInput
   widgets?: Prisma.DashboardWidgetUpdateManyWithoutDashboardNestedInput
   visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutDashboardNestedInput
@@ -618,6 +808,11 @@ export type DashboardUncheckedUpdateWithoutAppPreferencesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDashboardNestedInput
   visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutDashboardNestedInput
 }
@@ -626,12 +821,22 @@ export type DashboardCreateManyTenantInput = {
   id?: string
   workbookId?: string | null
   name: string
+  status?: string
+  createdByExternalUserId?: string | null
+  createdByDisplayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type DashboardUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   widgets?: Prisma.DashboardWidgetUpdateManyWithoutDashboardNestedInput
   visibilityRules?: Prisma.DashboardVisibilityRuleUpdateManyWithoutDashboardNestedInput
   appPreferences?: Prisma.PrincipalAppPreferenceUpdateManyWithoutSelectedDashboardNestedInput
@@ -641,6 +846,11 @@ export type DashboardUncheckedUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   widgets?: Prisma.DashboardWidgetUncheckedUpdateManyWithoutDashboardNestedInput
   visibilityRules?: Prisma.DashboardVisibilityRuleUncheckedUpdateManyWithoutDashboardNestedInput
   appPreferences?: Prisma.PrincipalAppPreferenceUncheckedUpdateManyWithoutSelectedDashboardNestedInput
@@ -650,6 +860,11 @@ export type DashboardUncheckedUpdateManyWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workbookId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByExternalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByDisplayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -706,6 +921,11 @@ export type DashboardSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   tenantId?: boolean
   workbookId?: boolean
   name?: boolean
+  status?: boolean
+  createdByExternalUserId?: boolean
+  createdByDisplayName?: boolean
+  createdAt?: boolean
+  updatedAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   widgets?: boolean | Prisma.Dashboard$widgetsArgs<ExtArgs>
   visibilityRules?: boolean | Prisma.Dashboard$visibilityRulesArgs<ExtArgs>
@@ -718,6 +938,11 @@ export type DashboardSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   tenantId?: boolean
   workbookId?: boolean
   name?: boolean
+  status?: boolean
+  createdByExternalUserId?: boolean
+  createdByDisplayName?: boolean
+  createdAt?: boolean
+  updatedAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["dashboard"]>
 
@@ -726,6 +951,11 @@ export type DashboardSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   tenantId?: boolean
   workbookId?: boolean
   name?: boolean
+  status?: boolean
+  createdByExternalUserId?: boolean
+  createdByDisplayName?: boolean
+  createdAt?: boolean
+  updatedAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["dashboard"]>
 
@@ -734,9 +964,14 @@ export type DashboardSelectScalar = {
   tenantId?: boolean
   workbookId?: boolean
   name?: boolean
+  status?: boolean
+  createdByExternalUserId?: boolean
+  createdByDisplayName?: boolean
+  createdAt?: boolean
+  updatedAt?: boolean
 }
 
-export type DashboardOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "workbookId" | "name", ExtArgs["result"]["dashboard"]>
+export type DashboardOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "workbookId" | "name" | "status" | "createdByExternalUserId" | "createdByDisplayName" | "createdAt" | "updatedAt", ExtArgs["result"]["dashboard"]>
 export type DashboardInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   widgets?: boolean | Prisma.Dashboard$widgetsArgs<ExtArgs>
@@ -764,6 +999,11 @@ export type $DashboardPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     tenantId: string
     workbookId: string | null
     name: string
+    status: string
+    createdByExternalUserId: string | null
+    createdByDisplayName: string | null
+    createdAt: Date
+    updatedAt: Date
   }, ExtArgs["result"]["dashboard"]>
   composites: {}
 }
@@ -1195,6 +1435,11 @@ export interface DashboardFieldRefs {
   readonly tenantId: Prisma.FieldRef<"Dashboard", 'String'>
   readonly workbookId: Prisma.FieldRef<"Dashboard", 'String'>
   readonly name: Prisma.FieldRef<"Dashboard", 'String'>
+  readonly status: Prisma.FieldRef<"Dashboard", 'String'>
+  readonly createdByExternalUserId: Prisma.FieldRef<"Dashboard", 'String'>
+  readonly createdByDisplayName: Prisma.FieldRef<"Dashboard", 'String'>
+  readonly createdAt: Prisma.FieldRef<"Dashboard", 'DateTime'>
+  readonly updatedAt: Prisma.FieldRef<"Dashboard", 'DateTime'>
 }
     
 

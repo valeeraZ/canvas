@@ -167,7 +167,12 @@ export const DashboardScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   workbookId: 'workbookId',
-  name: 'name'
+  name: 'name',
+  status: 'status',
+  createdByExternalUserId: 'createdByExternalUserId',
+  createdByDisplayName: 'createdByDisplayName',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type DashboardScalarFieldEnum = (typeof DashboardScalarFieldEnum)[keyof typeof DashboardScalarFieldEnum]

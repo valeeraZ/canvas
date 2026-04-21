@@ -72,7 +72,6 @@ export default async function PortalAppDashboardsPage(props: {
       ]}
       actions={
         <div className="flex items-center gap-2">
-          <CreateDashboardDialog appName={appName} />
           <Button asChild variant="outline">
             <Link href="/portal">Back to portal</Link>
           </Button>
@@ -80,12 +79,18 @@ export default async function PortalAppDashboardsPage(props: {
       }
     >
       <DashboardList
-        appName={appName}
         dashboards={dashboards.map((dashboard) => ({
           id: dashboard.id,
-          name: dashboard.name
+          appName,
+          appDisplayName: activeApp.appDisplayName,
+          name: dashboard.name,
+          status: dashboard.status,
+          author: dashboard.author,
+          createdAt: dashboard.createdAt,
+          updatedAt: dashboard.updatedAt
         }))}
         selectedDashboardId={selected.dashboardId}
+        showDefaultEmbed
         actions={<CreateDashboardDialog appName={appName} />}
       />
     </PortalShell>

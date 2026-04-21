@@ -109,7 +109,7 @@ export default async function PortalHomePage() {
       apps={orderedApps}
       currentApp={null}
       principal={session.principal}
-      title="Your apps"
+      title="Accessible Apps"
       description="Start from the apps you can access, then jump directly into each app's dashboards."
       currentSection="overview"
       breadcrumbs={[
@@ -117,19 +117,12 @@ export default async function PortalHomePage() {
         { label: "Overview" }
       ]}
     >
-      <section className="grid gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Apps overview</CardTitle>
-            <CardDescription>
-              Recently used apps float to the top so you can jump back into active
-              dashboards quickly.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AppInventory apps={inventory} />
-          </CardContent>
-        </Card>
+      <section className="flex flex-col gap-4">
+        <p className="text-sm text-muted-foreground">
+          Recently used apps float to the top so you can jump back into active
+          dashboards quickly.
+        </p>
+        <AppInventory apps={inventory} />
       </section>
     </PortalShell>
   );

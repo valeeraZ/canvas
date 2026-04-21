@@ -7,6 +7,11 @@ type PersistedDashboard = {
   tenantId: string;
   name: string;
   workbookId: string | null;
+  status: string;
+  createdByExternalUserId: string | null;
+  createdByDisplayName: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   tenant?: {
     slug: string;
   } | null;
@@ -17,7 +22,14 @@ export function toDashboardRecord(input: PersistedDashboard): DashboardRecord {
     id: input.id,
     tenantId: input.tenant?.slug ?? input.tenantId,
     name: input.name,
-    workbookId: input.workbookId
+    workbookId: input.workbookId,
+    status: input.status,
+    author: {
+      externalUserId: input.createdByExternalUserId,
+      displayName: input.createdByDisplayName
+    },
+    createdAt: input.createdAt.toISOString(),
+    updatedAt: input.updatedAt.toISOString()
   };
 }
 
@@ -27,13 +39,18 @@ export function createDashboardStore(prisma: PrismaClient) {
       tenantId: string;
       name: string;
       workbookId?: string;
+      createdByExternalUserId?: string;
+      createdByDisplayName?: string;
     }) {
       const tenant = await resolveTenantBySlug(prisma, input.tenantId);
       const dashboard = await prisma.dashboard.create({
         data: {
           tenantId: tenant.id,
           name: input.name,
-          workbookId: input.workbookId ?? null
+          workbookId: input.workbookId ?? null,
+          status: "active",
+          createdByExternalUserId: input.createdByExternalUserId ?? null,
+          createdByDisplayName: input.createdByDisplayName ?? null
         },
         include: tenantSlugInclude
       });
@@ -67,6 +84,49 @@ export function createDashboardStore(prisma: PrismaClient) {
       });
 
       return dashboard ? toDashboardRecord(dashboard) : null;
+    },
+    async rename(input: {
+      tenantId: string;
+      dashboardId: string;
+      name: string;
+    }) {
+      const tenant = await resolveTenantBySlug(prisma, input.tenantId);
+      try {
+        const dashboard = await prisma.dashboard.update({
+          where: {
+            id: input.dashboardId,
+            tenantId: tenant.id
+          },
+          data: {
+            name: input.name
+          },
+          include: tenantSlugInclude
+        });
+
+        return toDashboardRecord(dashboard);
+      } catch {
+        return null;
+      }
+    },
+    async remove(input: {
+      tenantId: string;
+      dashboardId: string;
+    }) {
+      const tenant = await resolveTenantBySlug(prisma, input.tenantId);
+      try {
+        const dashboard = await prisma.dashboard.delete({
+          where: {
+            id: input.dashboardId,
+            tenantId: tenant.id
+          }
+        });
+
+        return {
+          deletedDashboardId: dashboard.id
+        };
+      } catch {
+        return null;
+      }
     }
   };
 }

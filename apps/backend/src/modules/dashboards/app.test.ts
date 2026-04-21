@@ -28,6 +28,8 @@ describe("dashboard routes", () => {
     let createRequest: unknown;
     let shareRequest: unknown;
     let shareReadRequest: unknown;
+    let renameRequest: unknown;
+    let removeRequest: unknown;
     let exportRequest: unknown;
     let importRequest: unknown;
     let selectedReadRequest: unknown;
@@ -53,7 +55,14 @@ describe("dashboard routes", () => {
               id: "dash_1",
               tenantId,
               name: "Overview",
-              workbookId: "wb_1"
+              workbookId: "wb_1",
+              status: "active",
+              author: {
+                externalUserId: "dev-1",
+                displayName: "Local Dev"
+              },
+              createdAt: "2026-04-21T09:00:00.000Z",
+              updatedAt: "2026-04-21T09:00:00.000Z"
             }
           ];
         },
@@ -64,7 +73,14 @@ describe("dashboard routes", () => {
               id: "dash_1",
               tenantId: "tenant_demo",
               name: "Overview",
-              workbookId: "wb_1"
+              workbookId: "wb_1",
+              status: "active",
+              author: {
+                externalUserId: "dev-1",
+                displayName: "Local Dev"
+              },
+              createdAt: "2026-04-21T09:00:00.000Z",
+              updatedAt: "2026-04-21T09:00:00.000Z"
             }
           ];
         },
@@ -74,20 +90,58 @@ describe("dashboard routes", () => {
             id: dashboardId,
             tenantId,
             name: "Overview",
-            workbookId: "wb_1"
+            workbookId: "wb_1",
+            status: "active",
+            author: {
+              externalUserId: "dev-1",
+              displayName: "Local Dev"
+            },
+            createdAt: "2026-04-21T09:00:00.000Z",
+            updatedAt: "2026-04-21T09:00:00.000Z"
           };
         },
         createDashboard: async (input: {
           tenantId: string;
           name: string;
           workbookId?: string;
+          createdByExternalUserId?: string;
+          createdByDisplayName?: string;
         }) => {
           createRequest = input;
           return {
             id: "dash_1",
             tenantId: input.tenantId,
             name: input.name,
-            workbookId: input.workbookId ?? null
+            workbookId: input.workbookId ?? null,
+            status: "active",
+            author: {
+              externalUserId: input.createdByExternalUserId ?? null,
+              displayName: input.createdByDisplayName ?? null
+            },
+            createdAt: "2026-04-21T09:00:00.000Z",
+            updatedAt: "2026-04-21T09:00:00.000Z"
+          };
+        },
+        renameDashboard: async (input: unknown) => {
+          renameRequest = input;
+          return {
+            id: "dash_1",
+            tenantId: "canvas",
+            name: "Renamed Overview",
+            workbookId: "wb_1",
+            status: "active",
+            author: {
+              externalUserId: "dev-1",
+              displayName: "Local Dev"
+            },
+            createdAt: "2026-04-21T09:00:00.000Z",
+            updatedAt: "2026-04-21T10:00:00.000Z"
+          };
+        },
+        removeDashboard: async (input: unknown) => {
+          removeRequest = input;
+          return {
+            deletedDashboardId: "dash_1"
           };
         },
         shareDashboard: async (input: unknown) => {
@@ -139,7 +193,14 @@ describe("dashboard routes", () => {
             id: "dash_imported",
             tenantId: "canvas",
             name: "Imported Overview",
-            workbookId: "wb_1"
+            workbookId: "wb_1",
+            status: "active",
+            author: {
+              externalUserId: "dev-1",
+              displayName: "Local Dev"
+            },
+            createdAt: "2026-04-21T09:00:00.000Z",
+            updatedAt: "2026-04-21T09:00:00.000Z"
           };
         },
         getSelectedDashboard: async (input: unknown) => {
@@ -375,6 +436,37 @@ describe("dashboard routes", () => {
       "canvas"
     );
     expect(authorizedCreate.json().workbookId).toBe("wb_1");
+    expect(
+      (createRequest as { createdByExternalUserId?: string }).createdByExternalUserId
+    ).toBe("dev-1");
+
+    const renameResponse = await app.inject({
+      method: "PATCH",
+      url: "/dashboards/dash_1",
+      headers: {
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
+      },
+      payload: {
+        name: "Renamed Overview"
+      }
+    });
+    expect(renameResponse.statusCode).toBe(200);
+    expect((renameRequest as { tenantId?: string })?.tenantId).toBe("canvas");
+    expect((renameRequest as { dashboardId?: string })?.dashboardId).toBe("dash_1");
+    expect(renameResponse.json().name).toBe("Renamed Overview");
+
+    const removeResponse = await app.inject({
+      method: "DELETE",
+      url: "/dashboards/dash_1",
+      headers: {
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
+      }
+    });
+    expect(removeResponse.statusCode).toBe(200);
+    expect((removeRequest as { tenantId?: string })?.tenantId).toBe("canvas");
+    expect(removeResponse.json().deletedDashboardId).toBe("dash_1");
 
     const createWidgetResponse = await app.inject({
       method: "POST",
@@ -501,6 +593,10 @@ describe("dashboard routes", () => {
     });
     expect(importResponse.statusCode).toBe(200);
     expect((importRequest as { tenantId?: string })?.tenantId).toBe("canvas");
+    expect(
+      (importRequest as { createdByExternalUserId?: string })
+        ?.createdByExternalUserId
+    ).toBe("dev-1");
     expect(importResponse.json().id).toBe("dash_imported");
 
     const selectedResponse = await app.inject({

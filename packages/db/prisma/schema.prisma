@@ -93,14 +93,21 @@ model Workbook {
 }
 
 model Dashboard {
-  id              String                  @id @default(cuid())
-  tenantId        String
-  workbookId      String?
-  name            String
-  tenant          Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  widgets         DashboardWidget[]
-  visibilityRules DashboardVisibilityRule[]
-  appPreferences  PrincipalAppPreference[]
+  id                      String                    @id @default(cuid())
+  tenantId                String
+  workbookId              String?
+  name                    String
+  status                  String                    @default("active")
+  createdByExternalUserId String?
+  createdByDisplayName    String?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  tenant                  Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  widgets                 DashboardWidget[]
+  visibilityRules         DashboardVisibilityRule[]
+  appPreferences          PrincipalAppPreference[]
+
+  @@unique([id, tenantId])
 }
 
 model DashboardWidget {

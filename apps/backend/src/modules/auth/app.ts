@@ -170,8 +170,11 @@ export const authModule: FastifyPluginAsync<AuthModuleOptions> = async (
         mockAccessibleApps: options.mockAccessibleApps
       })
     ]);
+    const appsWithRoles = (accessibleApps ?? []).filter(
+      (app) => app.roles.length > 0
+    );
     const apps = await Promise.all(
-      (accessibleApps ?? []).map((app) =>
+      appsWithRoles.map((app) =>
         hydrateAccessibleApp(app, {
           authBaseUrl: options.authBaseUrl,
           token,

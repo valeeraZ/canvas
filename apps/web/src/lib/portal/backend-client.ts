@@ -7,6 +7,20 @@ import type { DashboardExportPackage } from "../../../../../packages/contracts/s
 import type { ChartWidgetConfig, DatasetPreview } from "../../../../../packages/contracts/src/dashboard-editor.js";
 import type { DashboardWidgetRecord } from "../../../../../packages/contracts/src/widgets.js";
 
+type PortalDashboardRecord = {
+  id: string;
+  tenantId: string;
+  name: string;
+  workbookId: string | null;
+  status: string;
+  author: {
+    externalUserId: string | null;
+    displayName: string | null;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+
 const PUBLIC_PORTAL_ERROR_MESSAGE = "Request failed";
 
 function getBackendBaseUrl() {
@@ -220,7 +234,7 @@ export function createPortalBackendClient(session: PortalSession) {
     },
     async listDashboards() {
       const response = await authorizedFetch("/dashboards");
-      return readJson<Array<{ id: string; tenantId: string; name: string; workbookId: string | null }>>(response);
+      return readJson<PortalDashboardRecord[]>(response);
     },
     async createDashboard(input: { name: string; workbookId?: string | null }) {
       const response = await authorizedFetch("/dashboards", {
@@ -230,16 +244,26 @@ export function createPortalBackendClient(session: PortalSession) {
           workbookId: input.workbookId ?? undefined
         })
       });
-      return readJson<{
-        id: string;
-        tenantId: string;
-        name: string;
-        workbookId: string | null;
-      }>(response);
+      return readJson<PortalDashboardRecord>(response);
     },
     async getDashboard(dashboardId: string) {
       const response = await authorizedFetch(`/dashboards/${dashboardId}`);
-      return readJson<{ id: string; tenantId: string; name: string; workbookId: string | null }>(response);
+      return readJson<PortalDashboardRecord>(response);
+    },
+    async renameDashboard(input: { dashboardId: string; name: string }) {
+      const response = await authorizedFetch(`/dashboards/${input.dashboardId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: input.name
+        })
+      });
+      return readJson<PortalDashboardRecord>(response);
+    },
+    async removeDashboard(dashboardId: string) {
+      const response = await authorizedFetch(`/dashboards/${dashboardId}`, {
+        method: "DELETE"
+      });
+      return readJson<{ deletedDashboardId: string }>(response);
     },
     async listDashboardWidgets(dashboardId: string) {
       const response = await authorizedFetch(`/dashboards/${dashboardId}/widgets`);
@@ -359,12 +383,7 @@ export function createPortalBackendClient(session: PortalSession) {
         method: "POST",
         body: JSON.stringify(pkg)
       });
-      return readJson<{
-        id: string;
-        tenantId: string;
-        name: string;
-        workbookId: string | null;
-      }>(response);
+      return readJson<PortalDashboardRecord>(response);
     },
     async listDatasets() {
       const response = await authorizedFetch("/datasets");
