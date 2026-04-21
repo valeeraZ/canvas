@@ -26,6 +26,17 @@ type ConfigPanelWidget = {
 };
 
 export const CONFIG_PANEL_GROUPS = ["Chart", "Data", "Meta"] as const;
+export const CHART_TYPE_OPTIONS = [
+  { value: "bar", label: "Bar" },
+  { value: "line", label: "Line" },
+  { value: "area", label: "Area" },
+  { value: "pie", label: "Pie" },
+  { value: "radar", label: "Radar" },
+  { value: "radial", label: "Radial" }
+] as const satisfies Array<{
+  value: ChartWidgetConfig["chartType"];
+  label: string;
+}>;
 export const WIDGET_TITLE_AUTOSAVE_DELAY_MS = 500;
 
 export function areChartWidgetConfigsEqual(
@@ -51,8 +62,14 @@ export function areChartWidgetConfigsEqual(
 
 function getSupportedChartType(
   chartType?: ChartWidgetConfig["chartType"]
-): "bar" | "line" | "area" {
-  if (chartType === "line" || chartType === "area") {
+): ChartWidgetConfig["chartType"] {
+  if (
+    chartType === "line" ||
+    chartType === "area" ||
+    chartType === "pie" ||
+    chartType === "radar" ||
+    chartType === "radial"
+  ) {
     return chartType;
   }
 
@@ -237,13 +254,15 @@ export function DashboardWidgetConfigPanel(props: {
                 <SelectValue placeholder="Select chart type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="bar">Bar</SelectItem>
-                <SelectItem value="line">Line</SelectItem>
-                <SelectItem value="area">Area</SelectItem>
+                {CHART_TYPE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Supports bar, line, and area in this phase. Pie charts coming later.
+              Supports trend, comparison, share, radar, and radial chart views.
             </p>
           </div>
         </section>

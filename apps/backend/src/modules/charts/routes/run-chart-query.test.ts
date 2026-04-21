@@ -66,20 +66,46 @@ describe("runChartQuery", () => {
     });
   });
 
-  it("rejects unsupported phase-1 chart types", async () => {
-    await expect(
-      runChartQuery({
-        chartType: "pie",
+  it.each(["pie", "radar", "radial"])(
+    "accepts %s chart queries through the existing grouped payload",
+    async (chartType) => {
+      const payload = await runChartQuery({
+        chartType,
         tenantId: "canvas",
         datasetId: "ds_1",
         xField: "region",
         yField: "amount",
         allowedFields: ["region", "amount"],
-        runQueryImpl: vi.fn(async () => ({
-          sql: "select 1",
-          values: [],
-          rows: []
-        }))
+        rows: [
+          { region: "APAC", amount: 40 },
+          { region: "APAC", amount: 2 },
+          { region: "EMEA", amount: 18 }
+        ]
+      });
+
+      expect(payload).toEqual({
+        chartType,
+        labels: ["APAC", "EMEA"],
+        series: [
+          {
+            name: "amount",
+            data: [42, 18]
+          }
+        ]
+      });
+    }
+  );
+
+  it("rejects unsupported chart types", async () => {
+    await expect(
+      runChartQuery({
+        chartType: "scatter",
+        tenantId: "canvas",
+        datasetId: "ds_1",
+        xField: "region",
+        yField: "amount",
+        allowedFields: ["region", "amount"],
+        rows: []
       })
     ).rejects.toThrow("Unsupported chart type");
   });

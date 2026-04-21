@@ -91,7 +91,7 @@ export type PortalApiClient = {
     datasetId?: string | null;
     config?: {
       datasetId: string;
-      chartType: "bar" | "line" | "area" | "pie";
+      chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
       xField: string;
       yField: string;
       seriesField?: string;
@@ -103,7 +103,7 @@ export type PortalApiClient = {
     widgetId: string;
     config: {
       datasetId: string;
-      chartType: "bar" | "line" | "area" | "pie";
+      chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
       xField: string;
       yField: string;
       seriesField?: string;
@@ -132,11 +132,11 @@ export type PortalApiClient = {
   }>;
   runDatasetChartQuery: (input: {
     datasetId: string;
-    chartType: "bar" | "line" | "area";
+    chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
     xField: string;
     yField: string;
   }) => Promise<{
-    chartType: "bar" | "line" | "area";
+    chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
     labels: string[];
     series: Array<{ name: string; data: number[] }>;
   }>;

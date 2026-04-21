@@ -10,7 +10,14 @@ type ParsedDatasetRow = Record<string, string | number | boolean | null>;
 function assertSupportedChartType(
   chartType: string
 ): asserts chartType is SupportedChartQueryType {
-  if (chartType !== "bar" && chartType !== "line" && chartType !== "area") {
+  if (
+    chartType !== "bar" &&
+    chartType !== "line" &&
+    chartType !== "area" &&
+    chartType !== "pie" &&
+    chartType !== "radar" &&
+    chartType !== "radial"
+  ) {
     throw new Error(`Unsupported chart type: ${chartType}`);
   }
 }

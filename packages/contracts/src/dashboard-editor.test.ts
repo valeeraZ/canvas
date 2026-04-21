@@ -5,14 +5,14 @@ describe("dashboard editor contracts", () => {
   it("describes a chart widget config for dashboard rendering", () => {
     const config: ChartWidgetConfig = {
       datasetId: "ds_sales",
-      chartType: "bar",
+      chartType: "radial",
       xField: "month",
       yField: "revenue",
       seriesField: "region",
       title: "Monthly revenue"
     };
 
-    expect(config.chartType).toBe("bar");
+    expect(config.chartType).toBe("radial");
     expect(config.seriesField).toBe("region");
   });
 

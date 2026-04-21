@@ -24,7 +24,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   const { datasetId } = await context.params;
   const body = (await request.json().catch(() => ({}))) as {
-    chartType?: "bar" | "line" | "area";
+    chartType?: "bar" | "line" | "area" | "pie" | "radar" | "radial";
     xField?: string;
     yField?: string;
   };

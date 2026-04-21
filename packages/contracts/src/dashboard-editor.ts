@@ -1,4 +1,10 @@
-export type SupportedChartType = "bar" | "line" | "area" | "pie";
+export type SupportedChartType =
+  | "bar"
+  | "line"
+  | "area"
+  | "pie"
+  | "radar"
+  | "radial";
 
 export type DatasetPreviewColumn = {
   name: string;

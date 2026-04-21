@@ -36,3 +36,24 @@ export function buildChartRenderModel(input: ChartPayload) {
     seriesKeys
   };
 }
+
+export function buildCategoricalChartRenderModel(input: ChartPayload) {
+  const valueKey = input.series[0]?.name ?? "value";
+  const data = input.labels.map((label, index) => ({
+    label,
+    value: Number(input.series[0]?.data[index] ?? 0),
+    fill: SERIES_COLORS[index % SERIES_COLORS.length]
+  }));
+
+  return {
+    config: {
+      value: {
+        label: valueKey,
+        color: SERIES_COLORS[0]
+      }
+    } satisfies ChartConfig,
+    data,
+    labelKey: "label",
+    valueKey: "value"
+  };
+}

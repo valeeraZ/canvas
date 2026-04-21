@@ -16,7 +16,7 @@ type WidgetSummary = {
   datasetId: string | null;
   config: {
     datasetId: string;
-    chartType: "bar" | "line" | "area" | "pie";
+    chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
     xField: string;
     yField: string;
     seriesField?: string;

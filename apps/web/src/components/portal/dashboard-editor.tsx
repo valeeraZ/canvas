@@ -40,7 +40,7 @@ type DashboardWidgetSummary = {
   datasetId: string | null;
   config: {
     datasetId: string;
-    chartType: "bar" | "line" | "area" | "pie";
+    chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
     xField: string;
     yField: string;
     seriesField?: string;
@@ -82,7 +82,7 @@ const portalApiClient = createPortalApiClient();
 function normalizeChartType(
   chartType: NonNullable<NonNullable<WidgetConfig>["chartType"]>
 ) {
-  return chartType === "line" || chartType === "area" ? chartType : "bar";
+  return chartType;
 }
 
 function areWidgetConfigsEqual(
@@ -111,10 +111,6 @@ function buildChartQueryKey(widget: DashboardWidgetSummary): string | null {
   const config = widget.config;
 
   if (!config?.datasetId || !config.xField || !config.yField) {
-    return null;
-  }
-
-  if (config.chartType === "pie") {
     return null;
   }
 
@@ -232,12 +228,6 @@ function deriveChartState(input: {
   const allowedFields = new Set(preview?.columns.map((column) => column.name) ?? []);
 
   if (!allowedFields.has(config.xField) || !allowedFields.has(config.yField)) {
-    return {
-      status: "field-invalid"
-    };
-  }
-
-  if (config.chartType === "pie") {
     return {
       status: "field-invalid"
     };
@@ -632,7 +622,7 @@ export function DashboardEditor(props: {
     widgetId: string,
     config: {
       datasetId: string;
-      chartType: "bar" | "line" | "area" | "pie";
+      chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
       xField: string;
       yField: string;
       seriesField?: string;

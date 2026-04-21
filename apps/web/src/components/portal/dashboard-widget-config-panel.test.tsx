@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { renderToString } from "react-dom/server";
 import {
   areChartWidgetConfigsEqual,
+  CHART_TYPE_OPTIONS,
   DashboardWidgetConfigPanel,
   buildDatasetConfigUpdate,
   CONFIG_PANEL_GROUPS,
@@ -48,6 +49,14 @@ describe("DashboardWidgetConfigPanel", () => {
     expect(html).toContain("Chart");
     expect(html).toContain("Data");
     expect(html).toContain("Meta");
+    expect(CHART_TYPE_OPTIONS.map((option) => option.value)).toEqual([
+      "bar",
+      "line",
+      "area",
+      "pie",
+      "radar",
+      "radial"
+    ]);
     expect(html).not.toContain("Save widget");
   });
 
