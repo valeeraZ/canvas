@@ -1,7 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { ExpiringStore } from "../../../../../packages/auth/src/index.js";
 import {
-  createDatasetRowStore,
   createDatasetStore,
   createImportJobStore
 } from "../../../../../packages/db/src/index.js";
@@ -179,11 +178,27 @@ type CreateDatasetsServiceInput = {
   };
 };
 
+function paginateContentRows(input: {
+  rows: Array<Record<string, string | number | boolean | null>>;
+  page: number;
+  pageSize: number;
+}) {
+  const page = Math.max(1, Math.floor(input.page));
+  const pageSize = Math.max(1, Math.floor(input.pageSize));
+  const start = (page - 1) * pageSize;
+
+  return {
+    rows: input.rows.slice(start, start + pageSize),
+    page,
+    pageSize,
+    totalRows: input.rows.length
+  };
+}
+
 export function createDatasetsService(
   input: CreateDatasetsServiceInput
 ): DatasetsService {
   const datasets = createDatasetStore(input.db);
-  const datasetRows = createDatasetRowStore(input.db);
   const importJobs = createImportJobStore(input.db);
   const datasetContentLoader =
     input.cache && input.objectReader
@@ -394,25 +409,44 @@ export function createDatasetsService(
         );
       }
 
-      const page = await datasetRows.listPageByDataset({
-        tenantId: rowsInput.tenantId,
-        datasetId: rowsInput.datasetId,
-        page: rowsInput.page,
-        pageSize: rowsInput.pageSize
-      });
+      const dataset = await datasets.findByTenantAndId(
+        rowsInput.tenantId,
+        rowsInput.datasetId
+      );
 
-      return {
-        columns: requestedColumns,
-        rows: page.rows.map((row) => {
-          const record = row.record as Record<string, string | number | boolean | null>;
-          return Object.fromEntries(
-            requestedColumns.map((column) => [column, record[column] ?? null])
-          );
-        }),
-        page: page.page,
-        pageSize: page.pageSize,
-        totalRows: page.totalRows
-      };
+      if (
+        datasetContentLoader &&
+        dataset?.storageBucket &&
+        dataset.storageObjectKey
+      ) {
+        const content = await datasetContentLoader.load({
+          tenantId: rowsInput.tenantId,
+          datasetId: rowsInput.datasetId,
+          bucket: dataset.storageBucket,
+          objectKey: dataset.storageObjectKey
+        });
+        const page = paginateContentRows({
+          rows: content.rows,
+          page: rowsInput.page,
+          pageSize: rowsInput.pageSize
+        });
+
+        return {
+          columns: requestedColumns,
+          rows: page.rows.map((row) =>
+            Object.fromEntries(
+              requestedColumns.map((column) => [column, row[column] ?? null])
+            )
+          ),
+          page: page.page,
+          pageSize: page.pageSize,
+          totalRows: page.totalRows
+        };
+      }
+
+      throw new Error(
+        `Dataset source content reader is not configured for dataset ${rowsInput.datasetId}`
+      );
     },
     async uploadFile(uploadInput: {
       uploadId: string;

@@ -324,4 +324,142 @@ describe("createDatasetsService", () => {
       key: "canvas/uploads/sales.csv"
     });
   });
+
+  it("returns table rows from cached object storage content instead of DatasetRow records", async () => {
+    const preview = {
+      datasetId: "ds_1",
+      columns: [
+        { name: "region", type: "string" as const },
+        { name: "amount", type: "number" as const }
+      ],
+      sampleRows: []
+    };
+    const prisma = {
+      dataset: {
+        findFirst: vi
+          .fn()
+          .mockResolvedValueOnce({
+            id: "ds_1",
+            preview
+          })
+          .mockResolvedValueOnce({
+            id: "ds_1",
+            tenantId: "tenant_row_1",
+            name: "Sales Upload",
+            status: "ready",
+            warnings: [],
+            preview,
+            storageBucket: "canvas-raw",
+            storageObjectKey: "canvas/uploads/sales.csv",
+            tenant: {
+              slug: "canvas"
+            }
+          })
+      },
+      datasetRow: {
+        count: vi.fn(async () => {
+          throw new Error("DatasetRow records should not be queried");
+        }),
+        findMany: vi.fn(async () => {
+          throw new Error("DatasetRow records should not be queried");
+        })
+      }
+    } as never;
+    const cache = {
+      get: vi.fn(async () => null),
+      set: vi.fn(async () => undefined),
+      delete: vi.fn(async () => undefined)
+    };
+    const objectReader = {
+      read: vi.fn(async () => ({
+        bucket: "canvas-raw",
+        key: "canvas/uploads/sales.csv",
+        body: Buffer.from("Region,Amount\nAPAC,40\nEMEA,18\nNA,25")
+      }))
+    };
+    const service = createDatasetsService({
+      db: prisma,
+      tenantId: "canvas",
+      cache,
+      objectReader
+    });
+
+    const payload = await service.getDatasetRowsPage({
+      tenantId: "canvas",
+      datasetId: "ds_1",
+      page: 2,
+      pageSize: 1,
+      columns: ["region"]
+    });
+
+    expect(payload).toEqual({
+      columns: ["region"],
+      rows: [{ region: "EMEA" }],
+      page: 2,
+      pageSize: 1,
+      totalRows: 3
+    });
+    expect(prisma.datasetRow.count).not.toHaveBeenCalled();
+    expect(prisma.datasetRow.findMany).not.toHaveBeenCalled();
+    expect(objectReader.read).toHaveBeenCalledWith({
+      bucket: "canvas-raw",
+      key: "canvas/uploads/sales.csv"
+    });
+  });
+
+  it("does not fall back to DatasetRow records for table rows", async () => {
+    const preview = {
+      datasetId: "ds_1",
+      columns: [{ name: "region", type: "string" as const }],
+      sampleRows: []
+    };
+    const prisma = {
+      dataset: {
+        findFirst: vi
+          .fn()
+          .mockResolvedValueOnce({
+            id: "ds_1",
+            preview
+          })
+          .mockResolvedValueOnce({
+            id: "ds_1",
+            tenantId: "tenant_row_1",
+            name: "Sales Upload",
+            status: "ready",
+            warnings: [],
+            preview,
+            storageBucket: "canvas-raw",
+            storageObjectKey: "canvas/uploads/sales.csv",
+            tenant: {
+              slug: "canvas"
+            }
+          })
+      },
+      datasetRow: {
+        count: vi.fn(async () => 1),
+        findMany: vi.fn(async () => [
+          {
+            record: {
+              region: "DB"
+            }
+          }
+        ])
+      }
+    } as never;
+    const service = createDatasetsService({
+      db: prisma,
+      tenantId: "canvas"
+    });
+
+    await expect(
+      service.getDatasetRowsPage({
+        tenantId: "canvas",
+        datasetId: "ds_1",
+        page: 1,
+        pageSize: 10
+      })
+    ).rejects.toThrow("Dataset source content reader is not configured");
+    expect(prisma.datasetRow.count).not.toHaveBeenCalled();
+    expect(prisma.datasetRow.findMany).not.toHaveBeenCalled();
+  });
 });
