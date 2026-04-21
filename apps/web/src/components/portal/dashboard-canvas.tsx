@@ -40,6 +40,7 @@ type WidgetSummary = {
       }
     | {
         datasetId: string;
+        chartType: "table";
         columns: string[];
         pageSize: number;
         title?: string;

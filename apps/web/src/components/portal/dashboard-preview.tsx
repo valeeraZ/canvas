@@ -27,6 +27,7 @@ type WidgetSummary = {
       }
     | {
         datasetId: string;
+        chartType: "table";
         columns: string[];
         pageSize: number;
         title?: string;
@@ -56,6 +57,10 @@ type DatasetPreviewSummary = {
 };
 
 const portalApiClient = createPortalApiClient();
+
+function isVisualChartConfig(config: NonNullable<WidgetSummary["config"]>): config is Extract<NonNullable<WidgetSummary["config"]>, { xField: string }> {
+  return "chartType" in config && !("columns" in config);
+}
 
 export function DashboardPreview(props: {
   widgets: WidgetSummary[];
@@ -102,7 +107,7 @@ export function DashboardPreview(props: {
     for (const [widgetId, entry] of loadingEntries) {
       const widget = props.widgets.find((item) => item.id === widgetId);
 
-      if (!widget?.config || !("chartType" in widget.config)) {
+      if (!widget?.config || !isVisualChartConfig(widget.config)) {
         continue;
       }
 

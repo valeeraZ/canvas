@@ -4,7 +4,10 @@ export type SupportedChartType =
   | "area"
   | "pie"
   | "radar"
-  | "radial";
+  | "radial"
+  | "table";
+
+export type SupportedVisualChartType = Exclude<SupportedChartType, "table">;
 
 export type DatasetPreviewColumn = {
   name: string;
@@ -24,7 +27,7 @@ export type DatasetPreview = {
 
 export type ChartWidgetConfig = {
   datasetId: string;
-  chartType: SupportedChartType;
+  chartType: SupportedVisualChartType;
   xField: string;
   yField: string;
   seriesField?: string;
@@ -33,6 +36,7 @@ export type ChartWidgetConfig = {
 
 export type TableWidgetConfig = {
   datasetId: string;
+  chartType: "table";
   columns: string[];
   pageSize: number;
   title?: string;

@@ -39,6 +39,7 @@ describe("dashboard editor contracts", () => {
   it("describes table widget config and paginated row payloads", () => {
     const config: TableWidgetConfig = {
       datasetId: "ds_sales",
+      chartType: "table",
       columns: ["month", "revenue"],
       pageSize: 10,
       title: "Sales rows"
@@ -51,6 +52,7 @@ describe("dashboard editor contracts", () => {
       totalRows: 21
     };
 
+    expect(config.chartType).toBe("table");
     expect(config.columns).toEqual(["month", "revenue"]);
     expect(payload.totalRows).toBe(21);
   });

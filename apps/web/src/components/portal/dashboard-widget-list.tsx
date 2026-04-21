@@ -11,7 +11,7 @@ type WidgetSummary = {
   id: string;
   type: "chart" | "table" | "metric" | "text";
   config: {
-    chartType?: "bar" | "line" | "area" | "pie" | "radar" | "radial";
+    chartType?: "bar" | "line" | "area" | "pie" | "radar" | "radial" | "table";
     title?: string;
   } | null;
 };

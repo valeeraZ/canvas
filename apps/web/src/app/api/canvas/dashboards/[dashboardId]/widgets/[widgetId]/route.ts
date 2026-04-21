@@ -24,14 +24,22 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const { dashboardId, widgetId } = await context.params;
-  const body = (await request.json().catch(() => ({}))) as {
-    datasetId: string;
-    chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
-    xField: string;
-    yField: string;
-    seriesField?: string;
-    title?: string;
-  };
+  const body = (await request.json().catch(() => ({}))) as
+    | {
+        datasetId: string;
+        chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
+        xField: string;
+        yField: string;
+        seriesField?: string;
+        title?: string;
+      }
+    | {
+        datasetId: string;
+        chartType: "table";
+        columns: string[];
+        pageSize: number;
+        title?: string;
+      };
 
   try {
     const widget = await createPortalBackendClient(session).updateDashboardWidget({

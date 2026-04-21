@@ -49,14 +49,23 @@ export async function POST(request: Request, context: RouteContext) {
   const body = (await request.json().catch(() => ({}))) as {
     type?: "chart" | "table" | "metric" | "text";
     datasetId?: string | null;
-    config?: {
-      datasetId: string;
-      chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
-      xField: string;
-      yField: string;
-      seriesField?: string;
-      title?: string;
-    } | null;
+    config?:
+      | {
+          datasetId: string;
+          chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
+          xField: string;
+          yField: string;
+          seriesField?: string;
+          title?: string;
+        }
+      | {
+          datasetId: string;
+          chartType: "table";
+          columns: string[];
+          pageSize: number;
+          title?: string;
+        }
+      | null;
   };
 
   try {

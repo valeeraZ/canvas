@@ -41,6 +41,37 @@ describe("toDashboardWidgetRecord", () => {
       h: 1
     });
   });
+
+  it("preserves table chart widget configs without x and y fields", () => {
+    const widget = toDashboardWidgetRecord({
+      id: "widget_table",
+      tenantId: "tenant_row_1",
+      dashboardId: "dash_1",
+      type: "chart",
+      datasetId: "ds_1",
+      config: {
+        datasetId: "ds_1",
+        chartType: "table",
+        columns: ["month", "revenue"],
+        pageSize: 10,
+        title: "Sales rows"
+      },
+      layout: null,
+      dashboard: {
+        tenant: {
+          slug: "canvas"
+        }
+      }
+    } as any);
+
+    expect(widget.config).toEqual({
+      datasetId: "ds_1",
+      chartType: "table",
+      columns: ["month", "revenue"],
+      pageSize: 10,
+      title: "Sales rows"
+    });
+  });
 });
 
 describe("createDashboardWidgetStore", () => {

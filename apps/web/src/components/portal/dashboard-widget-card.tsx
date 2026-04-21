@@ -21,6 +21,7 @@ type ChartWidgetConfig = {
 
 type TableWidgetConfig = {
   datasetId: string;
+  chartType: "table";
   columns: string[];
   pageSize: number;
   title?: string;
@@ -64,6 +65,13 @@ export function DashboardWidgetCard(props: {
   const [deleteArmed, setDeleteArmed] = useState(false);
   const dragHandleOnClick = props.dragHandleProps?.onClick;
   const isExpanded = (props.widget.layout?.w ?? 1) >= 2;
+  const isTableWidget =
+    props.widget.type === "table" ||
+    Boolean(props.widget.config && "chartType" in props.widget.config && props.widget.config.chartType === "table");
+  const chartConfig =
+    props.widget.config && "chartType" in props.widget.config && !("columns" in props.widget.config)
+      ? props.widget.config
+      : null;
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key !== "Enter" && event.key !== " ") {
@@ -192,12 +200,12 @@ export function DashboardWidgetCard(props: {
           )}
         </div>
       </div>
-      {props.widget.type === "table" ? (
+      {isTableWidget ? (
         <DashboardTableRenderer
           widget={{
             config:
               props.widget.config && "columns" in props.widget.config
-                ? props.widget.config
+                ? { ...props.widget.config, chartType: "table" }
                 : null
           }}
           state={props.tableState ?? { status: "idle" }}
@@ -207,10 +215,7 @@ export function DashboardWidgetCard(props: {
       ) : (
         <DashboardChartRenderer
           widget={{
-            config:
-              props.widget.config && "chartType" in props.widget.config
-                ? props.widget.config
-                : null
+            config: chartConfig
           }}
           state={props.chartState}
           pending={props.readOnly ? false : props.pending}

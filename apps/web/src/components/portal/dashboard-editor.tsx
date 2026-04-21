@@ -33,28 +33,30 @@ import {
 } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
+type VisualWidgetConfig = {
+  datasetId: string;
+  chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
+  xField: string;
+  yField: string;
+  seriesField?: string;
+  title?: string;
+};
+
+type TableWidgetConfig = {
+  datasetId: string;
+  chartType: "table";
+  columns: string[];
+  pageSize: number;
+  title?: string;
+};
+
 type DashboardWidgetSummary = {
   id: string;
   tenantId: string;
   dashboardId: string;
   type: "chart" | "table" | "metric" | "text";
   datasetId: string | null;
-  config:
-    | {
-        datasetId: string;
-        chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
-        xField: string;
-        yField: string;
-        seriesField?: string;
-        title?: string;
-      }
-    | {
-        datasetId: string;
-        columns: string[];
-        pageSize: number;
-        title?: string;
-      }
-    | null;
+  config: VisualWidgetConfig | TableWidgetConfig | null;
   layout?: {
     x: number;
     y: number;
@@ -97,12 +99,22 @@ function normalizeChartType(chartType: "bar" | "line" | "area" | "pie" | "radar"
   return chartType;
 }
 
-function isChartConfig(config: WidgetConfig | undefined): config is Extract<NonNullable<WidgetConfig>, { chartType: string }> {
-  return Boolean(config && "chartType" in config);
+function isChartConfig(config: WidgetConfig | undefined): config is VisualWidgetConfig {
+  return Boolean(config && "chartType" in config && !("columns" in config));
 }
 
-function isTableConfig(config: WidgetConfig | undefined): config is Extract<NonNullable<WidgetConfig>, { columns: string[] }> {
+function isTableConfig(config: WidgetConfig | undefined): config is TableWidgetConfig {
   return Boolean(config && "columns" in config);
+}
+
+function isTableWidget(widget: DashboardWidgetSummary | null | undefined) {
+  return Boolean(
+    widget &&
+      (widget.type === "table" ||
+        (widget.config &&
+          "chartType" in widget.config &&
+          widget.config.chartType === "table"))
+  );
 }
 
 function areWidgetConfigsEqual(
@@ -269,7 +281,7 @@ function deriveChartState(input: {
 function buildTableQueryKey(widget: DashboardWidgetSummary, page = 1): string | null {
   const config = widget.config;
 
-  if (widget.type !== "table" || !isTableConfig(config) || !config.datasetId) {
+  if (!isTableWidget(widget) || !isTableConfig(config) || !config.datasetId) {
     return null;
   }
 
@@ -288,7 +300,7 @@ function deriveTableState(input: {
 }): DashboardTableState {
   const config = input.widget?.config;
 
-  if (input.widget?.type !== "table" || !isTableConfig(config) || !config.datasetId) {
+  if (!isTableWidget(input.widget) || !isTableConfig(config) || !config.datasetId) {
     return {
       status: "idle"
     };
@@ -324,7 +336,7 @@ function buildWidgetTableStateEntries(input: {
 }): Record<string, DashboardWidgetTableEntry> {
   return Object.fromEntries(
     input.widgets
-      .filter((widget) => widget.type === "table")
+      .filter((widget) => isTableWidget(widget))
       .map((widget) => {
         const currentEntry = input.currentEntries[widget.id];
         const currentPage =
@@ -887,11 +899,12 @@ export function DashboardEditor(props: {
       try {
         await portalApiClient.createDashboardWidget({
           dashboardId: props.dashboard.id,
-          type: "table",
+          type: "chart",
           datasetId: firstDataset?.id ?? null,
           config: firstDataset
             ? {
                 datasetId: firstDataset.id,
+                chartType: "table",
                 columns,
                 pageSize: 10,
                 title: ""
@@ -909,19 +922,7 @@ export function DashboardEditor(props: {
 
   function saveWidget(
     widgetId: string,
-    config: {
-      datasetId: string;
-      chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
-      xField: string;
-      yField: string;
-      seriesField?: string;
-      title?: string;
-    } | {
-      datasetId: string;
-      columns: string[];
-      pageSize: number;
-      title?: string;
-    }
+    config: NonNullable<WidgetConfig>
   ) {
     setWidgetDrafts((current) => ({
       ...current,

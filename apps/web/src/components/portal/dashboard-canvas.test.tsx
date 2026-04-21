@@ -187,6 +187,51 @@ describe("DashboardCanvas", () => {
     expect(html).not.toContain("Configure a dataset and chart fields");
   });
 
+  it("routes chart widgets with table chartType to the table renderer", async () => {
+    const module = await import("./dashboard-canvas").catch(() => ({
+      DashboardCanvas: null
+    }));
+
+    const html = renderToString(
+      <module.DashboardCanvas
+        widgets={[
+          {
+            id: "table_chart_1",
+            tenantId: "canvas",
+            dashboardId: "dash_1",
+            type: "chart",
+            datasetId: "ds_1",
+            layout: { x: 0, y: 0, w: 2, h: 1 },
+            config: {
+              datasetId: "ds_1",
+              chartType: "table",
+              columns: ["month", "revenue"],
+              pageSize: 10,
+              title: "Sales rows"
+            }
+          }
+        ]}
+        activeWidgetId="table_chart_1"
+        tableStates={{
+          table_chart_1: {
+            status: "ready",
+            payload: {
+              columns: ["month", "revenue"],
+              rows: [{ month: "Jan", revenue: 120 }],
+              page: 1,
+              pageSize: 10,
+              totalRows: 1
+            }
+          }
+        }}
+      />
+    );
+
+    expect(html).toContain("Sales rows");
+    expect(html).toContain("Jan");
+    expect(html).not.toContain("Configure a dataset and chart fields");
+  });
+
   it("renders drag activator props on the grip button instead of the card root", () => {
     const html = renderToString(
       <DashboardWidgetCard

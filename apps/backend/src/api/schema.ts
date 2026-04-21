@@ -441,6 +441,17 @@ export const chartWidgetConfigSchema = {
       type: "string",
       description: "Field used as the value axis."
     },
+    columns: {
+      type: "array",
+      description: "Columns rendered by table chart widgets.",
+      items: {
+        type: "string"
+      }
+    },
+    pageSize: {
+      type: "integer",
+      description: "Rows per page for table chart widgets."
+    },
     seriesField: {
       type: "string",
       description: "Optional field used to split multiple series."
@@ -450,7 +461,7 @@ export const chartWidgetConfigSchema = {
       description: "Optional widget title."
     }
   },
-  required: ["datasetId", "chartType", "xField", "yField"]
+  required: ["datasetId", "chartType"]
 } as const;
 
 export const dashboardWidgetSchema = {

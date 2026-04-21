@@ -98,6 +98,7 @@ export type PortalApiClient = {
       title?: string;
     } | {
       datasetId: string;
+      chartType: "table";
       columns: string[];
       pageSize: number;
       title?: string;
@@ -115,6 +116,7 @@ export type PortalApiClient = {
       title?: string;
     } | {
       datasetId: string;
+      chartType: "table";
       columns: string[];
       pageSize: number;
       title?: string;

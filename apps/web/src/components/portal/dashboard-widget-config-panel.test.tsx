@@ -176,6 +176,7 @@ describe("DashboardWidgetConfigPanel", () => {
           datasetId: "ds_1",
           config: {
             datasetId: "ds_1",
+            chartType: "table",
             columns: ["month", "revenue"],
             pageSize: 10,
             title: "Sales rows"

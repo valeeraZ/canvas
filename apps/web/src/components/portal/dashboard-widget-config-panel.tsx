@@ -83,13 +83,30 @@ function getSupportedChartType(
   return "bar";
 }
 
+function isTableConfig(
+  config: ChartWidgetConfig | TableWidgetConfig | null | undefined
+): config is TableWidgetConfig {
+  return Boolean(config && "columns" in config);
+}
+
+function isTableWidget(widget: ConfigPanelWidget | null | undefined) {
+  return Boolean(
+    widget &&
+      (widget.type === "table" || isTableConfig(widget.config))
+  );
+}
+
 function buildInitialConfig(
   widget: ConfigPanelWidget | null,
   previews: Record<string, DatasetPreview | null>,
   datasets: DatasetOption[]
 ): ChartWidgetConfig | null {
+  if (isTableWidget(widget)) {
+    return null;
+  }
+
   if (widget?.config) {
-    if (!("chartType" in widget.config)) {
+    if (isTableConfig(widget.config) || !("chartType" in widget.config)) {
       return null;
     }
 
@@ -108,12 +125,10 @@ function buildInitialConfig(
 
   const preview = previews[datasetId];
   const columns = preview?.columns ?? [];
-  const chartType =
-    widget?.config && "chartType" in widget.config ? widget.config.chartType : undefined;
 
   return {
     datasetId,
-    chartType: getSupportedChartType(chartType),
+    chartType: getSupportedChartType(),
     xField: columns[0]?.name ?? "",
     yField:
       columns.find(
@@ -207,14 +222,11 @@ export function DashboardWidgetConfigPanel(props: {
 
   const preview = draft?.datasetId ? props.previews[draft.datasetId] : null;
   const fields: DatasetPreview["columns"] = preview?.columns ?? [];
-  const tableConfig =
-    props.widget?.type === "table" &&
-    props.widget.config &&
-    "columns" in props.widget.config
-      ? props.widget.config
-      : null;
+  const tableConfig = isTableConfig(props.widget?.config)
+    ? props.widget.config
+    : null;
 
-  if (props.widget?.type === "table") {
+  if (isTableWidget(props.widget)) {
     const datasetId = tableConfig?.datasetId ?? props.widget.datasetId ?? props.datasets[0]?.id ?? "";
     const tablePreview = datasetId ? props.previews[datasetId] : null;
     const columns = tablePreview?.columns.map((column) => column.name) ?? [];
