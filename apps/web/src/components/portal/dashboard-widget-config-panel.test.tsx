@@ -6,6 +6,7 @@ import {
   CHART_TYPE_OPTIONS,
   DashboardWidgetConfigPanel,
   buildDatasetConfigUpdate,
+  buildTableDatasetConfigUpdate,
   CONFIG_PANEL_GROUPS,
   shouldResetWidgetConfigDraft,
   WIDGET_TITLE_AUTOSAVE_DELAY_MS
@@ -202,5 +203,37 @@ describe("DashboardWidgetConfigPanel", () => {
     expect(html).toContain("Visible columns");
     expect(html).toContain("Page size");
     expect(html).toContain("Sales rows");
+  });
+
+  it("derives a table config update when changing the table dataset", () => {
+    expect(buildTableDatasetConfigUpdate).toBeTypeOf("function");
+
+    const next = buildTableDatasetConfigUpdate({
+      current: {
+        datasetId: "ds_1",
+        chartType: "table",
+        columns: ["month", "revenue"],
+        pageSize: 25,
+        title: "Sales rows"
+      },
+      datasetId: "ds_2",
+      preview: {
+        datasetId: "ds_2",
+        columns: [
+          { name: "day", type: "date" },
+          { name: "region", type: "string" },
+          { name: "profit", type: "number" }
+        ],
+        sampleRows: [{ day: "2026-01-01", region: "East", profit: 8 }]
+      }
+    });
+
+    expect(next).toEqual({
+      datasetId: "ds_2",
+      chartType: "table",
+      columns: ["day", "region", "profit"],
+      pageSize: 25,
+      title: "Sales rows"
+    });
   });
 });

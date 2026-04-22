@@ -160,6 +160,18 @@ export function buildDatasetConfigUpdate(input: {
   };
 }
 
+export function buildTableDatasetConfigUpdate(input: {
+  current: TableWidgetConfig;
+  datasetId: string;
+  preview: DatasetPreview | null | undefined;
+}): TableWidgetConfig {
+  return {
+    ...input.current,
+    datasetId: input.datasetId,
+    columns: input.preview?.columns.map((column) => column.name) ?? []
+  };
+}
+
 export function shouldResetWidgetConfigDraft(input: {
   currentDraft: ChartWidgetConfig | null;
   widget: ConfigPanelWidget | null;
@@ -226,10 +238,26 @@ export function DashboardWidgetConfigPanel(props: {
     ? props.widget.config
     : null;
 
+  function saveTableConfig(next: TableWidgetConfig) {
+    if (!props.widget) {
+      return;
+    }
+
+    props.onSave(props.widget.id, next);
+  }
+
   if (isTableWidget(props.widget)) {
-    const datasetId = tableConfig?.datasetId ?? props.widget.datasetId ?? props.datasets[0]?.id ?? "";
+    const fallbackDatasetId = props.widget.datasetId ?? props.datasets[0]?.id ?? "";
+    const datasetId = tableConfig?.datasetId ?? fallbackDatasetId;
     const tablePreview = datasetId ? props.previews[datasetId] : null;
     const columns = tablePreview?.columns.map((column) => column.name) ?? [];
+    const currentTableConfig: TableWidgetConfig = tableConfig ?? {
+      datasetId,
+      chartType: "table",
+      columns,
+      pageSize: 10,
+      title: ""
+    };
 
     return (
       <Card className="h-full">
@@ -247,7 +275,18 @@ export function DashboardWidgetConfigPanel(props: {
             </div>
             <div className="grid gap-2">
               <Label>Dataset</Label>
-              <Select value={datasetId}>
+              <Select
+                value={datasetId}
+                onValueChange={(value) => {
+                  const next = buildTableDatasetConfigUpdate({
+                    current: currentTableConfig,
+                    datasetId: value,
+                    preview: props.previews[value]
+                  });
+
+                  saveTableConfig(next);
+                }}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select dataset" />
                 </SelectTrigger>
