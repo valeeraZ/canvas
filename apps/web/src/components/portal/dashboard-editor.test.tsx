@@ -113,6 +113,7 @@ describe("DashboardEditor", () => {
     expect(html).not.toContain("Back to dashboards");
     expect(html).toContain("Widgets");
     expect(html).toContain("Add chart");
+    expect(html).toContain("Add table");
     expect(html).toContain("Dashboard canvas");
     expect(html).toContain("Configure widget");
     expect(html).toContain("Review every chart widget while keeping one active edit focus.");

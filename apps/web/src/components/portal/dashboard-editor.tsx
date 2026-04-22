@@ -6,6 +6,7 @@ import { LayoutTemplate, LoaderCircle, Share2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DashboardCanvas } from "./dashboard-canvas";
 import type { DashboardChartState } from "./dashboard-chart-renderer";
+import type { DashboardTableState } from "./dashboard-table-renderer";
 import {
   reorderDashboardCanvasWidgets,
   resizeDashboardCanvasWidget
@@ -32,20 +33,30 @@ import {
 } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
+type VisualWidgetConfig = {
+  datasetId: string;
+  chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
+  xField: string;
+  yField: string;
+  seriesField?: string;
+  title?: string;
+};
+
+type TableWidgetConfig = {
+  datasetId: string;
+  chartType: "table";
+  columns: string[];
+  pageSize: number;
+  title?: string;
+};
+
 type DashboardWidgetSummary = {
   id: string;
   tenantId: string;
   dashboardId: string;
   type: "chart" | "table" | "metric" | "text";
   datasetId: string | null;
-  config: {
-    datasetId: string;
-    chartType: "bar" | "line" | "area" | "pie";
-    xField: string;
-    yField: string;
-    seriesField?: string;
-    title?: string;
-  } | null;
+  config: VisualWidgetConfig | TableWidgetConfig | null;
   layout?: {
     x: number;
     y: number;
@@ -77,12 +88,33 @@ export type DashboardWidgetChartEntry = {
   state: DashboardChartState;
 };
 
+export type DashboardWidgetTableEntry = {
+  queryKey: string | null;
+  state: DashboardTableState;
+};
+
 const portalApiClient = createPortalApiClient();
 
-function normalizeChartType(
-  chartType: NonNullable<NonNullable<WidgetConfig>["chartType"]>
-) {
-  return chartType === "line" || chartType === "area" ? chartType : "bar";
+function normalizeChartType(chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial") {
+  return chartType;
+}
+
+function isChartConfig(config: WidgetConfig | undefined): config is VisualWidgetConfig {
+  return Boolean(config && "chartType" in config && !("columns" in config));
+}
+
+function isTableConfig(config: WidgetConfig | undefined): config is TableWidgetConfig {
+  return Boolean(config && "columns" in config);
+}
+
+function isTableWidget(widget: DashboardWidgetSummary | null | undefined) {
+  return Boolean(
+    widget &&
+      (widget.type === "table" ||
+        (widget.config &&
+          "chartType" in widget.config &&
+          widget.config.chartType === "table"))
+  );
 }
 
 function areWidgetConfigsEqual(
@@ -99,6 +131,8 @@ function areWidgetConfigsEqual(
 
   return (
     left.datasetId === right.datasetId &&
+    isChartConfig(left) &&
+    isChartConfig(right) &&
     left.chartType === right.chartType &&
     left.xField === right.xField &&
     left.yField === right.yField &&
@@ -110,11 +144,7 @@ function areWidgetConfigsEqual(
 function buildChartQueryKey(widget: DashboardWidgetSummary): string | null {
   const config = widget.config;
 
-  if (!config?.datasetId || !config.xField || !config.yField) {
-    return null;
-  }
-
-  if (config.chartType === "pie") {
+  if (widget.type !== "chart" || !isChartConfig(config) || !config.datasetId || !config.xField || !config.yField) {
     return null;
   }
 
@@ -214,7 +244,13 @@ function deriveChartState(input: {
 }): DashboardChartState {
   const config = input.widget?.config;
 
-  if (!config?.datasetId || !config.xField || !config.yField) {
+  if (
+    input.widget?.type !== "chart" ||
+    !isChartConfig(config) ||
+    !config.datasetId ||
+    !config.xField ||
+    !config.yField
+  ) {
     return {
       status: "idle"
     };
@@ -237,7 +273,51 @@ function deriveChartState(input: {
     };
   }
 
-  if (config.chartType === "pie") {
+  return {
+    status: "loading"
+  };
+}
+
+function buildTableQueryKey(widget: DashboardWidgetSummary, page = 1): string | null {
+  const config = widget.config;
+
+  if (!isTableWidget(widget) || !isTableConfig(config) || !config.datasetId) {
+    return null;
+  }
+
+  return [
+    config.datasetId,
+    config.columns.join(","),
+    config.pageSize,
+    page
+  ].join("|");
+}
+
+function deriveTableState(input: {
+  widget: DashboardWidgetSummary | null;
+  datasets: DatasetSummary[];
+  datasetPreviews: Record<string, DatasetPreviewSummary | null>;
+}): DashboardTableState {
+  const config = input.widget?.config;
+
+  if (!isTableWidget(input.widget) || !isTableConfig(config) || !config.datasetId) {
+    return {
+      status: "idle"
+    };
+  }
+
+  const dataset = input.datasets.find((item) => item.id === config.datasetId);
+
+  if (!dataset || dataset.status !== "ready") {
+    return {
+      status: "dataset-importing"
+    };
+  }
+
+  const preview = input.datasetPreviews[config.datasetId];
+  const allowedFields = new Set(preview?.columns.map((column) => column.name) ?? []);
+
+  if (config.columns.some((column) => !allowedFields.has(column))) {
     return {
       status: "field-invalid"
     };
@@ -246,6 +326,51 @@ function deriveChartState(input: {
   return {
     status: "loading"
   };
+}
+
+export function buildWidgetTableStateEntries(input: {
+  widgets: DashboardWidgetSummary[];
+  datasets: DatasetSummary[];
+  datasetPreviews: Record<string, DatasetPreviewSummary | null>;
+  currentEntries: Record<string, DashboardWidgetTableEntry>;
+}): Record<string, DashboardWidgetTableEntry> {
+  return Object.fromEntries(
+    input.widgets
+      .filter((widget) => isTableWidget(widget))
+      .map((widget) => {
+        const currentEntry = input.currentEntries[widget.id];
+        const currentPage =
+          currentEntry?.state.status === "ready" ? currentEntry.state.payload.page : 1;
+        const nextState = deriveTableState({
+          widget,
+          datasets: input.datasets,
+          datasetPreviews: input.datasetPreviews
+        });
+        const nextQueryKey = buildTableQueryKey(widget, currentPage);
+
+        if (nextState.status === "loading" && nextQueryKey) {
+          if (currentEntry?.queryKey === nextQueryKey) {
+            return [widget.id, currentEntry] as const;
+          }
+
+          return [
+            widget.id,
+            {
+              queryKey: nextQueryKey,
+              state: nextState
+            }
+          ] as const;
+        }
+
+        return [
+          widget.id,
+          {
+            queryKey: null,
+            state: nextState
+          }
+        ] as const;
+      })
+  );
 }
 
 export function reuseChartState(
@@ -379,6 +504,16 @@ export function DashboardEditor(props: {
       currentEntries: {}
     })
   );
+  const [tableEntries, setTableEntries] = useState<
+    Record<string, DashboardWidgetTableEntry>
+  >(() =>
+    buildWidgetTableStateEntries({
+      widgets: props.widgets,
+      datasets: props.datasets,
+      datasetPreviews: props.datasetPreviews,
+      currentEntries: {}
+    })
+  );
 
   const effectiveWidgets = useMemo(
     () => applyWidgetConfigDrafts(optimisticWidgets, widgetDrafts),
@@ -390,6 +525,9 @@ export function DashboardEditor(props: {
   const chartStates = Object.fromEntries(
     Object.entries(chartEntries).map(([widgetId, entry]) => [widgetId, entry.state])
   ) as Record<string, DashboardChartState>;
+  const tableStates = Object.fromEntries(
+    Object.entries(tableEntries).map(([widgetId, entry]) => [widgetId, entry.state])
+  ) as Record<string, DashboardTableState>;
   const canAddChart = props.datasets.some((dataset) => {
     const preview = props.datasetPreviews[dataset.id];
     return Boolean(preview && preview.columns.length > 0);
@@ -446,6 +584,17 @@ export function DashboardEditor(props: {
   }, [effectiveWidgets, props.datasets, props.datasetPreviews]);
 
   useEffect(() => {
+    setTableEntries((current) =>
+      buildWidgetTableStateEntries({
+        widgets: effectiveWidgets,
+        datasets: props.datasets,
+        datasetPreviews: props.datasetPreviews,
+        currentEntries: current
+      })
+    );
+  }, [effectiveWidgets, props.datasets, props.datasetPreviews]);
+
+  useEffect(() => {
     const loadingEntries = Object.entries(chartEntries).filter(([, entry]) => {
       return entry.state.status === "loading" && entry.queryKey;
     });
@@ -459,7 +608,7 @@ export function DashboardEditor(props: {
     for (const [widgetId, entry] of loadingEntries) {
       const widget = effectiveWidgets.find((item) => item.id === widgetId);
 
-      if (!widget?.config) {
+      if (!widget?.config || !isChartConfig(widget.config)) {
         continue;
       }
 
@@ -551,6 +700,108 @@ export function DashboardEditor(props: {
     };
   }, [chartEntries, effectiveWidgets]);
 
+  useEffect(() => {
+    const loadingEntries = Object.entries(tableEntries).filter(([, entry]) => {
+      return entry.state.status === "loading" && entry.queryKey;
+    });
+
+    if (loadingEntries.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    for (const [widgetId, entry] of loadingEntries) {
+      const widget = effectiveWidgets.find((item) => item.id === widgetId);
+
+      if (!widget?.config || !isTableConfig(widget.config)) {
+        continue;
+      }
+
+      const page = Number(entry.queryKey?.split("|").at(-1) ?? 1);
+
+      void portalApiClient
+        .getDatasetRowsPage({
+          datasetId: widget.config.datasetId,
+          page,
+          pageSize: widget.config.pageSize,
+          columns: widget.config.columns
+        })
+        .then((payload) => {
+          if (cancelled) {
+            return;
+          }
+
+          setTableEntries((current) => {
+            const currentEntry = current[widgetId];
+
+            if (!currentEntry || currentEntry.queryKey !== entry.queryKey) {
+              return current;
+            }
+
+            return {
+              ...current,
+              [widgetId]: {
+                queryKey: entry.queryKey,
+                state: payload.rows.length > 0
+                  ? { status: "ready", payload }
+                  : { status: "empty" }
+              }
+            };
+          });
+        })
+        .catch((caught) => {
+          if (cancelled) {
+            return;
+          }
+
+          const portalError = toPortalApiError(caught);
+
+          setTableEntries((current) => {
+            const currentEntry = current[widgetId];
+
+            if (!currentEntry || currentEntry.queryKey !== entry.queryKey) {
+              return current;
+            }
+
+            return {
+              ...current,
+              [widgetId]: {
+                queryKey: entry.queryKey,
+                state: {
+                  status: "error",
+                  message: portalError.requestId
+                    ? `${portalError.message} (Request ID: ${portalError.requestId})`
+                    : portalError.message
+                }
+              }
+            };
+          });
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tableEntries, effectiveWidgets]);
+
+  function changeTablePage(widgetId: string, page: number) {
+    const widget = effectiveWidgets.find((item) => item.id === widgetId);
+    const queryKey = widget ? buildTableQueryKey(widget, page) : null;
+
+    if (!queryKey) {
+      return;
+    }
+
+    setTableEntries((current) => ({
+      ...current,
+      [widgetId]: {
+        queryKey,
+        state: { status: "loading" }
+      }
+    }));
+  }
+
   function setWidgetsSaving(widgetIds: string[], pending: boolean) {
     setSavingWidgetIds((current) => {
       const next = { ...current };
@@ -628,16 +879,50 @@ export function DashboardEditor(props: {
     });
   }
 
+  function addTableWidget() {
+    if (!canAddChart) {
+      return;
+    }
+
+    setEditorPending(true);
+    setError(null);
+
+    const firstDataset =
+      props.datasets.find((dataset) => {
+        const preview = props.datasetPreviews[dataset.id];
+        return Boolean(preview && preview.columns.length > 0);
+      }) ?? null;
+    const preview = firstDataset ? props.datasetPreviews[firstDataset.id] : null;
+    const columns = preview?.columns.map((column) => column.name) ?? [];
+
+    startTransition(async () => {
+      try {
+        await portalApiClient.createDashboardWidget({
+          dashboardId: props.dashboard.id,
+          type: "chart",
+          datasetId: firstDataset?.id ?? null,
+          config: firstDataset
+            ? {
+                datasetId: firstDataset.id,
+                chartType: "table",
+                columns,
+                pageSize: 10,
+                title: ""
+              }
+            : null
+        });
+        router.refresh();
+      } catch (caught) {
+        setError(toPortalApiError(caught));
+      } finally {
+        setEditorPending(false);
+      }
+    });
+  }
+
   function saveWidget(
     widgetId: string,
-    config: {
-      datasetId: string;
-      chartType: "bar" | "line" | "area" | "pie";
-      xField: string;
-      yField: string;
-      seriesField?: string;
-      title?: string;
-    }
+    config: NonNullable<WidgetConfig>
   ) {
     setWidgetDrafts((current) => ({
       ...current,
@@ -827,6 +1112,7 @@ export function DashboardEditor(props: {
               }
               onSelectWidget={setActiveWidgetId}
               onAddChart={addChartWidget}
+              onAddTable={addTableWidget}
             />
             <div className="grid gap-4">
               <PortalActionAlert
@@ -838,10 +1124,12 @@ export function DashboardEditor(props: {
                 activeWidgetId={activeWidgetId}
                 savingWidgetIds={savingWidgetIds}
                 chartStates={chartStates}
+                tableStates={tableStates}
                 onSelectWidget={setActiveWidgetId}
                 onMoveWidget={moveWidget}
                 onResizeWidget={resizeWidget}
                 onDeleteWidget={deleteWidget}
+                onTablePageChange={changeTablePage}
               />
             </div>
             <DashboardWidgetConfigPanel

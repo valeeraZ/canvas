@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import { renderToString } from "react-dom/server";
 import {
   areChartWidgetConfigsEqual,
+  CHART_TYPE_OPTIONS,
   DashboardWidgetConfigPanel,
   buildDatasetConfigUpdate,
+  buildTableDatasetConfigUpdate,
   CONFIG_PANEL_GROUPS,
   shouldResetWidgetConfigDraft,
   WIDGET_TITLE_AUTOSAVE_DELAY_MS
@@ -48,6 +50,14 @@ describe("DashboardWidgetConfigPanel", () => {
     expect(html).toContain("Chart");
     expect(html).toContain("Data");
     expect(html).toContain("Meta");
+    expect(CHART_TYPE_OPTIONS.map((option) => option.value)).toEqual([
+      "bar",
+      "line",
+      "area",
+      "pie",
+      "radar",
+      "radial"
+    ]);
     expect(html).not.toContain("Save widget");
   });
 
@@ -154,5 +164,76 @@ describe("DashboardWidgetConfigPanel", () => {
         }
       })
     ).toBe(false);
+  });
+
+  it("renders table-specific controls for table widgets", () => {
+    const html = renderToString(
+      <DashboardWidgetConfigPanel
+        widget={{
+          id: "table_1",
+          tenantId: "canvas",
+          dashboardId: "dash_1",
+          type: "table",
+          datasetId: "ds_1",
+          config: {
+            datasetId: "ds_1",
+            chartType: "table",
+            columns: ["month", "revenue"],
+            pageSize: 10,
+            title: "Sales rows"
+          }
+        }}
+        datasets={[{ id: "ds_1", name: "Sales Upload", status: "ready" }]}
+        previews={{
+          ds_1: {
+            datasetId: "ds_1",
+            columns: [
+              { name: "month", type: "string" },
+              { name: "revenue", type: "number" }
+            ],
+            sampleRows: [{ month: "Jan", revenue: 120 }]
+          }
+        }}
+        pending={false}
+        onSave={() => {}}
+      />
+    );
+
+    expect(html).toContain("Table");
+    expect(html).toContain("Visible columns");
+    expect(html).toContain("Page size");
+    expect(html).toContain("Sales rows");
+  });
+
+  it("derives a table config update when changing the table dataset", () => {
+    expect(buildTableDatasetConfigUpdate).toBeTypeOf("function");
+
+    const next = buildTableDatasetConfigUpdate({
+      current: {
+        datasetId: "ds_1",
+        chartType: "table",
+        columns: ["month", "revenue"],
+        pageSize: 25,
+        title: "Sales rows"
+      },
+      datasetId: "ds_2",
+      preview: {
+        datasetId: "ds_2",
+        columns: [
+          { name: "day", type: "date" },
+          { name: "region", type: "string" },
+          { name: "profit", type: "number" }
+        ],
+        sampleRows: [{ day: "2026-01-01", region: "East", profit: 8 }]
+      }
+    });
+
+    expect(next).toEqual({
+      datasetId: "ds_2",
+      chartType: "table",
+      columns: ["day", "region", "profit"],
+      pageSize: 25,
+      title: "Sales rows"
+    });
   });
 });

@@ -1,4 +1,4 @@
-import type { ChartWidgetConfig } from "./dashboard-editor.js";
+import type { ChartWidgetConfig, TableWidgetConfig } from "./dashboard-editor.js";
 
 export type WidgetType = "chart" | "table" | "metric" | "text";
 
@@ -15,6 +15,6 @@ export type DashboardWidgetRecord = {
   dashboardId: string;
   type: WidgetType;
   datasetId: string | null;
-  config: ChartWidgetConfig | null;
+  config: ChartWidgetConfig | TableWidgetConfig | null;
   layout: DashboardWidgetLayout;
 };

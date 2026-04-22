@@ -15,6 +15,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { DashboardChartState } from "./dashboard-chart-renderer";
+import type { DashboardTableState } from "./dashboard-table-renderer";
 import {
   reorderDashboardCanvasWidgets,
   sortDashboardCanvasWidgets
@@ -28,14 +29,23 @@ type WidgetSummary = {
   dashboardId: string;
   type: "chart" | "table" | "metric" | "text";
   datasetId: string | null;
-  config: {
-    datasetId: string;
-    chartType: "bar" | "line" | "area" | "pie";
-    xField: string;
-    yField: string;
-    seriesField?: string;
-    title?: string;
-  } | null;
+  config:
+    | {
+        datasetId: string;
+        chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
+        xField: string;
+        yField: string;
+        seriesField?: string;
+        title?: string;
+      }
+    | {
+        datasetId: string;
+        chartType: "table";
+        columns: string[];
+        pageSize: number;
+        title?: string;
+      }
+    | null;
   layout?: {
     x: number;
     y: number;
@@ -112,6 +122,7 @@ function SortableWidgetCard(props: {
   focused: boolean;
   pending: boolean;
   chartState: DashboardChartState;
+  tableState?: DashboardTableState;
   readOnly?: boolean;
   datasetDetail?: {
     id: string;
@@ -121,6 +132,7 @@ function SortableWidgetCard(props: {
   onSelectWidget?: (widgetId: string) => void;
   onResizeWidget?: (widgetId: string, nextWidth: number) => void;
   onDeleteWidget?: (widgetId: string) => void;
+  onTablePageChange?: (widgetId: string, page: number) => void;
 }) {
   const { listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({
@@ -156,6 +168,7 @@ export function DashboardCanvas(props: {
   activeWidgetId: string | null;
   savingWidgetIds?: Record<string, boolean>;
   chartStates?: Record<string, DashboardChartState>;
+  tableStates?: Record<string, DashboardTableState>;
   readOnly?: boolean;
   datasetDetails?: Record<
     string,
@@ -170,6 +183,7 @@ export function DashboardCanvas(props: {
   onMoveWidget?: (widgetId: string, targetWidgetId: string) => void;
   onResizeWidget?: (widgetId: string, nextWidth: number) => void;
   onDeleteWidget?: (widgetId: string) => void;
+  onTablePageChange?: (widgetId: string, page: number) => void;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -288,6 +302,7 @@ export function DashboardCanvas(props: {
                     focused={props.activeWidgetId === widget.id}
                     pending={Boolean(props.savingWidgetIds?.[widget.id])}
                     chartState={props.chartStates?.[widget.id] ?? { status: "idle" }}
+                    tableState={props.tableStates?.[widget.id] ?? { status: "idle" }}
                     readOnly={props.readOnly}
                     datasetDetail={
                       widget.datasetId ? props.datasetDetails?.[widget.datasetId] ?? null : null
@@ -295,6 +310,7 @@ export function DashboardCanvas(props: {
                     onSelectWidget={props.onSelectWidget}
                     onResizeWidget={props.onResizeWidget}
                     onDeleteWidget={props.onDeleteWidget}
+                    onTablePageChange={props.onTablePageChange}
                   />
                 ))}
               </div>

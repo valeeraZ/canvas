@@ -55,4 +55,37 @@ describe("DashboardChartRenderer", () => {
     expect(html).toContain("data-chart=\"dashboard-widget-chart\"");
     expect(html).toContain("revenue");
   });
+
+  it.each(["pie", "radar", "radial"] as const)(
+    "renders %s charts from the ready chart payload",
+    (chartType) => {
+      const html = renderToString(
+        <DashboardChartRenderer
+          widget={{
+            ...widget,
+            config: {
+              ...widget.config,
+              chartType
+            }
+          }}
+          state={{
+            status: "ready",
+            payload: {
+              chartType,
+              labels: ["APAC", "EMEA"],
+              series: [
+                {
+                  name: "revenue",
+                  data: [120, 150]
+                }
+              ]
+            }
+          }}
+        />
+      );
+
+      expect(html).toContain("data-chart=\"dashboard-widget-chart\"");
+      expect(html).toContain(`data-chart-type="${chartType}"`);
+    }
+  );
 });

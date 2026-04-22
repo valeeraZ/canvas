@@ -1,6 +1,9 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { ExpiringStore } from "../../../../../packages/auth/src/index.js";
-import { createDatasetStore, createImportJobStore } from "../../../../../packages/db/src/index.js";
+import {
+  createDatasetStore,
+  createImportJobStore
+} from "../../../../../packages/db/src/index.js";
 import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
 import type { ChartPayload, ChartQueryRequest } from "../../../../../packages/contracts/src/charts.js";
 import { streamMultipartUpload } from "./routes/upload-file";
@@ -11,9 +14,11 @@ import {
   datasetPreviewSchema,
   datasetDetailSchema,
   datasetSummarySchema,
-  messageResponseSchema
+  messageResponseSchema,
+  tableRowsPayloadSchema
 } from "../../api/schema";
 import type { DatasetPreview } from "../../../../../packages/contracts/src/index.js";
+import type { TableRowsPayload } from "../../../../../packages/contracts/src/dashboard-editor.js";
 import { runChartQuery as executeChartQuery } from "../charts/routes/run-chart-query";
 import { createUploadSession } from "./routes/create-upload";
 import { mapDatasetDetail } from "./routes/get-dataset";
@@ -88,6 +93,13 @@ export type DatasetsService = {
     xField: string;
     yField: string;
   }) => Promise<ChartPayload | null>;
+  getDatasetRowsPage: (input: {
+    datasetId: string;
+    tenantId: string;
+    page: number;
+    pageSize: number;
+    columns?: string[];
+  }) => Promise<TableRowsPayload | null>;
   uploadFile: (input: {
     uploadId: string;
     tenantId: string;
@@ -165,6 +177,23 @@ type CreateDatasetsServiceInput = {
     }>;
   };
 };
+
+function paginateContentRows(input: {
+  rows: Array<Record<string, string | number | boolean | null>>;
+  page: number;
+  pageSize: number;
+}) {
+  const page = Math.max(1, Math.floor(input.page));
+  const pageSize = Math.max(1, Math.floor(input.pageSize));
+  const start = (page - 1) * pageSize;
+
+  return {
+    rows: input.rows.slice(start, start + pageSize),
+    page,
+    pageSize,
+    totalRows: input.rows.length
+  };
+}
 
 export function createDatasetsService(
   input: CreateDatasetsServiceInput
@@ -349,6 +378,75 @@ export function createDatasetsService(
         yField: queryInput.yField,
         allowedFields: preview.columns.map((column) => column.name)
       });
+    },
+    async getDatasetRowsPage(rowsInput: {
+      datasetId: string;
+      tenantId: string;
+      page: number;
+      pageSize: number;
+      columns?: string[];
+    }) {
+      const preview = await datasets.findPreviewByTenantAndId(
+        rowsInput.tenantId,
+        rowsInput.datasetId
+      );
+
+      if (!preview) {
+        return null;
+      }
+
+      const allowedColumns = preview.columns.map((column) => column.name);
+      const requestedColumns = rowsInput.columns?.length
+        ? rowsInput.columns
+        : allowedColumns;
+      const invalidColumn = requestedColumns.find(
+        (column) => !allowedColumns.includes(column)
+      );
+
+      if (invalidColumn) {
+        throw new Error(
+          `Table column "${invalidColumn}" is not available on dataset ${rowsInput.datasetId}`
+        );
+      }
+
+      const dataset = await datasets.findByTenantAndId(
+        rowsInput.tenantId,
+        rowsInput.datasetId
+      );
+
+      if (
+        datasetContentLoader &&
+        dataset?.storageBucket &&
+        dataset.storageObjectKey
+      ) {
+        const content = await datasetContentLoader.load({
+          tenantId: rowsInput.tenantId,
+          datasetId: rowsInput.datasetId,
+          bucket: dataset.storageBucket,
+          objectKey: dataset.storageObjectKey
+        });
+        const page = paginateContentRows({
+          rows: content.rows,
+          page: rowsInput.page,
+          pageSize: rowsInput.pageSize
+        });
+
+        return {
+          columns: requestedColumns,
+          rows: page.rows.map((row) =>
+            Object.fromEntries(
+              requestedColumns.map((column) => [column, row[column] ?? null])
+            )
+          ),
+          page: page.page,
+          pageSize: page.pageSize,
+          totalRows: page.totalRows
+        };
+      }
+
+      throw new Error(
+        `Dataset source content reader is not configured for dataset ${rowsInput.datasetId}`
+      );
     },
     async uploadFile(uploadInput: {
       uploadId: string;
@@ -646,6 +744,90 @@ export const datasetsModule: FastifyPluginAsync<DatasetsModuleOptions> = async (
       reply.status(400);
       return {
         message: error instanceof Error ? error.message : "Invalid chart query"
+      };
+    }
+  });
+
+  app.get<{
+    Params: {
+      datasetId: string;
+    };
+    Querystring: {
+      page?: string;
+      pageSize?: string;
+      columns?: string;
+    };
+  }>("/datasets/:datasetId/rows", {
+    schema: {
+      tags: ["datasets"],
+      summary: "Get paginated dataset rows",
+      description:
+        "Requires Authorization: Bearer <amtoken> and a valid canvas_session cookie. Returns a paginated row slice for table widgets.",
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: "object",
+        required: ["datasetId"],
+        properties: {
+          datasetId: {
+            description: "Dataset identifier inside the active app.",
+            type: "string"
+          }
+        }
+      },
+      querystring: {
+        type: "object",
+        properties: {
+          page: { type: "string" },
+          pageSize: { type: "string" },
+          columns: { type: "string" }
+        }
+      },
+      response: {
+        200: tableRowsPayloadSchema,
+        400: messageResponseSchema,
+        401: messageResponseSchema,
+        404: messageResponseSchema
+      }
+    }
+  }, async (request, reply) => {
+    if (!request.headers.authorization) {
+      reply.status(401);
+      return {
+        message: "Missing bearer token"
+      };
+    }
+
+    if (!request.tenantContext?.tenantId) {
+      reply.status(401);
+      return {
+        message: "Missing tenant context"
+      };
+    }
+
+    try {
+      const payload = await options.datasets.getDatasetRowsPage({
+        datasetId: request.params.datasetId,
+        tenantId: request.tenantContext.tenantId,
+        page: Number(request.query.page ?? 1),
+        pageSize: Number(request.query.pageSize ?? 10),
+        columns: request.query.columns
+          ?.split(",")
+          .map((column) => column.trim())
+          .filter(Boolean)
+      });
+
+      if (!payload) {
+        reply.status(404);
+        return {
+          message: "Dataset not found"
+        };
+      }
+
+      return payload;
+    } catch (error) {
+      reply.status(400);
+      return {
+        message: error instanceof Error ? error.message : "Invalid table query"
       };
     }
   });

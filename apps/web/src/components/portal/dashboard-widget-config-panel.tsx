@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import type { ChartWidgetConfig, DatasetPreview } from "../../../../../packages/contracts/src/dashboard-editor.js";
+import type {
+  ChartWidgetConfig,
+  DatasetPreview,
+  TableWidgetConfig
+} from "../../../../../packages/contracts/src/dashboard-editor.js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -21,11 +25,25 @@ type DatasetOption = {
 
 type ConfigPanelWidget = {
   id: string;
+  tenantId?: string;
+  dashboardId?: string;
+  type?: "chart" | "table" | "metric" | "text";
   datasetId: string | null;
-  config: ChartWidgetConfig | null;
+  config: ChartWidgetConfig | TableWidgetConfig | null;
 };
 
 export const CONFIG_PANEL_GROUPS = ["Chart", "Data", "Meta"] as const;
+export const CHART_TYPE_OPTIONS = [
+  { value: "bar", label: "Bar" },
+  { value: "line", label: "Line" },
+  { value: "area", label: "Area" },
+  { value: "pie", label: "Pie" },
+  { value: "radar", label: "Radar" },
+  { value: "radial", label: "Radial" }
+] as const satisfies Array<{
+  value: ChartWidgetConfig["chartType"];
+  label: string;
+}>;
 export const WIDGET_TITLE_AUTOSAVE_DELAY_MS = 500;
 
 export function areChartWidgetConfigsEqual(
@@ -51,12 +69,31 @@ export function areChartWidgetConfigsEqual(
 
 function getSupportedChartType(
   chartType?: ChartWidgetConfig["chartType"]
-): "bar" | "line" | "area" {
-  if (chartType === "line" || chartType === "area") {
+): ChartWidgetConfig["chartType"] {
+  if (
+    chartType === "line" ||
+    chartType === "area" ||
+    chartType === "pie" ||
+    chartType === "radar" ||
+    chartType === "radial"
+  ) {
     return chartType;
   }
 
   return "bar";
+}
+
+function isTableConfig(
+  config: ChartWidgetConfig | TableWidgetConfig | null | undefined
+): config is TableWidgetConfig {
+  return Boolean(config && "columns" in config);
+}
+
+function isTableWidget(widget: ConfigPanelWidget | null | undefined) {
+  return Boolean(
+    widget &&
+      (widget.type === "table" || isTableConfig(widget.config))
+  );
 }
 
 function buildInitialConfig(
@@ -64,7 +101,15 @@ function buildInitialConfig(
   previews: Record<string, DatasetPreview | null>,
   datasets: DatasetOption[]
 ): ChartWidgetConfig | null {
+  if (isTableWidget(widget)) {
+    return null;
+  }
+
   if (widget?.config) {
+    if (isTableConfig(widget.config) || !("chartType" in widget.config)) {
+      return null;
+    }
+
     return {
       ...widget.config,
       chartType: getSupportedChartType(widget.config.chartType),
@@ -83,7 +128,7 @@ function buildInitialConfig(
 
   return {
     datasetId,
-    chartType: getSupportedChartType(widget?.config?.chartType),
+    chartType: getSupportedChartType(),
     xField: columns[0]?.name ?? "",
     yField:
       columns.find(
@@ -115,6 +160,18 @@ export function buildDatasetConfigUpdate(input: {
   };
 }
 
+export function buildTableDatasetConfigUpdate(input: {
+  current: TableWidgetConfig;
+  datasetId: string;
+  preview: DatasetPreview | null | undefined;
+}): TableWidgetConfig {
+  return {
+    ...input.current,
+    datasetId: input.datasetId,
+    columns: input.preview?.columns.map((column) => column.name) ?? []
+  };
+}
+
 export function shouldResetWidgetConfigDraft(input: {
   currentDraft: ChartWidgetConfig | null;
   widget: ConfigPanelWidget | null;
@@ -131,7 +188,7 @@ export function DashboardWidgetConfigPanel(props: {
   datasets: DatasetOption[];
   previews: Record<string, DatasetPreview | null>;
   pending: boolean;
-  onSave: (widgetId: string, config: ChartWidgetConfig) => void;
+  onSave: (widgetId: string, config: ChartWidgetConfig | TableWidgetConfig) => void;
 }) {
   const [draft, setDraft] = useState<ChartWidgetConfig | null>(
     buildInitialConfig(props.widget, props.previews, props.datasets)
@@ -177,6 +234,108 @@ export function DashboardWidgetConfigPanel(props: {
 
   const preview = draft?.datasetId ? props.previews[draft.datasetId] : null;
   const fields: DatasetPreview["columns"] = preview?.columns ?? [];
+  const tableConfig = isTableConfig(props.widget?.config)
+    ? props.widget.config
+    : null;
+
+  function saveTableConfig(next: TableWidgetConfig) {
+    if (!props.widget) {
+      return;
+    }
+
+    props.onSave(props.widget.id, next);
+  }
+
+  if (isTableWidget(props.widget)) {
+    const fallbackDatasetId = props.widget.datasetId ?? props.datasets[0]?.id ?? "";
+    const datasetId = tableConfig?.datasetId ?? fallbackDatasetId;
+    const tablePreview = datasetId ? props.previews[datasetId] : null;
+    const columns = tablePreview?.columns.map((column) => column.name) ?? [];
+    const currentTableConfig: TableWidgetConfig = tableConfig ?? {
+      datasetId,
+      chartType: "table",
+      columns,
+      pageSize: 10,
+      title: ""
+    };
+
+    return (
+      <Card className="h-full">
+        <CardHeader>
+          <CardTitle className="text-base">Configure widget</CardTitle>
+          <CardDescription>Changes save automatically while you edit.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <section className="grid gap-3">
+            <div className="grid gap-1">
+              <p className="text-sm font-medium">Table</p>
+              <p className="text-xs text-muted-foreground">
+                Choose which dataset rows this widget should show.
+              </p>
+            </div>
+            <div className="grid gap-2">
+              <Label>Dataset</Label>
+              <Select
+                value={datasetId}
+                onValueChange={(value) => {
+                  const next = buildTableDatasetConfigUpdate({
+                    current: currentTableConfig,
+                    datasetId: value,
+                    preview: props.previews[value]
+                  });
+
+                  saveTableConfig(next);
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select dataset" />
+                </SelectTrigger>
+                <SelectContent>
+                  {props.datasets.map((dataset: DatasetOption) => (
+                    <SelectItem key={dataset.id} value={dataset.id}>
+                      {dataset.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Visible columns</Label>
+              <div className="rounded-xl border border-border bg-muted/20 p-3 text-sm">
+                {(tableConfig?.columns.length ? tableConfig.columns : columns).join(", ")}
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="table-page-size">Page size</Label>
+              <Input
+                id="table-page-size"
+                value={String(tableConfig?.pageSize ?? 10)}
+                readOnly
+              />
+            </div>
+          </section>
+          <section className="grid gap-3">
+            <div className="grid gap-1">
+              <p className="text-sm font-medium">Meta</p>
+              <p className="text-xs text-muted-foreground">Tune the widget label.</p>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="table-title">Title</Label>
+              <Input
+                id="table-title"
+                value={tableConfig?.title ?? ""}
+                readOnly
+                placeholder="Sales rows"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {props.pending ? "Saving..." : "Changes save automatically."}
+            </p>
+          </section>
+        </CardContent>
+      </Card>
+    );
+  }
 
   function updateDraft(partial: Partial<ChartWidgetConfig>) {
     setDraft((current: ChartWidgetConfig | null) => {
@@ -237,13 +396,15 @@ export function DashboardWidgetConfigPanel(props: {
                 <SelectValue placeholder="Select chart type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="bar">Bar</SelectItem>
-                <SelectItem value="line">Line</SelectItem>
-                <SelectItem value="area">Area</SelectItem>
+                {CHART_TYPE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Supports bar, line, and area in this phase. Pie charts coming later.
+              Supports trend, comparison, share, radar, and radial chart views.
             </p>
           </div>
         </section>

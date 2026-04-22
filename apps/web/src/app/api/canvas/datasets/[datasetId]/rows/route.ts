@@ -11,7 +11,7 @@ type RouteContext = {
   }>;
 };
 
-export async function POST(request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   const requestId = createRouteRequestId();
   const session = readScopedPortalSession(request);
 
@@ -23,18 +23,18 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const { datasetId } = await context.params;
-  const body = (await request.json().catch(() => ({}))) as {
-    chartType?: "bar" | "line" | "area" | "pie" | "radar" | "radial";
-    xField?: string;
-    yField?: string;
-  };
+  const url = new URL(request.url);
+  const columns = url.searchParams.get("columns");
 
   try {
-    const payload = await createPortalBackendClient(session).runDatasetChartQuery({
+    const payload = await createPortalBackendClient(session).getDatasetRowsPage({
       datasetId,
-      chartType: body.chartType ?? "bar",
-      xField: body.xField ?? "",
-      yField: body.yField ?? ""
+      page: Number(url.searchParams.get("page") ?? 1),
+      pageSize: Number(url.searchParams.get("pageSize") ?? 10),
+      columns: columns
+        ?.split(",")
+        .map((column) => column.trim())
+        .filter(Boolean)
     });
     return jsonWithRequestId(payload, { requestId });
   } catch (error) {

@@ -441,6 +441,17 @@ export const chartWidgetConfigSchema = {
       type: "string",
       description: "Field used as the value axis."
     },
+    columns: {
+      type: "array",
+      description: "Columns rendered by table chart widgets.",
+      items: {
+        type: "string"
+      }
+    },
+    pageSize: {
+      type: "integer",
+      description: "Rows per page for table chart widgets."
+    },
     seriesField: {
       type: "string",
       description: "Optional field used to split multiple series."
@@ -450,7 +461,7 @@ export const chartWidgetConfigSchema = {
       description: "Optional widget title."
     }
   },
-  required: ["datasetId", "chartType", "xField", "yField"]
+  required: ["datasetId", "chartType"]
 } as const;
 
 export const dashboardWidgetSchema = {
@@ -605,6 +616,36 @@ export const chartPayloadSchema = {
     }
   },
   required: ["chartType", "labels", "series"]
+} as const;
+
+export const tableRowsPayloadSchema = {
+  type: "object",
+  description: "Paginated dataset rows returned for table widgets.",
+  properties: {
+    columns: {
+      type: "array",
+      items: {
+        type: "string"
+      }
+    },
+    rows: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: true
+      }
+    },
+    page: {
+      type: "integer"
+    },
+    pageSize: {
+      type: "integer"
+    },
+    totalRows: {
+      type: "integer"
+    }
+  },
+  required: ["columns", "rows", "page", "pageSize", "totalRows"]
 } as const;
 
 export const selectedDashboardSchema = {

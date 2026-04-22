@@ -1,4 +1,10 @@
-export type SupportedChartQueryType = "bar" | "line" | "area";
+export type SupportedChartQueryType =
+  | "bar"
+  | "line"
+  | "area"
+  | "pie"
+  | "radar"
+  | "radial";
 
 export type ChartQueryRequest = {
   datasetId: string;

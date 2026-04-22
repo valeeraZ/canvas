@@ -492,6 +492,29 @@ describe("dashboard routes", () => {
     );
     expect(createWidgetResponse.json().id).toBe("widget_2");
 
+    const createTableWidgetResponse = await app.inject({
+      method: "POST",
+      url: "/dashboards/dash_1/widgets",
+      headers: {
+        authorization: "Bearer local-dev-token",
+        cookie: readSessionCookie(session.headers["set-cookie"])
+      },
+      payload: {
+        type: "chart",
+        datasetId: "ds_1",
+        config: {
+          datasetId: "ds_1",
+          chartType: "table",
+          columns: ["month", "revenue"],
+          pageSize: 10
+        }
+      }
+    });
+    expect(createTableWidgetResponse.statusCode).toBe(200);
+    expect((createWidgetRequest as { config?: { chartType?: string } })?.config?.chartType).toBe(
+      "table"
+    );
+
     const authorizedVisible = await app.inject({
       method: "GET",
       url: "/dashboards/visible",

@@ -10,7 +10,8 @@ import type { DashboardRecord } from "../../../../../packages/contracts/src/dash
 import type {
   ChartWidgetConfig,
   DashboardWidgetLayout,
-  DashboardWidgetRecord
+  DashboardWidgetRecord,
+  TableWidgetConfig
 } from "../../../../../packages/contracts/src/index.js";
 import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
 import { shareDashboard } from "./routes/share-dashboard";
@@ -127,14 +128,14 @@ export type DashboardsService = {
     dashboardId: string;
     type: DashboardWidgetRecord["type"];
     datasetId?: string | null;
-    config?: ChartWidgetConfig | null;
+    config?: ChartWidgetConfig | TableWidgetConfig | null;
   }) => Promise<DashboardWidgetRecord>;
   updateDashboardWidget: (input: {
     tenantId: string;
     dashboardId: string;
     widgetId: string;
     datasetId?: string | null;
-    config?: ChartWidgetConfig | null;
+    config?: ChartWidgetConfig | TableWidgetConfig | null;
   }) => Promise<DashboardWidgetRecord | null>;
   updateDashboardWidgetLayout: (input: {
     tenantId: string;
@@ -823,7 +824,7 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
     Body: {
       type?: DashboardWidgetRecord["type"];
       datasetId?: string | null;
-      config?: ChartWidgetConfig | null;
+      config?: ChartWidgetConfig | TableWidgetConfig | null;
     };
   }>("/dashboards/:dashboardId/widgets", {
     schema: {
@@ -884,7 +885,7 @@ export const dashboardsModule: FastifyPluginAsync<DashboardsModuleOptions> = asy
       dashboardId: string;
       widgetId: string;
     };
-    Body: ChartWidgetConfig;
+    Body: ChartWidgetConfig | TableWidgetConfig;
   }>("/dashboards/:dashboardId/widgets/:widgetId", {
     schema: {
       tags: ["dashboards"],

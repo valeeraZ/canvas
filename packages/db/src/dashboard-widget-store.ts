@@ -1,7 +1,8 @@
 import type {
   ChartWidgetConfig,
   DashboardWidgetLayout,
-  DashboardWidgetRecord
+  DashboardWidgetRecord,
+  TableWidgetConfig
 } from "../../../packages/contracts/src/index.js";
 import type { PrismaClient } from "./generated/prisma/client.js";
 import {
@@ -39,31 +40,66 @@ const dashboardTenantInclude = {
   }
 } as const;
 
-function normalizeChartWidgetConfig(input: unknown): ChartWidgetConfig | null {
+function normalizeChartWidgetConfig(input: Record<string, unknown>): ChartWidgetConfig | null {
+  if (
+    typeof input.datasetId !== "string" ||
+    typeof input.chartType !== "string" ||
+    typeof input.xField !== "string" ||
+    typeof input.yField !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    datasetId: input.datasetId,
+    chartType: input.chartType as ChartWidgetConfig["chartType"],
+    xField: input.xField,
+    yField: input.yField,
+    seriesField:
+      typeof input.seriesField === "string" ? input.seriesField : undefined,
+    title: typeof input.title === "string" ? input.title : undefined
+  };
+}
+
+function normalizeTableWidgetConfig(input: Record<string, unknown>): TableWidgetConfig | null {
+  if (
+    input.chartType !== "table" ||
+    typeof input.datasetId !== "string" ||
+    !Array.isArray(input.columns) ||
+    typeof input.pageSize !== "number"
+  ) {
+    return null;
+  }
+
+  const columns = input.columns.filter(
+    (column): column is string => typeof column === "string"
+  );
+
+  if (columns.length !== input.columns.length) {
+    return null;
+  }
+
+  return {
+    datasetId: input.datasetId,
+    chartType: "table",
+    columns,
+    pageSize: input.pageSize,
+    title: typeof input.title === "string" ? input.title : undefined
+  };
+}
+
+function normalizeWidgetConfig(input: unknown): ChartWidgetConfig | TableWidgetConfig | null {
   if (!input || typeof input !== "object") {
     return null;
   }
 
   const config = input as Record<string, unknown>;
 
-  if (
-    typeof config.datasetId !== "string" ||
-    typeof config.chartType !== "string" ||
-    typeof config.xField !== "string" ||
-    typeof config.yField !== "string"
-  ) {
-    return null;
+  if (config.chartType === "table") {
+    return normalizeTableWidgetConfig(config);
   }
 
-  return {
-    datasetId: config.datasetId,
-    chartType: config.chartType as ChartWidgetConfig["chartType"],
-    xField: config.xField,
-    yField: config.yField,
-    seriesField:
-      typeof config.seriesField === "string" ? config.seriesField : undefined,
-    title: typeof config.title === "string" ? config.title : undefined
-  };
+  return normalizeChartWidgetConfig(config);
 }
 
 export function toDashboardWidgetRecord(
@@ -76,7 +112,7 @@ export function toDashboardWidgetRecord(
     dashboardId: input.dashboardId,
     type: input.type as DashboardWidgetRecord["type"],
     datasetId: input.datasetId,
-    config: normalizeChartWidgetConfig(input.config),
+    config: normalizeWidgetConfig(input.config),
     layout: normalizeDashboardWidgetLayout(
       input.layout as Partial<DashboardWidgetLayout> | null | undefined,
       index
@@ -113,7 +149,7 @@ export function createDashboardWidgetStore(prisma: PrismaClient) {
       dashboardId: string;
       type: DashboardWidgetRecord["type"];
       datasetId?: string | null;
-      config?: ChartWidgetConfig | null;
+      config?: ChartWidgetConfig | TableWidgetConfig | null;
     }) {
       const tenant = await resolveTenantBySlug(prisma, input.tenantId);
       const existingWidgets = await listScopedWidgets({
@@ -139,7 +175,7 @@ export function createDashboardWidgetStore(prisma: PrismaClient) {
       dashboardId: string;
       widgetId: string;
       datasetId?: string | null;
-      config?: ChartWidgetConfig | null;
+      config?: ChartWidgetConfig | TableWidgetConfig | null;
     }) {
       const existing = await prisma.dashboardWidget.findFirst({
         where: {

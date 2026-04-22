@@ -25,6 +25,7 @@ describe("dataset routes", () => {
     let createRequest: unknown;
     let previewRequest: unknown;
     let chartQueryRequest: unknown;
+    let rowsPageRequest: unknown;
     let uploadFileRequest: unknown;
 
     const app = createApiApp({
@@ -132,7 +133,7 @@ describe("dataset routes", () => {
         runChartQuery: async (input?: {
           datasetId: string;
           tenantId: string;
-          chartType: "bar" | "line" | "area";
+          chartType: "bar" | "line" | "area" | "pie" | "radar" | "radial";
           xField: string;
           yField: string;
         }) => {
@@ -146,6 +147,22 @@ describe("dataset routes", () => {
                 data: [120, 150]
               }
             ]
+          };
+        },
+        getDatasetRowsPage: async (input?: {
+          datasetId: string;
+          tenantId: string;
+          page: number;
+          pageSize: number;
+          columns?: string[];
+        }) => {
+          rowsPageRequest = input;
+          return {
+            columns: input?.columns?.length ? input.columns : ["month", "revenue"],
+            rows: [{ month: "Jan", revenue: 120 }],
+            page: input?.page ?? 1,
+            pageSize: input?.pageSize ?? 10,
+            totalRows: 21
           };
         },
         uploadFile: async (input?: {
@@ -230,6 +247,19 @@ describe("dataset routes", () => {
     expect((chartQueryRequest as { tenantId?: string })?.tenantId).toBe(
       "canvas-data"
     );
+
+    const rowsResponse = await app.inject({
+      method: "GET",
+      url: "/datasets/ds_1/rows?page=2&pageSize=10&columns=month,revenue",
+      headers: authHeaders
+    });
+    expect(rowsResponse.statusCode).toBe(200);
+    expect(rowsResponse.json().totalRows).toBe(21);
+    expect((rowsPageRequest as { tenantId?: string })?.tenantId).toBe("canvas-data");
+    expect((rowsPageRequest as { columns?: string[] })?.columns).toEqual([
+      "month",
+      "revenue"
+    ]);
 
     const createResponse = await app.inject({
       method: "POST",
