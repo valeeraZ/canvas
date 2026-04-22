@@ -328,7 +328,7 @@ function deriveTableState(input: {
   };
 }
 
-function buildWidgetTableStateEntries(input: {
+export function buildWidgetTableStateEntries(input: {
   widgets: DashboardWidgetSummary[];
   datasets: DatasetSummary[];
   datasetPreviews: Record<string, DatasetPreviewSummary | null>;

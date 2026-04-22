@@ -4,10 +4,13 @@ import React, { useEffect, useState } from "react";
 import { createPortalApiClient, toPortalApiError } from "../../lib/portal/api-client";
 import { DashboardCanvas } from "./dashboard-canvas";
 import type { DashboardChartState } from "./dashboard-chart-renderer";
+import type { DashboardTableState } from "./dashboard-table-renderer";
 import {
   buildWidgetChartStateEntries,
+  buildWidgetTableStateEntries,
   reuseChartState,
-  type DashboardWidgetChartEntry
+  type DashboardWidgetChartEntry,
+  type DashboardWidgetTableEntry
 } from "./dashboard-editor";
 
 type WidgetSummary = {
@@ -58,8 +61,16 @@ type DatasetPreviewSummary = {
 
 const portalApiClient = createPortalApiClient();
 
-function isVisualChartConfig(config: NonNullable<WidgetSummary["config"]>): config is Extract<NonNullable<WidgetSummary["config"]>, { xField: string }> {
+function isVisualChartConfig(
+  config: NonNullable<WidgetSummary["config"]>
+): config is Extract<NonNullable<WidgetSummary["config"]>, { xField: string }> {
   return "chartType" in config && !("columns" in config);
+}
+
+function isTableChartConfig(
+  config: WidgetSummary["config"]
+): config is Extract<NonNullable<WidgetSummary["config"]>, { columns: string[] }> {
+  return Boolean(config && "columns" in config);
 }
 
 export function DashboardPreview(props: {
@@ -81,10 +92,30 @@ export function DashboardPreview(props: {
         currentEntries: {}
       })
   );
+  const [tableEntries, setTableEntries] = useState<Record<string, DashboardWidgetTableEntry>>(
+    () =>
+      buildWidgetTableStateEntries({
+        widgets: props.widgets,
+        datasets: props.datasets ?? [],
+        datasetPreviews: props.datasetPreviews ?? {},
+        currentEntries: {}
+      })
+  );
 
   useEffect(() => {
     setChartEntries((current) =>
       buildWidgetChartStateEntries({
+        widgets: props.widgets,
+        datasets: props.datasets ?? [],
+        datasetPreviews: props.datasetPreviews ?? {},
+        currentEntries: current
+      })
+    );
+  }, [props.widgets, props.datasets, props.datasetPreviews]);
+
+  useEffect(() => {
+    setTableEntries((current) =>
+      buildWidgetTableStateEntries({
         widgets: props.widgets,
         datasets: props.datasets ?? [],
         datasetPreviews: props.datasetPreviews ?? {},
@@ -194,17 +225,131 @@ export function DashboardPreview(props: {
     };
   }, [chartEntries, props.widgets]);
 
+  useEffect(() => {
+    const loadingEntries = Object.entries(tableEntries).filter(([, entry]) => {
+      return entry.state.status === "loading" && entry.queryKey;
+    });
+
+    if (loadingEntries.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    for (const [widgetId, entry] of loadingEntries) {
+      const widget = props.widgets.find((item) => item.id === widgetId);
+
+      if (!widget || !isTableChartConfig(widget.config)) {
+        continue;
+      }
+
+      const page = Number(entry.queryKey?.split("|").at(-1) ?? 1);
+
+      void portalApiClient
+        .getDatasetRowsPage({
+          datasetId: widget.config.datasetId,
+          page,
+          pageSize: widget.config.pageSize,
+          columns: widget.config.columns
+        })
+        .then((payload) => {
+          if (cancelled) {
+            return;
+          }
+
+          setTableEntries((current) => {
+            const currentEntry = current[widgetId];
+
+            if (!currentEntry || currentEntry.queryKey !== entry.queryKey) {
+              return current;
+            }
+
+            return {
+              ...current,
+              [widgetId]: {
+                queryKey: entry.queryKey,
+                state:
+                  payload.rows.length > 0
+                    ? { status: "ready", payload }
+                    : { status: "empty" }
+              }
+            };
+          });
+        })
+        .catch((caught) => {
+          if (cancelled) {
+            return;
+          }
+
+          const portalError = toPortalApiError(caught);
+
+          setTableEntries((current) => {
+            const currentEntry = current[widgetId];
+
+            if (!currentEntry || currentEntry.queryKey !== entry.queryKey) {
+              return current;
+            }
+
+            return {
+              ...current,
+              [widgetId]: {
+                queryKey: entry.queryKey,
+                state: {
+                  status: "error",
+                  message: portalError.requestId
+                    ? `${portalError.message} (Request ID: ${portalError.requestId})`
+                    : portalError.message
+                }
+              }
+            };
+          });
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tableEntries, props.widgets]);
+
   const chartStates = Object.fromEntries(
     Object.entries(chartEntries).map(([widgetId, entry]) => [widgetId, entry.state])
   ) as Record<string, DashboardChartState>;
+  const tableStates = Object.fromEntries(
+    Object.entries(tableEntries).map(([widgetId, entry]) => [widgetId, entry.state])
+  ) as Record<string, DashboardTableState>;
+
+  function changeTablePage(widgetId: string, page: number) {
+    const widget = props.widgets.find((item) => item.id === widgetId);
+
+    if (!widget || !isTableChartConfig(widget.config)) {
+      return;
+    }
+
+    const queryKey = [
+      widget.config.datasetId,
+      widget.config.columns.join(","),
+      widget.config.pageSize,
+      page
+    ].join("|");
+
+    setTableEntries((current) => ({
+      ...current,
+      [widgetId]: {
+        queryKey,
+        state: { status: "loading" }
+      }
+    }));
+  }
 
   return (
     <DashboardCanvas
-        widgets={props.widgets}
-        activeWidgetId={null}
-        chartStates={chartStates}
-        readOnly
-        datasetDetails={props.datasetDetails}
-      />
+      widgets={props.widgets}
+      activeWidgetId={null}
+      chartStates={chartStates}
+      tableStates={tableStates}
+      readOnly
+      datasetDetails={props.datasetDetails}
+      onTablePageChange={changeTablePage}
+    />
   );
 }
