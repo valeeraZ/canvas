@@ -80,7 +80,10 @@ export function DashboardChartRenderer(props: {
         <p className="mb-3 text-xs font-medium text-muted-foreground">Saving...</p>
       ) : null}
       {!config || props.state.status !== "ready" ? (
-        <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-sm text-muted-foreground">
+        <div
+          className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-sm text-muted-foreground"
+          suppressHydrationWarning
+        >
           {renderStateMessage(props.state)}
         </div>
       ) : (
