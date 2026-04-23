@@ -1,5 +1,7 @@
 import type { PrincipalRecord } from "./principal-repository.js";
-import type { PrismaClient } from "./generated/prisma/client.js";
+import { eq } from "drizzle-orm";
+import type { DbClient } from "./client.js";
+import { principals } from "./schema.js";
 
 type PersistedPrincipal = {
   id: string;
@@ -13,27 +15,30 @@ export function toPrincipalRecord(input: PersistedPrincipal): PrincipalRecord {
   };
 }
 
-export function createPrincipalStore(prisma: PrismaClient) {
+export function createPrincipalStore(db: DbClient) {
   return {
     async upsert(input: { externalUserId: string }) {
-      const principal = await prisma.principal.upsert({
-        where: {
+      const [principal] = await db
+        .insert(principals)
+        .values({
           externalUserId: input.externalUserId
-        },
-        update: {},
-        create: {
-          externalUserId: input.externalUserId
-        }
-      });
+        })
+        .onConflictDoUpdate({
+          target: principals.externalUserId,
+          set: {
+            externalUserId: input.externalUserId
+          }
+        })
+        .returning();
 
       return toPrincipalRecord(principal);
     },
     async findByExternalUserId(externalUserId: string) {
-      const principal = await prisma.principal.findUnique({
-        where: {
-          externalUserId
-        }
-      });
+      const [principal] = await db
+        .select()
+        .from(principals)
+        .where(eq(principals.externalUserId, externalUserId))
+        .limit(1);
 
       return principal ? toPrincipalRecord(principal) : null;
     }

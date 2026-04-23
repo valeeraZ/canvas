@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 import { createWorkbookStore } from "../../../../../packages/db/src/index.js";
-import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
+import type { DbClient } from "../../../../../packages/db/src/client.js";
 import type { WorkbookRecord } from "../../../../../packages/contracts/src/workbooks.js";
 import { messageResponseSchema, workbookSchema } from "../../api/schema";
 
@@ -15,7 +15,7 @@ export type WorkbooksModuleOptions = {
 };
 
 export function createWorkbooksService(input: {
-  db: PrismaClient;
+  db: DbClient;
   tenantId: string;
 }): WorkbooksService {
   const workbooks = createWorkbookStore(input.db);

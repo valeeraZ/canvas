@@ -1,8 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import {
-  createDashboardWidgetStore,
-  toDashboardWidgetRecord
-} from "./dashboard-widget-store";
+import { describe, expect, it } from "vitest";
+import { toDashboardWidgetRecord } from "./dashboard-widget-store";
 import {
   compactDashboardWidgetLayouts,
   isValidDashboardWidgetLayout,
@@ -74,73 +71,7 @@ describe("toDashboardWidgetRecord", () => {
   });
 });
 
-describe("createDashboardWidgetStore", () => {
-  it("loads dashboard tenant context when listing widgets", async () => {
-    const prisma = {
-      dashboardWidget: {
-        findMany: vi.fn().mockResolvedValue([
-          {
-            id: "widget_1",
-            tenantId: "tenant_row_1",
-            dashboardId: "dash_1",
-            type: "chart",
-            datasetId: "ds_1",
-            config: {
-              datasetId: "ds_1",
-              chartType: "bar",
-              xField: "month",
-              yField: "revenue"
-            },
-            layout: null,
-            dashboard: {
-              tenant: {
-                slug: "canvas"
-              }
-            }
-          }
-        ])
-      }
-    } as never;
-
-    const store = createDashboardWidgetStore(prisma);
-    const widgets = await store.listByDashboard({
-      tenantId: "canvas",
-      dashboardId: "dash_1"
-    });
-
-    expect(prisma.dashboardWidget.findMany).toHaveBeenCalledWith({
-      where: {
-        dashboardId: "dash_1",
-        dashboard: {
-          tenant: {
-            slug: "canvas"
-          }
-        }
-      },
-      include: {
-        dashboard: {
-          include: {
-            tenant: {
-              select: {
-                slug: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: {
-        id: "asc"
-      }
-    });
-    expect(widgets[0]?.tenantId).toBe("canvas");
-    expect(widgets[0]?.layout).toEqual({
-      x: 0,
-      y: 0,
-      w: 1,
-      h: 1
-    });
-  });
-
+describe("dashboard widget layout helpers", () => {
   it("normalizes partially missing layout fields through the shared helper", () => {
     expect(
       normalizeDashboardWidgetLayout(
@@ -155,85 +86,6 @@ describe("createDashboardWidgetStore", () => {
       y: 2,
       w: 1,
       h: 3
-    });
-  });
-
-  it("assigns the next default layout when creating a widget", async () => {
-    const findMany = vi
-      .fn()
-      .mockResolvedValueOnce([
-        {
-          id: "widget_1",
-          tenantId: "tenant_row_1",
-          dashboardId: "dash_1",
-          type: "chart",
-          datasetId: "ds_1",
-          config: null,
-          layout: null,
-          dashboard: {
-            tenant: {
-              slug: "canvas"
-            }
-          }
-        }
-      ]);
-    const create = vi.fn().mockResolvedValue({
-      id: "widget_2",
-      tenantId: "tenant_row_1",
-      dashboardId: "dash_1",
-      type: "chart",
-      datasetId: "ds_1",
-      config: null,
-      layout: {
-        x: 1,
-        y: 0,
-        w: 1,
-        h: 1
-      },
-      dashboard: {
-        tenant: {
-          slug: "canvas"
-        }
-      }
-    });
-    const prisma = {
-      tenant: {
-        findUnique: vi.fn().mockResolvedValue({
-          id: "tenant_row_1",
-          slug: "canvas"
-        })
-      },
-      dashboardWidget: {
-        findMany,
-        create
-      }
-    } as never;
-
-    const store = createDashboardWidgetStore(prisma);
-    const widget = await store.create({
-      tenantId: "canvas",
-      dashboardId: "dash_1",
-      type: "chart",
-      datasetId: "ds_1"
-    });
-
-    expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          layout: {
-            x: 1,
-            y: 0,
-            w: 1,
-            h: 1
-          }
-        })
-      })
-    );
-    expect(widget.layout).toEqual({
-      x: 1,
-      y: 0,
-      w: 1,
-      h: 1
     });
   });
 

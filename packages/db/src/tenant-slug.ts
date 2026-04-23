@@ -1,20 +1,21 @@
-import type { PrismaClient } from "./generated/prisma/client.js";
+import { eq } from "drizzle-orm";
+import type { DbClient } from "./client.js";
+import { tenants } from "./schema.js";
 
-type TenantLookupClient = Pick<PrismaClient, "tenant">;
+type TenantLookupClient = Pick<DbClient, "select">;
 
 export async function resolveTenantBySlug(
-  prisma: TenantLookupClient,
+  db: TenantLookupClient,
   tenantSlug: string
 ) {
-  const tenant = await prisma.tenant.findUnique({
-    where: {
-      slug: tenantSlug
-    },
-    select: {
-      id: true,
-      slug: true
-    }
-  });
+  const [tenant] = await db
+    .select({
+      id: tenants.id,
+      slug: tenants.slug
+    })
+    .from(tenants)
+    .where(eq(tenants.slug, tenantSlug))
+    .limit(1);
 
   if (!tenant) {
     throw new Error(`App not found: ${tenantSlug}`);

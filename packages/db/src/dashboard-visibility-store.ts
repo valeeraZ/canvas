@@ -1,4 +1,6 @@
-import type { PrismaClient } from "./generated/prisma/client.js";
+import { and, asc, eq, or } from "drizzle-orm";
+import type { DbClient } from "./client.js";
+import { dashboardVisibilityRules } from "./schema.js";
 
 export type DashboardVisibilityRule = {
   id?: string;
@@ -28,16 +30,22 @@ export function toDashboardVisibilityRule(
   };
 }
 
-export function createDashboardVisibilityStore(prisma: PrismaClient) {
+export function createDashboardVisibilityStore(db: DbClient) {
   return {
     async listByDashboard(input: { appId: string; dashboardId: string }) {
-      const rules = await prisma.dashboardVisibilityRule.findMany({
-        where: {
-          tenantId: input.appId,
-          dashboardId: input.dashboardId
-        },
-        orderBy: [{ subjectType: "asc" }, { subjectId: "asc" }]
-      });
+      const rules = await db
+        .select()
+        .from(dashboardVisibilityRules)
+        .where(
+          and(
+            eq(dashboardVisibilityRules.tenantId, input.appId),
+            eq(dashboardVisibilityRules.dashboardId, input.dashboardId)
+          )
+        )
+        .orderBy(
+          asc(dashboardVisibilityRules.subjectType),
+          asc(dashboardVisibilityRules.subjectId)
+        );
 
       return rules.map(toDashboardVisibilityRule);
     },
@@ -46,25 +54,30 @@ export function createDashboardVisibilityStore(prisma: PrismaClient) {
       dashboardId: string;
       rules: DashboardVisibilityRule[];
     }) {
-      await prisma.dashboardVisibilityRule.deleteMany({
-        where: {
-          tenantId: input.appId,
-          dashboardId: input.dashboardId
-        }
-      });
+      await db
+        .delete(dashboardVisibilityRules)
+        .where(
+          and(
+            eq(dashboardVisibilityRules.tenantId, input.appId),
+            eq(dashboardVisibilityRules.dashboardId, input.dashboardId)
+          )
+        );
 
       if (input.rules.length === 0) {
         return [] as DashboardVisibilityRule[];
       }
 
-      const created = await prisma.dashboardVisibilityRule.createManyAndReturn({
-        data: input.rules.map((rule) => ({
-          tenantId: input.appId,
-          dashboardId: input.dashboardId,
-          subjectType: rule.subjectType,
-          subjectId: rule.subjectId
-        }))
-      });
+      const created = await db
+        .insert(dashboardVisibilityRules)
+        .values(
+          input.rules.map((rule) => ({
+            tenantId: input.appId,
+            dashboardId: input.dashboardId,
+            subjectType: rule.subjectType,
+            subjectId: rule.subjectId
+          }))
+        )
+        .returning();
 
       return created.map(toDashboardVisibilityRule);
     },
@@ -79,18 +92,23 @@ export function createDashboardVisibilityStore(prisma: PrismaClient) {
         return [] as DashboardVisibilityRule[];
       }
 
-      const rules = await prisma.dashboardVisibilityRule.findMany({
-        where: {
-          tenantId: input.appId,
-          OR: input.subjects.map((subject) => ({
-            subjectType: subject.subjectType,
-            subjectId: subject.subjectId
-          }))
-        },
-        orderBy: {
-          dashboardId: "asc"
-        }
-      });
+      const subjectWhere = or(
+        ...input.subjects.map((subject) =>
+          and(
+            eq(dashboardVisibilityRules.subjectType, subject.subjectType),
+            eq(dashboardVisibilityRules.subjectId, subject.subjectId)
+          )
+        )
+      );
+      const rules = await db
+        .select()
+        .from(dashboardVisibilityRules)
+        .where(
+          subjectWhere
+            ? and(eq(dashboardVisibilityRules.tenantId, input.appId), subjectWhere)
+            : eq(dashboardVisibilityRules.tenantId, input.appId)
+        )
+        .orderBy(asc(dashboardVisibilityRules.dashboardId));
 
       return rules.map(toDashboardVisibilityRule);
     }

@@ -3,7 +3,7 @@ import type {
   AuthorizationContext,
   AuthorizationResolver
 } from "../../../../../packages/auth/src/index.js";
-import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
+import type { DbClient } from "../../../../../packages/db/src/client.js";
 import { sessionExchangeResponseSchema } from "../../api/schema";
 import { exchangeHostAssertion } from "./routes/exchange-session";
 import type { CanvasSessionStore } from "./session-store";
@@ -17,7 +17,7 @@ type SessionExchangeBody = {
 export type SessionModuleOptions = {
   authBaseUrl: string;
   mockContext?: AuthorizationContext;
-  db?: PrismaClient;
+  db?: DbClient;
   authorizationResolver: AuthorizationResolver;
   sessionStore: CanvasSessionStore;
   sessionTtlSeconds?: number;

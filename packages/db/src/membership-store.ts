@@ -1,4 +1,6 @@
-import type { PrismaClient } from "./generated/prisma/client.js";
+import { asc, eq } from "drizzle-orm";
+import type { DbClient } from "./client.js";
+import { memberships } from "./schema.js";
 
 export type MembershipRecord = {
   id: string;
@@ -16,43 +18,38 @@ export function toMembershipRecord(input: MembershipRecord): MembershipRecord {
   };
 }
 
-export function createMembershipStore(prisma: PrismaClient) {
+export function createMembershipStore(db: DbClient) {
   return {
     async upsert(input: {
       tenantId: string;
       principalId: string;
       role: string;
     }) {
-      const membership = await prisma.membership.upsert({
-        where: {
-          tenantId_principalId: {
-            tenantId: input.tenantId,
-            principalId: input.principalId
-          }
-        },
-        update: {
-          role: input.role
-        },
-        create: {
+      const [membership] = await db
+        .insert(memberships)
+        .values({
           tenantId: input.tenantId,
           principalId: input.principalId,
           role: input.role
-        }
-      });
+        })
+        .onConflictDoUpdate({
+          target: [memberships.tenantId, memberships.principalId],
+          set: {
+            role: input.role
+          }
+        })
+        .returning();
 
       return toMembershipRecord(membership);
     },
     async listByTenant(tenantId: string) {
-      const memberships = await prisma.membership.findMany({
-        where: {
-          tenantId
-        },
-        orderBy: {
-          principalId: "asc"
-        }
-      });
+      const rows = await db
+        .select()
+        .from(memberships)
+        .where(eq(memberships.tenantId, tenantId))
+        .orderBy(asc(memberships.principalId));
 
-      return memberships.map(toMembershipRecord);
+      return rows.map(toMembershipRecord);
     }
   };
 }

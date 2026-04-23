@@ -1,16 +1,18 @@
 import type {
   ChartWidgetConfig,
   DashboardWidgetLayout,
-  DashboardWidgetRecord,
-  TableWidgetConfig
+  DashboardWidgetRecord
 } from "../../../packages/contracts/src/index.js";
-import type { PrismaClient } from "./generated/prisma/client.js";
+import type { TableWidgetConfig } from "../../../packages/contracts/src/dashboard-editor.js";
+import { and, asc, eq } from "drizzle-orm";
+import type { DbClient } from "./client.js";
 import {
   compactDashboardWidgetLayouts,
   isValidDashboardWidgetLayout,
   normalizeDashboardWidgetLayout,
   swapDashboardWidgetLayouts
 } from "./dashboard-widget-layout.js";
+import { dashboardWidgets, dashboards, tenants } from "./schema.js";
 import { resolveTenantBySlug } from "./tenant-slug.js";
 
 type PersistedDashboardWidget = {
@@ -27,18 +29,6 @@ type PersistedDashboardWidget = {
     } | null;
   } | null;
 };
-
-const dashboardTenantInclude = {
-  dashboard: {
-    include: {
-      tenant: {
-        select: {
-          slug: true
-        }
-      }
-    }
-  }
-} as const;
 
 function normalizeChartWidgetConfig(input: Record<string, unknown>): ChartWidgetConfig | null {
   if (
@@ -120,29 +110,71 @@ export function toDashboardWidgetRecord(
   };
 }
 
-export function createDashboardWidgetStore(prisma: PrismaClient) {
-  async function listScopedWidgets(input: { tenantId: string; dashboardId: string }) {
-    return prisma.dashboardWidget.findMany({
-      where: {
-        dashboardId: input.dashboardId,
-        dashboard: {
-          tenant: {
-            slug: input.tenantId
-          }
+type WidgetRowWithSlug = {
+  id: string;
+  tenantId: string;
+  dashboardId: string;
+  type: string;
+  datasetId: string | null;
+  config: unknown;
+  layout: unknown;
+  tenantSlug: string;
+};
+
+function toWidgetRecordWithSlug(input: WidgetRowWithSlug, index = 0) {
+  return toDashboardWidgetRecord(
+    {
+      id: input.id,
+      tenantId: input.tenantId,
+      dashboardId: input.dashboardId,
+      type: input.type,
+      datasetId: input.datasetId,
+      config: input.config,
+      layout: input.layout,
+      dashboard: {
+        tenant: {
+          slug: input.tenantSlug
         }
-      },
-      include: dashboardTenantInclude,
-      orderBy: {
-        id: "asc"
       }
-    });
+    },
+    index
+  );
+}
+
+function widgetSelection() {
+  return {
+    id: dashboardWidgets.id,
+    tenantId: dashboardWidgets.tenantId,
+    dashboardId: dashboardWidgets.dashboardId,
+    type: dashboardWidgets.type,
+    datasetId: dashboardWidgets.datasetId,
+    config: dashboardWidgets.config,
+    layout: dashboardWidgets.layout,
+    tenantSlug: tenants.slug
+  };
+}
+
+export function createDashboardWidgetStore(db: DbClient) {
+  async function listScopedWidgets(input: { tenantId: string; dashboardId: string }) {
+    return db
+      .select(widgetSelection())
+      .from(dashboardWidgets)
+      .innerJoin(dashboards, eq(dashboardWidgets.dashboardId, dashboards.id))
+      .innerJoin(tenants, eq(dashboards.tenantId, tenants.id))
+      .where(
+        and(
+          eq(dashboardWidgets.dashboardId, input.dashboardId),
+          eq(tenants.slug, input.tenantId)
+        )
+      )
+      .orderBy(asc(dashboardWidgets.id));
   }
 
   return {
     async listByDashboard(input: { tenantId: string; dashboardId: string }) {
       const widgets = await listScopedWidgets(input);
 
-      return widgets.map((widget, index) => toDashboardWidgetRecord(widget, index));
+      return widgets.map((widget, index) => toWidgetRecordWithSlug(widget, index));
     },
     async create(input: {
       tenantId: string;
@@ -151,24 +183,27 @@ export function createDashboardWidgetStore(prisma: PrismaClient) {
       datasetId?: string | null;
       config?: ChartWidgetConfig | TableWidgetConfig | null;
     }) {
-      const tenant = await resolveTenantBySlug(prisma, input.tenantId);
+      const tenant = await resolveTenantBySlug(db, input.tenantId);
       const existingWidgets = await listScopedWidgets({
         tenantId: input.tenantId,
         dashboardId: input.dashboardId
       });
-      const widget = await prisma.dashboardWidget.create({
-        data: {
+      const [widget] = await db
+        .insert(dashboardWidgets)
+        .values({
           tenantId: tenant.id,
           dashboardId: input.dashboardId,
           type: input.type,
           datasetId: input.datasetId ?? null,
           config: input.config ?? null,
           layout: normalizeDashboardWidgetLayout(null, existingWidgets.length)
-        },
-        include: dashboardTenantInclude
-      });
+        })
+        .returning();
 
-      return toDashboardWidgetRecord(widget, existingWidgets.length);
+      return toDashboardWidgetRecord(
+        { ...widget, dashboard: { tenant: { slug: tenant.slug } } },
+        existingWidgets.length
+      );
     },
     async update(input: {
       tenantId: string;
@@ -177,37 +212,25 @@ export function createDashboardWidgetStore(prisma: PrismaClient) {
       datasetId?: string | null;
       config?: ChartWidgetConfig | TableWidgetConfig | null;
     }) {
-      const existing = await prisma.dashboardWidget.findFirst({
-        where: {
-          id: input.widgetId,
-          dashboardId: input.dashboardId,
-          dashboard: {
-            tenant: {
-              slug: input.tenantId
-            }
-          }
-        },
-        select: {
-          id: true
-        }
-      });
+      const existing = await listScopedWidgets(input);
 
-      if (!existing) {
+      if (!existing.some((widget) => widget.id === input.widgetId)) {
         return null;
       }
 
-      const widget = await prisma.dashboardWidget.update({
-        where: {
-          id: input.widgetId
-        },
-        data: {
+      const [widget] = await db
+        .update(dashboardWidgets)
+        .set({
           datasetId: input.datasetId ?? null,
           config: input.config ?? null
-        },
-        include: dashboardTenantInclude
-      });
+        })
+        .where(eq(dashboardWidgets.id, input.widgetId))
+        .returning();
 
-      return toDashboardWidgetRecord(widget);
+      return toDashboardWidgetRecord({
+        ...widget,
+        dashboard: { tenant: { slug: input.tenantId } }
+      });
     },
     async updateLayout(input: {
       tenantId: string;
@@ -222,7 +245,7 @@ export function createDashboardWidgetStore(prisma: PrismaClient) {
       const widgets = (await listScopedWidgets({
         tenantId: input.tenantId,
         dashboardId: input.dashboardId
-      })).map((widget, index) => toDashboardWidgetRecord(widget, index));
+      })).map((widget, index) => toWidgetRecordWithSlug(widget, index));
       const nextWidgets = swapDashboardWidgetLayouts(
         widgets,
         input.widgetId,
@@ -234,18 +257,14 @@ export function createDashboardWidgetStore(prisma: PrismaClient) {
         return null;
       }
 
-      await prisma.$transaction(
-        nextWidgets.map((widget) =>
-          prisma.dashboardWidget.update({
-            where: {
-              id: widget.id
-            },
-            data: {
-              layout: widget.layout
-            }
-          })
-        )
-      );
+      await db.transaction(async (tx) => {
+        for (const widget of nextWidgets) {
+          await tx
+            .update(dashboardWidgets)
+            .set({ layout: widget.layout })
+            .where(eq(dashboardWidgets.id, widget.id));
+        }
+      });
 
       return targetWidget;
     },
@@ -257,7 +276,7 @@ export function createDashboardWidgetStore(prisma: PrismaClient) {
       const widgets = (await listScopedWidgets({
         tenantId: input.tenantId,
         dashboardId: input.dashboardId
-      })).map((widget, index) => toDashboardWidgetRecord(widget, index));
+      })).map((widget, index) => toWidgetRecordWithSlug(widget, index));
       const widgetToDelete = widgets.find((widget) => widget.id === input.widgetId);
 
       if (!widgetToDelete) {
@@ -268,23 +287,18 @@ export function createDashboardWidgetStore(prisma: PrismaClient) {
         widgets.filter((widget) => widget.id !== input.widgetId)
       );
 
-      await prisma.$transaction([
-        prisma.dashboardWidget.delete({
-          where: {
-            id: input.widgetId
-          }
-        }),
-        ...remainingWidgets.map((widget) =>
-          prisma.dashboardWidget.update({
-            where: {
-              id: widget.id
-            },
-            data: {
-              layout: widget.layout
-            }
-          })
-        )
-      ]);
+      await db.transaction(async (tx) => {
+        await tx
+          .delete(dashboardWidgets)
+          .where(eq(dashboardWidgets.id, input.widgetId));
+
+        for (const widget of remainingWidgets) {
+          await tx
+            .update(dashboardWidgets)
+            .set({ layout: widget.layout })
+            .where(eq(dashboardWidgets.id, widget.id));
+        }
+      });
 
       return {
         deletedWidgetId: input.widgetId,

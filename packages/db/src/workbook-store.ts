@@ -1,6 +1,8 @@
 import type { WorkbookRecord } from "../../../packages/contracts/src/workbooks.js";
-import type { PrismaClient } from "./generated/prisma/client.js";
-import { resolveTenantBySlug, tenantSlugInclude } from "./tenant-slug.js";
+import { and, asc, eq } from "drizzle-orm";
+import type { DbClient } from "./client.js";
+import { tenants, workbooks } from "./schema.js";
+import { resolveTenantBySlug } from "./tenant-slug.js";
 
 type PersistedWorkbook = {
   id: string;
@@ -19,47 +21,63 @@ export function toWorkbookRecord(input: PersistedWorkbook): WorkbookRecord {
   };
 }
 
-export function createWorkbookStore(prisma: PrismaClient) {
+export function createWorkbookStore(db: DbClient) {
   return {
     async create(input: { tenantId: string; name: string }) {
-      const tenant = await resolveTenantBySlug(prisma, input.tenantId);
-      const workbook = await prisma.workbook.create({
-        data: {
+      const tenant = await resolveTenantBySlug(db, input.tenantId);
+      const [workbook] = await db
+        .insert(workbooks)
+        .values({
           tenantId: tenant.id,
           name: input.name
-        },
-        include: tenantSlugInclude
-      });
+        })
+        .returning();
 
-      return toWorkbookRecord(workbook);
+      return toWorkbookRecord({ ...workbook, tenant: { slug: tenant.slug } });
     },
     async listByTenant(tenantId: string) {
-      const workbooks = await prisma.workbook.findMany({
-        where: {
-          tenant: {
-            slug: tenantId
-          }
-        },
-        include: tenantSlugInclude,
-        orderBy: {
-          name: "asc"
-        }
-      });
+      const rows = await db
+        .select({
+          id: workbooks.id,
+          tenantId: workbooks.tenantId,
+          name: workbooks.name,
+          tenantSlug: tenants.slug
+        })
+        .from(workbooks)
+        .innerJoin(tenants, eq(workbooks.tenantId, tenants.id))
+        .where(eq(tenants.slug, tenantId))
+        .orderBy(asc(workbooks.name));
 
-      return workbooks.map(toWorkbookRecord);
+      return rows.map((row) =>
+        toWorkbookRecord({
+          id: row.id,
+          tenantId: row.tenantId,
+          name: row.name,
+          tenant: { slug: row.tenantSlug }
+        })
+      );
     },
     async findByTenantAndId(tenantId: string, workbookId: string) {
-      const workbook = await prisma.workbook.findFirst({
-        where: {
-          id: workbookId,
-          tenant: {
-            slug: tenantId
-          }
-        },
-        include: tenantSlugInclude
-      });
+      const [workbook] = await db
+        .select({
+          id: workbooks.id,
+          tenantId: workbooks.tenantId,
+          name: workbooks.name,
+          tenantSlug: tenants.slug
+        })
+        .from(workbooks)
+        .innerJoin(tenants, eq(workbooks.tenantId, tenants.id))
+        .where(and(eq(workbooks.id, workbookId), eq(tenants.slug, tenantId)))
+        .limit(1);
 
-      return workbook ? toWorkbookRecord(workbook) : null;
+      return workbook
+        ? toWorkbookRecord({
+            id: workbook.id,
+            tenantId: workbook.tenantId,
+            name: workbook.name,
+            tenant: { slug: workbook.tenantSlug }
+          })
+        : null;
     }
   };
 }

@@ -1,5 +1,7 @@
 import type { ImportJobRecord } from "../../../packages/contracts/src/datasets.js";
-import type { PrismaClient } from "./generated/prisma/client.js";
+import { and, asc, eq, lt } from "drizzle-orm";
+import type { DbClient } from "./client.js";
+import { importJobs } from "./schema.js";
 
 type WarningRecord = {
   code: string;
@@ -44,7 +46,7 @@ export function toImportJobRecord(input: {
   };
 }
 
-export function createImportJobStore(prisma: PrismaClient) {
+export function createImportJobStore(db: DbClient) {
   return {
     async create(input: {
       datasetId: string;
@@ -52,15 +54,16 @@ export function createImportJobStore(prisma: PrismaClient) {
       objectKey: string;
       status?: string;
     }) {
-      const job = await prisma.importJob.create({
-        data: {
+      const [job] = await db
+        .insert(importJobs)
+        .values({
           datasetId: input.datasetId,
           tenantId: input.tenantId,
           objectKey: input.objectKey,
           status: input.status ?? "queued",
           warnings: []
-        }
-      });
+        })
+        .returning();
 
       return toImportJobRecord(job);
     },
@@ -68,24 +71,25 @@ export function createImportJobStore(prisma: PrismaClient) {
       tenantId: string;
       importJobId: string;
     }) {
-      const job = await prisma.importJob.findFirst({
-        where: {
-          id: input.importJobId,
-          tenantId: input.tenantId
-        }
-      });
+      const [job] = await db
+        .select()
+        .from(importJobs)
+        .where(
+          and(
+            eq(importJobs.id, input.importJobId),
+            eq(importJobs.tenantId, input.tenantId)
+          )
+        )
+        .limit(1);
 
       return job ? toImportJobRecord(job) : null;
     },
     async listQueuedJobs() {
-      const jobs = await prisma.importJob.findMany({
-        where: {
-          status: "queued"
-        },
-        orderBy: {
-          id: "asc"
-        }
-      });
+      const jobs = await db
+        .select()
+        .from(importJobs)
+        .where(eq(importJobs.status, "queued"))
+        .orderBy(asc(importJobs.id));
 
       return jobs.map(toImportJobRecord);
     },
@@ -93,14 +97,11 @@ export function createImportJobStore(prisma: PrismaClient) {
       importJobId: string;
       status: ImportJobRecord["status"];
     }) {
-      const job = await prisma.importJob.update({
-        where: {
-          id: input.importJobId
-        },
-        data: {
-          status: input.status
-        }
-      });
+      const [job] = await db
+        .update(importJobs)
+        .set({ status: input.status })
+        .where(eq(importJobs.id, input.importJobId))
+        .returning();
 
       return toImportJobRecord(job);
     },
@@ -108,26 +109,14 @@ export function createImportJobStore(prisma: PrismaClient) {
       importJobId: string;
       claimedAt: Date;
     }) {
-      const result = await prisma.importJob.updateMany({
-        where: {
-          id: input.importJobId,
-          status: "queued"
-        },
-        data: {
+      const [job] = await db
+        .update(importJobs)
+        .set({
           status: "processing",
           claimedAt: input.claimedAt
-        }
-      } as never);
-
-      if (result.count === 0) {
-        return null;
-      }
-
-      const job = await prisma.importJob.findUnique({
-        where: {
-          id: input.importJobId
-        }
-      } as never);
+        })
+        .where(and(eq(importJobs.id, input.importJobId), eq(importJobs.status, "queued")))
+        .returning();
 
       return job ? toImportJobRecord(job) : null;
     },
@@ -135,16 +124,15 @@ export function createImportJobStore(prisma: PrismaClient) {
       importJobId: string;
       completedAt: Date;
     }) {
-      const job = await prisma.importJob.update({
-        where: {
-          id: input.importJobId
-        },
-        data: {
+      const [job] = await db
+        .update(importJobs)
+        .set({
           status: "ready",
           warnings: [],
           completedAt: input.completedAt
-        }
-      } as never);
+        })
+        .where(eq(importJobs.id, input.importJobId))
+        .returning();
 
       return toImportJobRecord(job);
     },
@@ -153,53 +141,52 @@ export function createImportJobStore(prisma: PrismaClient) {
       completedAt: Date;
       warnings: WarningRecord[];
     }) {
-      const job = await prisma.importJob.update({
-        where: {
-          id: input.importJobId
-        },
-        data: {
+      const [job] = await db
+        .update(importJobs)
+        .set({
           status: "failed",
           warnings: input.warnings,
           completedAt: input.completedAt
-        }
-      } as never);
+        })
+        .where(eq(importJobs.id, input.importJobId))
+        .returning();
 
       return toImportJobRecord(job);
     },
     async listStaleProcessingJobs(input: {
       staleBefore: Date;
     }) {
-      const jobs = await prisma.importJob.findMany({
-        where: {
-          status: "processing",
-          claimedAt: {
-            lt: input.staleBefore
-          }
-        },
-        orderBy: {
-          claimedAt: "asc"
-        }
-      } as never);
+      const jobs = await db
+        .select()
+        .from(importJobs)
+        .where(
+          and(
+            eq(importJobs.status, "processing"),
+            lt(importJobs.claimedAt, input.staleBefore)
+          )
+        )
+        .orderBy(asc(importJobs.claimedAt));
 
       return jobs.map(toImportJobRecord);
     },
     async resetStaleProcessingJobs(input: {
       staleBefore: Date;
     }) {
-      const result = await prisma.importJob.updateMany({
-        where: {
-          status: "processing",
-          claimedAt: {
-            lt: input.staleBefore
-          }
-        },
-        data: {
+      const rows = await db
+        .update(importJobs)
+        .set({
           status: "queued",
           claimedAt: null
-        }
-      } as never);
+        })
+        .where(
+          and(
+            eq(importJobs.status, "processing"),
+            lt(importJobs.claimedAt, input.staleBefore)
+          )
+        )
+        .returning({ id: importJobs.id });
 
-      return result.count;
+      return rows.length;
     }
   };
 }

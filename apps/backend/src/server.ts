@@ -3,8 +3,7 @@ import {
   createRedisExpiringStore,
   type AuthorizationContext
 } from "../../../packages/auth/src/index.js";
-import { createDbClient } from "../../../packages/db/src/client.js";
-import type { PrismaClient } from "../../../packages/db/src/generated/prisma/client.js";
+import { createDbClient, type DbClient } from "../../../packages/db/src/client.js";
 import {
   createImportJobQueue,
   createQueueClient
@@ -45,7 +44,7 @@ export type BackendRuntimeConfig = {
 
 export type BackendRuntime = {
   app: ReturnType<typeof createApiApp>;
-  db?: PrismaClient;
+  db?: DbClient;
   cache?: {
     disconnect(): Promise<void>;
   };

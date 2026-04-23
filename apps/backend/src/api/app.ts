@@ -11,7 +11,7 @@ import {
   type AuthorizationResolver,
   type ExpiringStore
 } from "../../../../packages/auth/src/index.js";
-import type { PrismaClient } from "../../../../packages/db/src/generated/prisma/client.js";
+import type { DbClient } from "../../../../packages/db/src/client.js";
 import { attachAuthContext, authModule } from "../modules/auth/app";
 import {
   createDatasetsService,
@@ -40,7 +40,7 @@ export type CreateApiAppOptions = {
   prettyLogs?: boolean;
   mockContext?: AuthorizationContext;
   mockAccessibleApps?: AccessibleApp[];
-  db?: PrismaClient;
+  db?: DbClient;
   tenantId?: string;
   authCacheStore?: ExpiringStore;
   sessionBackingStore?: ExpiringStore;

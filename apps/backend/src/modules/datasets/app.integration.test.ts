@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
 import { createDbClient } from "../../../../../packages/db/src/index.js";
+import { datasets, importJobs, tenants } from "../../../../../packages/db/src/schema.js";
 import { createApiApp } from "../../api/app";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -7,9 +9,9 @@ const databaseUrl = process.env.DATABASE_URL;
 const describeIfDatabase =
   databaseUrl && databaseUrl.length > 0 ? describe : describe.skip;
 
-describeIfDatabase("dataset routes with prisma", () => {
+describeIfDatabase("dataset routes with drizzle", () => {
   const tenantId = "tenant_integration";
-  const prisma = createDbClient({
+  const db = createDbClient({
     connectionString: databaseUrl as string
   });
   const app = createApiApp({
@@ -19,54 +21,32 @@ describeIfDatabase("dataset routes with prisma", () => {
       employeeId: "dev-1",
       roles: ["ADMIN"]
     },
-    db: prisma,
+    db: db,
     tenantId
   });
 
   beforeAll(async () => {
-    await prisma.tenant.upsert({
-      where: {
-        slug: "tenant-integration"
-      },
-      update: {
-        name: "Integration Tenant"
-      },
-      create: {
+    await db
+      .insert(tenants)
+      .values({
         id: tenantId,
         slug: "tenant-integration",
         name: "Integration Tenant"
-      }
-    });
-    await prisma.importJob.deleteMany({
-      where: {
-        tenantId
-      }
-    });
-    await prisma.dataset.deleteMany({
-      where: {
-        tenantId
-      }
-    });
+      })
+      .onConflictDoUpdate({
+        target: tenants.slug,
+        set: { name: "Integration Tenant" }
+      });
+    await db.delete(importJobs).where(eq(importJobs.tenantId, tenantId));
+    await db.delete(datasets).where(eq(datasets.tenantId, tenantId));
   });
 
   afterAll(async () => {
-    await prisma.importJob.deleteMany({
-      where: {
-        tenantId
-      }
-    });
-    await prisma.dataset.deleteMany({
-      where: {
-        tenantId
-      }
-    });
-    await prisma.tenant.deleteMany({
-      where: {
-        id: tenantId
-      }
-    });
+    await db.delete(importJobs).where(eq(importJobs.tenantId, tenantId));
+    await db.delete(datasets).where(eq(datasets.tenantId, tenantId));
+    await db.delete(tenants).where(eq(tenants.id, tenantId));
     await app.close();
-    await prisma.$disconnect();
+    await db.$disconnect();
   });
 
   it("creates and lists persisted datasets", async () => {

@@ -1,0 +1,872 @@
+{
+  "id": "6fdb6054-987a-4ee0-94d8-5d266d1c2915",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.DashboardVisibilityRule": {
+      "name": "DashboardVisibilityRule",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dashboardId": {
+          "name": "dashboardId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subjectType": {
+          "name": "subjectType",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subjectId": {
+          "name": "subjectId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "DashboardVisibilityRule_tenantId_dashboardId_idx": {
+          "name": "DashboardVisibilityRule_tenantId_dashboardId_idx",
+          "columns": [
+            {
+              "expression": "tenantId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "dashboardId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "DashboardVisibilityRule_tenantId_Tenant_id_fk": {
+          "name": "DashboardVisibilityRule_tenantId_Tenant_id_fk",
+          "tableFrom": "DashboardVisibilityRule",
+          "tableTo": "Tenant",
+          "columnsFrom": [
+            "tenantId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "DashboardVisibilityRule_dashboardId_Dashboard_id_fk": {
+          "name": "DashboardVisibilityRule_dashboardId_Dashboard_id_fk",
+          "tableFrom": "DashboardVisibilityRule",
+          "tableTo": "Dashboard",
+          "columnsFrom": [
+            "dashboardId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.DashboardWidget": {
+      "name": "DashboardWidget",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dashboardId": {
+          "name": "dashboardId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datasetId": {
+          "name": "datasetId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "config": {
+          "name": "config",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "layout": {
+          "name": "layout",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "DashboardWidget_dashboardId_Dashboard_id_fk": {
+          "name": "DashboardWidget_dashboardId_Dashboard_id_fk",
+          "tableFrom": "DashboardWidget",
+          "tableTo": "Dashboard",
+          "columnsFrom": [
+            "dashboardId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "DashboardWidget_datasetId_Dataset_id_fk": {
+          "name": "DashboardWidget_datasetId_Dataset_id_fk",
+          "tableFrom": "DashboardWidget",
+          "tableTo": "Dataset",
+          "columnsFrom": [
+            "datasetId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Dashboard": {
+      "name": "Dashboard",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workbookId": {
+          "name": "workbookId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "createdByExternalUserId": {
+          "name": "createdByExternalUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdByDisplayName": {
+          "name": "createdByDisplayName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "Dashboard_tenantId_Tenant_id_fk": {
+          "name": "Dashboard_tenantId_Tenant_id_fk",
+          "tableFrom": "Dashboard",
+          "tableTo": "Tenant",
+          "columnsFrom": [
+            "tenantId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "Dashboard_id_tenantId_key": {
+          "name": "Dashboard_id_tenantId_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "tenantId"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.DatasetRow": {
+      "name": "DatasetRow",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datasetId": {
+          "name": "datasetId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rowIndex": {
+          "name": "rowIndex",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "record": {
+          "name": "record",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "DatasetRow_datasetId_rowIndex_key": {
+          "name": "DatasetRow_datasetId_rowIndex_key",
+          "columns": [
+            {
+              "expression": "datasetId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "rowIndex",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "DatasetRow_tenantId_datasetId_rowIndex_idx": {
+          "name": "DatasetRow_tenantId_datasetId_rowIndex_idx",
+          "columns": [
+            {
+              "expression": "tenantId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "datasetId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "rowIndex",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "DatasetRow_datasetId_Dataset_id_fk": {
+          "name": "DatasetRow_datasetId_Dataset_id_fk",
+          "tableFrom": "DatasetRow",
+          "tableTo": "Dataset",
+          "columnsFrom": [
+            "datasetId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Dataset": {
+      "name": "Dataset",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "warnings": {
+          "name": "warnings",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "preview": {
+          "name": "preview",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uploadedByExternalUserId": {
+          "name": "uploadedByExternalUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uploadedByDisplayName": {
+          "name": "uploadedByDisplayName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uploadedAt": {
+          "name": "uploadedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sourceFilename": {
+          "name": "sourceFilename",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contentType": {
+          "name": "contentType",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sizeBytes": {
+          "name": "sizeBytes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "storageBucket": {
+          "name": "storageBucket",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "storageObjectKey": {
+          "name": "storageObjectKey",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "storageUploadId": {
+          "name": "storageUploadId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "importStatus": {
+          "name": "importStatus",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "Dataset_tenantId_Tenant_id_fk": {
+          "name": "Dataset_tenantId_Tenant_id_fk",
+          "tableFrom": "Dataset",
+          "tableTo": "Tenant",
+          "columnsFrom": [
+            "tenantId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ImportJob": {
+      "name": "ImportJob",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "datasetId": {
+          "name": "datasetId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "objectKey": {
+          "name": "objectKey",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "warnings": {
+          "name": "warnings",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "claimedAt": {
+          "name": "claimedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completedAt": {
+          "name": "completedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ImportJob_datasetId_Dataset_id_fk": {
+          "name": "ImportJob_datasetId_Dataset_id_fk",
+          "tableFrom": "ImportJob",
+          "tableTo": "Dataset",
+          "columnsFrom": [
+            "datasetId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Membership": {
+      "name": "Membership",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "principalId": {
+          "name": "principalId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "Membership_tenantId_principalId_key": {
+          "name": "Membership_tenantId_principalId_key",
+          "columns": [
+            {
+              "expression": "tenantId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "principalId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "Membership_tenantId_Tenant_id_fk": {
+          "name": "Membership_tenantId_Tenant_id_fk",
+          "tableFrom": "Membership",
+          "tableTo": "Tenant",
+          "columnsFrom": [
+            "tenantId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "Membership_principalId_Principal_id_fk": {
+          "name": "Membership_principalId_Principal_id_fk",
+          "tableFrom": "Membership",
+          "tableTo": "Principal",
+          "columnsFrom": [
+            "principalId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.PrincipalAppPreference": {
+      "name": "PrincipalAppPreference",
+      "schema": "",
+      "columns": {
+        "principalId": {
+          "name": "principalId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "selectedDashboardId": {
+          "name": "selectedDashboardId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "PrincipalAppPreference_principalId_Principal_id_fk": {
+          "name": "PrincipalAppPreference_principalId_Principal_id_fk",
+          "tableFrom": "PrincipalAppPreference",
+          "tableTo": "Principal",
+          "columnsFrom": [
+            "principalId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "PrincipalAppPreference_tenantId_Tenant_id_fk": {
+          "name": "PrincipalAppPreference_tenantId_Tenant_id_fk",
+          "tableFrom": "PrincipalAppPreference",
+          "tableTo": "Tenant",
+          "columnsFrom": [
+            "tenantId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "PrincipalAppPreference_selectedDashboardId_Dashboard_id_fk": {
+          "name": "PrincipalAppPreference_selectedDashboardId_Dashboard_id_fk",
+          "tableFrom": "PrincipalAppPreference",
+          "tableTo": "Dashboard",
+          "columnsFrom": [
+            "selectedDashboardId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "PrincipalAppPreference_principalId_tenantId_pk": {
+          "name": "PrincipalAppPreference_principalId_tenantId_pk",
+          "columns": [
+            "principalId",
+            "tenantId"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Principal": {
+      "name": "Principal",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "externalUserId": {
+          "name": "externalUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "Principal_externalUserId_unique": {
+          "name": "Principal_externalUserId_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "externalUserId"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Tenant": {
+      "name": "Tenant",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "Tenant_slug_unique": {
+          "name": "Tenant_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Workbook": {
+      "name": "Workbook",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "Workbook_tenantId_Tenant_id_fk": {
+          "name": "Workbook_tenantId_Tenant_id_fk",
+          "tableFrom": "Workbook",
+          "tableTo": "Tenant",
+          "columnsFrom": [
+            "tenantId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

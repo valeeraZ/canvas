@@ -4,19 +4,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate": "prisma generate",
-    "migrate:dev": "prisma migrate dev",
-    "db:push": "prisma db push",
-    "db:seed": "prisma db seed"
+    "generate": "drizzle-kit generate",
+    "migrate:dev": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:seed": "tsx drizzle/seed.ts"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.5.0",
-    "@prisma/client": "^7.5.0",
     "dotenv": "^17.3.1",
+    "drizzle-orm": "^0.45.2",
     "pg": "^8.20.0"
   },
   "devDependencies": {
-    "prisma": "^7.5.0",
+    "@types/pg": "^8.20.0",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.21.0"
   }
 }

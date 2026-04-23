@@ -4,7 +4,7 @@ import {
   createDatasetStore,
   createImportJobStore
 } from "../../../../../packages/db/src/index.js";
-import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
+import type { DbClient } from "../../../../../packages/db/src/client.js";
 import type { ChartPayload, ChartQueryRequest } from "../../../../../packages/contracts/src/charts.js";
 import { streamMultipartUpload } from "./routes/upload-file";
 import {
@@ -120,7 +120,7 @@ export type DatasetsModuleOptions = {
 };
 
 type CreateDatasetsServiceInput = {
-  db: PrismaClient;
+  db: DbClient;
   tenantId: string;
   importQueue?: {
     enqueue: (jobId: string) => Promise<void>;

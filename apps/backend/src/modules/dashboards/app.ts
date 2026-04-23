@@ -10,10 +10,10 @@ import type { DashboardRecord } from "../../../../../packages/contracts/src/dash
 import type {
   ChartWidgetConfig,
   DashboardWidgetLayout,
-  DashboardWidgetRecord,
-  TableWidgetConfig
+  DashboardWidgetRecord
 } from "../../../../../packages/contracts/src/index.js";
-import type { PrismaClient } from "../../../../../packages/db/src/generated/prisma/client.js";
+import type { TableWidgetConfig } from "../../../../../packages/contracts/src/dashboard-editor.js";
+import type { DbClient } from "../../../../../packages/db/src/client.js";
 import { shareDashboard } from "./routes/share-dashboard";
 import {
   getSelectedDashboard,
@@ -158,7 +158,7 @@ export type DashboardsModuleOptions = {
 };
 
 export function createDashboardsService(input: {
-  db: PrismaClient;
+  db: DbClient;
 }): DashboardsService {
   const dashboards = createDashboardStore(input.db);
   const visibility = createDashboardVisibilityStore(input.db);

@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { and, eq } from "drizzle-orm";
 import { createDbClient } from "../../../../../packages/db/src/index.js";
+import { memberships, principals, tenants } from "../../../../../packages/db/src/schema.js";
 import { createApiApp } from "../../api/app";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -16,10 +18,10 @@ function readSessionCookie(value: string | string[] | undefined) {
   return cookie.split(";")[0] ?? "";
 }
 
-describeIfDatabase("session exchange with prisma", () => {
+describeIfDatabase("session exchange with drizzle", () => {
   const tenantSlug = "canvas-auth";
   const externalUserId = "dev-1";
-  const prisma = createDbClient({
+  const db = createDbClient({
     connectionString: databaseUrl as string
   });
   const app = createApiApp({
@@ -29,49 +31,27 @@ describeIfDatabase("session exchange with prisma", () => {
       employeeId: externalUserId,
       roles: ["ADMIN"]
     },
-    db: prisma
+    db: db
   });
 
   beforeAll(async () => {
-    await prisma.membership.deleteMany({
-      where: {
-        tenant: {
-          slug: tenantSlug
-        }
-      }
-    });
-    await prisma.principal.deleteMany({
-      where: {
-        externalUserId
-      }
-    });
-    await prisma.tenant.deleteMany({
-      where: {
-        slug: tenantSlug
-      }
-    });
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, tenantSlug));
+    if (tenant) {
+      await db.delete(memberships).where(eq(memberships.tenantId, tenant.id));
+    }
+    await db.delete(principals).where(eq(principals.externalUserId, externalUserId));
+    await db.delete(tenants).where(eq(tenants.slug, tenantSlug));
   });
 
   afterAll(async () => {
-    await prisma.membership.deleteMany({
-      where: {
-        tenant: {
-          slug: tenantSlug
-        }
-      }
-    });
-    await prisma.principal.deleteMany({
-      where: {
-        externalUserId
-      }
-    });
-    await prisma.tenant.deleteMany({
-      where: {
-        slug: tenantSlug
-      }
-    });
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, tenantSlug));
+    if (tenant) {
+      await db.delete(memberships).where(eq(memberships.tenantId, tenant.id));
+    }
+    await db.delete(principals).where(eq(principals.externalUserId, externalUserId));
+    await db.delete(tenants).where(eq(tenants.slug, tenantSlug));
     await app.close();
-    await prisma.$disconnect();
+    await db.$disconnect();
   });
 
   it("persists tenant identities and returns tenant context", async () => {
@@ -86,26 +66,27 @@ describeIfDatabase("session exchange with prisma", () => {
 
     expect(session.statusCode).toBe(200);
 
-    const tenant = await prisma.tenant.findUnique({
-      where: {
-        slug: tenantSlug
-      }
-    });
-    const principal = await prisma.principal.findUnique({
-      where: {
-        externalUserId
-      }
-    });
-    const memberships = await prisma.membership.findMany({
-      where: {
-        tenantId: tenant?.id,
-        principalId: principal?.id
-      }
-    });
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, tenantSlug));
+    const [principal] = await db
+      .select()
+      .from(principals)
+      .where(eq(principals.externalUserId, externalUserId));
+    const storedMemberships =
+      tenant && principal
+        ? await db
+            .select()
+            .from(memberships)
+            .where(
+              and(
+                eq(memberships.tenantId, tenant.id),
+                eq(memberships.principalId, principal.id)
+              )
+            )
+        : [];
 
     expect(tenant?.slug).toBe(tenantSlug);
     expect(principal?.externalUserId).toBe(externalUserId);
-    expect(memberships[0]?.role).toBe("ADMIN");
+    expect(storedMemberships[0]?.role).toBe("ADMIN");
 
     const auth = await app.inject({
       method: "GET",

@@ -3,7 +3,7 @@ import type { AuthorizationResolver } from "../../../../../../packages/auth/src/
 import { createMembershipStore } from "../../../../../../packages/db/src/membership-store.js";
 import { createPrincipalStore } from "../../../../../../packages/db/src/principal-store.js";
 import { createTenantStore } from "../../../../../../packages/db/src/tenant-store.js";
-import type { PrismaClient } from "../../../../../../packages/db/src/generated/prisma/client.js";
+import type { DbClient } from "../../../../../../packages/db/src/client.js";
 import type { SessionExchangeResult } from "../../../../../../packages/contracts/src/session.js";
 
 export async function exchangeHostAssertion(input: {
@@ -12,7 +12,7 @@ export async function exchangeHostAssertion(input: {
   appName: string;
   mockContext?: AuthorizationContext;
   authorizationResolver: AuthorizationResolver;
-  db?: PrismaClient;
+  db?: DbClient;
 }): Promise<SessionExchangeResult> {
   const assertion = await input.authorizationResolver.resolve({
     amtoken: input.token,

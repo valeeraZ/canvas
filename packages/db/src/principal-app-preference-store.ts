@@ -1,5 +1,7 @@
-import type { PrismaClient } from "./generated/prisma/client.js";
-import { resolveTenantBySlug, tenantSlugInclude } from "./tenant-slug.js";
+import { and, eq } from "drizzle-orm";
+import type { DbClient } from "./client.js";
+import { principalAppPreferences } from "./schema.js";
+import { resolveTenantBySlug } from "./tenant-slug.js";
 
 export type PrincipalAppPreference = {
   principalId: string;
@@ -26,43 +28,52 @@ export function toPrincipalAppPreference(
   };
 }
 
-export function createPrincipalAppPreferenceStore(prisma: PrismaClient) {
+export function createPrincipalAppPreferenceStore(db: DbClient) {
   return {
     async get(input: { principalId: string; appId: string }) {
-      const tenant = await resolveTenantBySlug(prisma, input.appId);
-      const preference = await prisma.principalAppPreference.findUnique({
-        where: {
-          principalId_tenantId: {
-            principalId: input.principalId,
-            tenantId: tenant.id
-          }
-        },
-        include: tenantSlugInclude
-      });
+      const tenant = await resolveTenantBySlug(db, input.appId);
+      const [preference] = await db
+        .select()
+        .from(principalAppPreferences)
+        .where(
+          and(
+            eq(principalAppPreferences.principalId, input.principalId),
+            eq(principalAppPreferences.tenantId, tenant.id)
+          )
+        )
+        .limit(1);
 
-      return preference ? toPrincipalAppPreference(preference) : null;
+      return preference
+        ? toPrincipalAppPreference({
+            ...preference,
+            tenant: { slug: tenant.slug }
+          })
+        : null;
     },
     async set(input: PrincipalAppPreference) {
-      const tenant = await resolveTenantBySlug(prisma, input.appId);
-      const preference = await prisma.principalAppPreference.upsert({
-        where: {
-          principalId_tenantId: {
-            principalId: input.principalId,
-            tenantId: tenant.id
-          }
-        },
-        update: {
-          selectedDashboardId: input.selectedDashboardId
-        },
-        create: {
+      const tenant = await resolveTenantBySlug(db, input.appId);
+      const [preference] = await db
+        .insert(principalAppPreferences)
+        .values({
           principalId: input.principalId,
           tenantId: tenant.id,
           selectedDashboardId: input.selectedDashboardId
-        },
-        include: tenantSlugInclude
-      });
+        })
+        .onConflictDoUpdate({
+          target: [
+            principalAppPreferences.principalId,
+            principalAppPreferences.tenantId
+          ],
+          set: {
+            selectedDashboardId: input.selectedDashboardId
+          }
+        })
+        .returning();
 
-      return toPrincipalAppPreference(preference);
+      return toPrincipalAppPreference({
+        ...preference,
+        tenant: { slug: tenant.slug }
+      });
     }
   };
 }

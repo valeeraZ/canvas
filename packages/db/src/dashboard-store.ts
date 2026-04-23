@@ -1,6 +1,8 @@
 import type { DashboardRecord } from "../../../packages/contracts/src/dashboards.js";
-import type { PrismaClient } from "./generated/prisma/client.js";
-import { resolveTenantBySlug, tenantSlugInclude } from "./tenant-slug.js";
+import { and, asc, eq } from "drizzle-orm";
+import type { DbClient } from "./client.js";
+import { dashboards, tenants } from "./schema.js";
+import { resolveTenantBySlug } from "./tenant-slug.js";
 
 type PersistedDashboard = {
   id: string;
@@ -33,7 +35,31 @@ export function toDashboardRecord(input: PersistedDashboard): DashboardRecord {
   };
 }
 
-export function createDashboardStore(prisma: PrismaClient) {
+function dashboardRecordSelection() {
+  return {
+    id: dashboards.id,
+    tenantId: dashboards.tenantId,
+    name: dashboards.name,
+    workbookId: dashboards.workbookId,
+    status: dashboards.status,
+    createdByExternalUserId: dashboards.createdByExternalUserId,
+    createdByDisplayName: dashboards.createdByDisplayName,
+    createdAt: dashboards.createdAt,
+    updatedAt: dashboards.updatedAt,
+    tenantSlug: tenants.slug
+  };
+}
+
+function toDashboardRecordWithSlug(
+  input: Omit<PersistedDashboard, "tenant"> & { tenantSlug: string }
+) {
+  return toDashboardRecord({
+    ...input,
+    tenant: { slug: input.tenantSlug }
+  });
+}
+
+export function createDashboardStore(db: DbClient) {
   return {
     async create(input: {
       tenantId: string;
@@ -42,91 +68,82 @@ export function createDashboardStore(prisma: PrismaClient) {
       createdByExternalUserId?: string;
       createdByDisplayName?: string;
     }) {
-      const tenant = await resolveTenantBySlug(prisma, input.tenantId);
-      const dashboard = await prisma.dashboard.create({
-        data: {
+      const tenant = await resolveTenantBySlug(db, input.tenantId);
+      const now = new Date();
+      const [dashboard] = await db
+        .insert(dashboards)
+        .values({
           tenantId: tenant.id,
           name: input.name,
           workbookId: input.workbookId ?? null,
           status: "active",
           createdByExternalUserId: input.createdByExternalUserId ?? null,
-          createdByDisplayName: input.createdByDisplayName ?? null
-        },
-        include: tenantSlugInclude
-      });
+          createdByDisplayName: input.createdByDisplayName ?? null,
+          createdAt: now,
+          updatedAt: now
+        })
+        .returning();
 
-      return toDashboardRecord(dashboard);
+      return toDashboardRecord({ ...dashboard, tenant: { slug: tenant.slug } });
     },
     async listByTenant(tenantId: string) {
-      const dashboards = await prisma.dashboard.findMany({
-        where: {
-          tenant: {
-            slug: tenantId
-          }
-        },
-        include: tenantSlugInclude,
-        orderBy: {
-          name: "asc"
-        }
-      });
+      const rows = await db
+        .select(dashboardRecordSelection())
+        .from(dashboards)
+        .innerJoin(tenants, eq(dashboards.tenantId, tenants.id))
+        .where(eq(tenants.slug, tenantId))
+        .orderBy(asc(dashboards.name));
 
-      return dashboards.map(toDashboardRecord);
+      return rows.map(toDashboardRecordWithSlug);
     },
     async findByTenantAndId(tenantId: string, dashboardId: string) {
-      const dashboard = await prisma.dashboard.findFirst({
-        where: {
-          id: dashboardId,
-          tenant: {
-            slug: tenantId
-          }
-        },
-        include: tenantSlugInclude
-      });
+      const [dashboard] = await db
+        .select(dashboardRecordSelection())
+        .from(dashboards)
+        .innerJoin(tenants, eq(dashboards.tenantId, tenants.id))
+        .where(and(eq(dashboards.id, dashboardId), eq(tenants.slug, tenantId)))
+        .limit(1);
 
-      return dashboard ? toDashboardRecord(dashboard) : null;
+      return dashboard ? toDashboardRecordWithSlug(dashboard) : null;
     },
     async rename(input: {
       tenantId: string;
       dashboardId: string;
       name: string;
     }) {
-      const tenant = await resolveTenantBySlug(prisma, input.tenantId);
-      try {
-        const dashboard = await prisma.dashboard.update({
-          where: {
-            id: input.dashboardId,
-            tenantId: tenant.id
-          },
-          data: {
-            name: input.name
-          },
-          include: tenantSlugInclude
-        });
+      const tenant = await resolveTenantBySlug(db, input.tenantId);
+      const [dashboard] = await db
+        .update(dashboards)
+        .set({
+          name: input.name,
+          updatedAt: new Date()
+        })
+        .where(and(eq(dashboards.id, input.dashboardId), eq(dashboards.tenantId, tenant.id)))
+        .returning();
 
-        return toDashboardRecord(dashboard);
-      } catch {
+      if (!dashboard) {
         return null;
       }
+
+      return toDashboardRecord({ ...dashboard, tenant: { slug: tenant.slug } });
     },
     async remove(input: {
       tenantId: string;
       dashboardId: string;
     }) {
-      const tenant = await resolveTenantBySlug(prisma, input.tenantId);
-      try {
-        const dashboard = await prisma.dashboard.delete({
-          where: {
-            id: input.dashboardId,
-            tenantId: tenant.id
-          }
-        });
+      const tenant = await resolveTenantBySlug(db, input.tenantId);
+      const [dashboard] = await db
+        .delete(dashboards)
+        .where(and(eq(dashboards.id, input.dashboardId), eq(dashboards.tenantId, tenant.id)))
+        .returning({ id: dashboards.id });
 
-        return {
-          deletedDashboardId: dashboard.id
-        };
-      } catch {
+      if (!dashboard) {
         return null;
       }
+
+      return {
+        deletedDashboardId: dashboard.id
+      };
     }
   };
 }

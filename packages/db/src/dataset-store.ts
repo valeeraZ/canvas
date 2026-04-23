@@ -1,7 +1,9 @@
 import type { DatasetRecord } from "../../../packages/contracts/src/datasets.js";
 import type { DatasetPreview } from "../../../packages/contracts/src/dashboard-editor.js";
-import type { PrismaClient } from "./generated/prisma/client.js";
-import { resolveTenantBySlug, tenantSlugInclude } from "./tenant-slug.js";
+import { and, asc, eq, inArray } from "drizzle-orm";
+import type { DbClient } from "./client.js";
+import { dashboardWidgets, dashboards, datasets, tenants, workbooks } from "./schema.js";
+import { resolveTenantBySlug } from "./tenant-slug.js";
 
 type WarningRecord = {
   code: string;
@@ -88,7 +90,52 @@ function normalizeDatasetPreview(input: unknown): DatasetPreview | null {
   return preview as DatasetPreview;
 }
 
-export function createDatasetStore(prisma: PrismaClient) {
+function datasetSelection() {
+  return {
+    id: datasets.id,
+    tenantId: datasets.tenantId,
+    name: datasets.name,
+    status: datasets.status,
+    warnings: datasets.warnings,
+    preview: datasets.preview,
+    uploadedByExternalUserId: datasets.uploadedByExternalUserId,
+    uploadedByDisplayName: datasets.uploadedByDisplayName,
+    uploadedAt: datasets.uploadedAt,
+    sourceFilename: datasets.sourceFilename,
+    contentType: datasets.contentType,
+    sizeBytes: datasets.sizeBytes,
+    storageBucket: datasets.storageBucket,
+    storageObjectKey: datasets.storageObjectKey,
+    storageUploadId: datasets.storageUploadId,
+    importStatus: datasets.importStatus,
+    tenantSlug: tenants.slug
+  };
+}
+
+function toDatasetRecordWithSlug(
+  input: Omit<PersistedDataset, "tenant"> & { tenantSlug: string }
+) {
+  return toDatasetRecord({
+    ...input,
+    tenant: { slug: input.tenantSlug }
+  });
+}
+
+async function findDatasetIdByTenant(
+  db: DbClient,
+  input: { tenantId: string; datasetId: string }
+) {
+  const [dataset] = await db
+    .select({ id: datasets.id })
+    .from(datasets)
+    .innerJoin(tenants, eq(datasets.tenantId, tenants.id))
+    .where(and(eq(datasets.id, input.datasetId), eq(tenants.slug, input.tenantId)))
+    .limit(1);
+
+  return dataset?.id ?? null;
+}
+
+export function createDatasetStore(db: DbClient) {
   return {
     async create(input: {
       tenantId: string;
@@ -106,9 +153,10 @@ export function createDatasetStore(prisma: PrismaClient) {
       storageUploadId?: string;
       importStatus?: DatasetRecord["status"];
     }) {
-      const tenant = await resolveTenantBySlug(prisma, input.tenantId);
-      const dataset = await prisma.dataset.create({
-        data: {
+      const tenant = await resolveTenantBySlug(db, input.tenantId);
+      const [dataset] = await db
+        .insert(datasets)
+        .values({
           tenantId: tenant.id,
           name: input.name,
           status: input.status ?? "queued",
@@ -124,53 +172,41 @@ export function createDatasetStore(prisma: PrismaClient) {
           storageObjectKey: input.storageObjectKey,
           storageUploadId: input.storageUploadId,
           importStatus: input.importStatus
-        },
-        include: tenantSlugInclude
-      });
+        })
+        .returning();
 
-      return toDatasetRecord(dataset);
+      return toDatasetRecord({ ...dataset, tenant: { slug: tenant.slug } });
     },
     async listByTenant(tenantId: string) {
-      const datasets = await prisma.dataset.findMany({
-        where: {
-          tenant: {
-            slug: tenantId
-          }
-        },
-        include: tenantSlugInclude,
-        orderBy: {
-          name: "asc"
-        }
-      });
+      const rows = await db
+        .select(datasetSelection())
+        .from(datasets)
+        .innerJoin(tenants, eq(datasets.tenantId, tenants.id))
+        .where(eq(tenants.slug, tenantId))
+        .orderBy(asc(datasets.name));
 
-      return datasets.map(toDatasetRecord);
+      return rows.map(toDatasetRecordWithSlug);
     },
     async findByTenantAndId(tenantId: string, datasetId: string) {
-      const dataset = await prisma.dataset.findFirst({
-        where: {
-          id: datasetId,
-          tenant: {
-            slug: tenantId
-          }
-        },
-        include: tenantSlugInclude
-      });
+      const [dataset] = await db
+        .select(datasetSelection())
+        .from(datasets)
+        .innerJoin(tenants, eq(datasets.tenantId, tenants.id))
+        .where(and(eq(datasets.id, datasetId), eq(tenants.slug, tenantId)))
+        .limit(1);
 
-      return dataset ? toDatasetRecord(dataset) : null;
+      return dataset ? toDatasetRecordWithSlug(dataset) : null;
     },
     async findPreviewByTenantAndId(tenantId: string, datasetId: string) {
-      const dataset = await prisma.dataset.findFirst({
-        where: {
-          id: datasetId,
-          tenant: {
-            slug: tenantId
-          }
-        },
-        select: {
-          id: true,
-          preview: true
-        }
-      });
+      const [dataset] = await db
+        .select({
+          id: datasets.id,
+          preview: datasets.preview
+        })
+        .from(datasets)
+        .innerJoin(tenants, eq(datasets.tenantId, tenants.id))
+        .where(and(eq(datasets.id, datasetId), eq(tenants.slug, tenantId)))
+        .limit(1);
 
       return dataset ? normalizeDatasetPreview(dataset.preview) : null;
     },
@@ -179,30 +215,16 @@ export function createDatasetStore(prisma: PrismaClient) {
       datasetId: string;
       preview: DatasetPreview | null;
     }) {
-      const dataset = await prisma.dataset.findFirst({
-        where: {
-          id: input.datasetId,
-          tenant: {
-            slug: input.tenantId
-          }
-        },
-        select: {
-          id: true
-        }
-      });
+      const datasetId = await findDatasetIdByTenant(db, input);
 
-      if (!dataset) {
+      if (!datasetId) {
         return null;
       }
 
-      await prisma.dataset.update({
-        where: {
-          id: input.datasetId
-        },
-        data: {
-          preview: input.preview
-        }
-      });
+      await db
+        .update(datasets)
+        .set({ preview: input.preview })
+        .where(eq(datasets.id, datasetId));
 
       return input.preview;
     },
@@ -217,27 +239,15 @@ export function createDatasetStore(prisma: PrismaClient) {
       status?: DatasetRecord["status"];
       importStatus?: DatasetRecord["status"];
     }) {
-      const dataset = await prisma.dataset.findFirst({
-        where: {
-          id: input.datasetId,
-          tenant: {
-            slug: input.tenantId
-          }
-        },
-        select: {
-          id: true
-        }
-      });
+      const datasetId = await findDatasetIdByTenant(db, input);
 
-      if (!dataset) {
+      if (!datasetId) {
         return null;
       }
 
-      const updated = await prisma.dataset.update({
-        where: {
-          id: input.datasetId
-        },
-        data: {
+      const [updated] = await db
+        .update(datasets)
+        .set({
           contentType: input.contentType,
           sizeBytes: input.sizeBytes,
           storageBucket: input.storageBucket,
@@ -245,166 +255,112 @@ export function createDatasetStore(prisma: PrismaClient) {
           storageUploadId: input.storageUploadId,
           status: input.status,
           importStatus: input.importStatus
-        },
-        include: tenantSlugInclude
-      });
+        })
+        .where(eq(datasets.id, datasetId))
+        .returning();
+      const tenant = await resolveTenantBySlug(db, input.tenantId);
 
-      return toDatasetRecord(updated);
+      return toDatasetRecord({ ...updated, tenant: { slug: tenant.slug } });
     },
     async markProcessing(input: {
       tenantId: string;
       datasetId: string;
     }) {
-      const dataset = await prisma.dataset.findFirst({
-        where: {
-          id: input.datasetId,
-          tenant: {
-            slug: input.tenantId
-          }
-        },
-        select: {
-          id: true
-        }
-      });
+      const datasetId = await findDatasetIdByTenant(db, input);
 
-      if (!dataset) {
+      if (!datasetId) {
         return null;
       }
 
-      const updated = await prisma.dataset.update({
-        where: {
-          id: input.datasetId
-        },
-        data: {
+      const [updated] = await db
+        .update(datasets)
+        .set({
           status: "processing",
           importStatus: "processing"
-        },
-        include: tenantSlugInclude
-      });
+        })
+        .where(eq(datasets.id, datasetId))
+        .returning();
+      const tenant = await resolveTenantBySlug(db, input.tenantId);
 
-      return toDatasetRecord(updated);
+      return toDatasetRecord({ ...updated, tenant: { slug: tenant.slug } });
     },
     async markReady(input: {
       tenantId: string;
       datasetId: string;
       preview: DatasetPreview | null;
     }) {
-      const dataset = await prisma.dataset.findFirst({
-        where: {
-          id: input.datasetId,
-          tenant: {
-            slug: input.tenantId
-          }
-        },
-        select: {
-          id: true
-        }
-      });
+      const datasetId = await findDatasetIdByTenant(db, input);
 
-      if (!dataset) {
+      if (!datasetId) {
         return null;
       }
 
-      const updated = await prisma.dataset.update({
-        where: {
-          id: input.datasetId
-        },
-        data: {
+      const [updated] = await db
+        .update(datasets)
+        .set({
           status: "ready",
           importStatus: "ready",
           warnings: [],
           preview: input.preview
-        },
-        include: tenantSlugInclude
-      });
+        })
+        .where(eq(datasets.id, datasetId))
+        .returning();
+      const tenant = await resolveTenantBySlug(db, input.tenantId);
 
-      return toDatasetRecord(updated);
+      return toDatasetRecord({ ...updated, tenant: { slug: tenant.slug } });
     },
     async markFailed(input: {
       tenantId: string;
       datasetId: string;
       warnings: WarningRecord[];
     }) {
-      const dataset = await prisma.dataset.findFirst({
-        where: {
-          id: input.datasetId,
-          tenant: {
-            slug: input.tenantId
-          }
-        },
-        select: {
-          id: true
-        }
-      });
+      const datasetId = await findDatasetIdByTenant(db, input);
 
-      if (!dataset) {
+      if (!datasetId) {
         return null;
       }
 
-      const updated = await prisma.dataset.update({
-        where: {
-          id: input.datasetId
-        },
-        data: {
+      const [updated] = await db
+        .update(datasets)
+        .set({
           status: "failed",
           importStatus: "failed",
           warnings: input.warnings
-        },
-        include: tenantSlugInclude
-      });
+        })
+        .where(eq(datasets.id, datasetId))
+        .returning();
+      const tenant = await resolveTenantBySlug(db, input.tenantId);
 
-      return toDatasetRecord(updated);
+      return toDatasetRecord({ ...updated, tenant: { slug: tenant.slug } });
     },
     async findUsageByTenantAndId(tenantId: string, datasetId: string) {
-      const dataset = await prisma.dataset.findFirst({
-        where: {
-          id: datasetId,
-          tenant: {
-            slug: tenantId
-          }
-        },
-        select: {
-          id: true
-        }
-      });
+      const existingDatasetId = await findDatasetIdByTenant(db, { tenantId, datasetId });
 
-      if (!dataset) {
+      if (!existingDatasetId) {
         return null;
       }
 
-      const widgets = await prisma.dashboardWidget.findMany({
-        where: {
-          datasetId,
-          dashboard: {
-            tenant: {
-              slug: tenantId
-            }
-          }
-        },
-        select: {
-          id: true,
-          type: true,
-          dashboardId: true,
-          dashboard: {
-            select: {
-              id: true,
-              name: true,
-              workbookId: true
-            }
-          }
-        },
-        orderBy: {
-          id: "asc"
-        }
-      });
+      const widgets = await db
+        .select({
+          id: dashboardWidgets.id,
+          type: dashboardWidgets.type,
+          dashboardId: dashboardWidgets.dashboardId,
+          dashboardName: dashboards.name,
+          dashboardWorkbookId: dashboards.workbookId
+        })
+        .from(dashboardWidgets)
+        .innerJoin(dashboards, eq(dashboardWidgets.dashboardId, dashboards.id))
+        .innerJoin(tenants, eq(dashboards.tenantId, tenants.id))
+        .where(and(eq(dashboardWidgets.datasetId, datasetId), eq(tenants.slug, tenantId)))
+        .orderBy(asc(dashboardWidgets.id));
 
-      const dashboards = Array.from(
+      const dashboardUsage = Array.from(
         new Map(
           widgets.map((widget) => [
-            widget.dashboard.id,
+            widget.dashboardId,
             {
-              id: widget.dashboard.id,
-              name: widget.dashboard.name
+              id: widget.dashboardId,
+              name: widget.dashboardName
             }
           ])
         ).values()
@@ -413,39 +369,31 @@ export function createDatasetStore(prisma: PrismaClient) {
       const workbookIds = Array.from(
         new Set(
           widgets
-            .map((widget) => widget.dashboard.workbookId)
+            .map((widget) => widget.dashboardWorkbookId)
             .filter((workbookId): workbookId is string => Boolean(workbookId))
         )
       );
-      const workbooks = workbookIds.length
-        ? await prisma.workbook.findMany({
-            where: {
-              id: {
-                in: workbookIds
-              },
-              tenant: {
-                slug: tenantId
-              }
-            },
-            select: {
-              id: true,
-              name: true
-            },
-            orderBy: {
-              id: "asc"
-            }
-          })
+      const workbookUsage = workbookIds.length
+        ? await db
+            .select({
+              id: workbooks.id,
+              name: workbooks.name
+            })
+            .from(workbooks)
+            .innerJoin(tenants, eq(workbooks.tenantId, tenants.id))
+            .where(and(inArray(workbooks.id, workbookIds), eq(tenants.slug, tenantId)))
+            .orderBy(asc(workbooks.id))
         : [];
 
       return {
-        dashboards,
+        dashboards: dashboardUsage,
         widgets: widgets.map((widget) => ({
           id: widget.id,
           dashboardId: widget.dashboardId,
-          dashboardName: widget.dashboard.name,
+          dashboardName: widget.dashboardName,
           type: widget.type
         })),
-        workbooks
+        workbooks: workbookUsage
       };
     }
   };

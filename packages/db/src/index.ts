@@ -1,5 +1,5 @@
 export { createDbClient } from "./client.js";
-export type { DbClientConfig } from "./client.js";
+export type { DbClient, DbClientConfig } from "./client.js";
 export { buildTenantRecord } from "./tenant-repository.js";
 export type { TenantRecord } from "./tenant-repository.js";
 export { buildPrincipalRecord } from "./principal-repository.js";
